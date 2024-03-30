@@ -4,17 +4,18 @@ class Program
 {
     static void Main(string[] args)
     {
-        var inputStr = Console.ReadLine();
-        var strList = inputStr.Split(' ');
-        var A = int.Parse(strList[0].ToString());
-        var B = int.Parse(strList[1].ToString());
-
-        if(A > B){
-            Console.WriteLine(">");
-        } else if (A < B) {
-            Console.WriteLine("<");
+        var score = int.Parse(Console.ReadLine());
+        
+        if(90 <= score & score <= 100){
+            Console.WriteLine('A');
+        } else if (80 <= score & score <= 89) {
+            Console.WriteLine('B');
+        } else if (70 <= score & score <= 79) {
+            Console.WriteLine('C');
+        } else if (60 <= score & score <= 69) {
+            Console.WriteLine('D');
         } else {
-            Console.WriteLine("==");
+            Console.WriteLine('F');
         }
     }
 }
