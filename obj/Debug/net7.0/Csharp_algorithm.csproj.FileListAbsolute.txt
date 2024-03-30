@@ -1,0 +1,15 @@
+/Users/dean/Desktop/programming/Csharp_algorithm/bin/Debug/net7.0/Csharp_algorithm
+/Users/dean/Desktop/programming/Csharp_algorithm/bin/Debug/net7.0/Csharp_algorithm.deps.json
+/Users/dean/Desktop/programming/Csharp_algorithm/bin/Debug/net7.0/Csharp_algorithm.runtimeconfig.json
+/Users/dean/Desktop/programming/Csharp_algorithm/bin/Debug/net7.0/Csharp_algorithm.dll
+/Users/dean/Desktop/programming/Csharp_algorithm/bin/Debug/net7.0/Csharp_algorithm.pdb
+/Users/dean/Desktop/programming/Csharp_algorithm/obj/Debug/net7.0/Csharp_algorithm.csproj.AssemblyReference.cache
+/Users/dean/Desktop/programming/Csharp_algorithm/obj/Debug/net7.0/Csharp_algorithm.GeneratedMSBuildEditorConfig.editorconfig
+/Users/dean/Desktop/programming/Csharp_algorithm/obj/Debug/net7.0/Csharp_algorithm.AssemblyInfoInputs.cache
+/Users/dean/Desktop/programming/Csharp_algorithm/obj/Debug/net7.0/Csharp_algorithm.AssemblyInfo.cs
+/Users/dean/Desktop/programming/Csharp_algorithm/obj/Debug/net7.0/Csharp_algorithm.csproj.CoreCompileInputs.cache
+/Users/dean/Desktop/programming/Csharp_algorithm/obj/Debug/net7.0/Csharp_algorithm.dll
+/Users/dean/Desktop/programming/Csharp_algorithm/obj/Debug/net7.0/refint/Csharp_algorithm.dll
+/Users/dean/Desktop/programming/Csharp_algorithm/obj/Debug/net7.0/Csharp_algorithm.pdb
+/Users/dean/Desktop/programming/Csharp_algorithm/obj/Debug/net7.0/Csharp_algorithm.genruntimeconfig.cache
+/Users/dean/Desktop/programming/Csharp_algorithm/obj/Debug/net7.0/ref/Csharp_algorithm.dll
