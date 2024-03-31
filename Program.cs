@@ -4,20 +4,20 @@ class Program
 {
     static void Main(string[] args)
     {
-        var inputX = int.Parse(Console.ReadLine());
-        var inputY = int.Parse(Console.ReadLine());
-        if(inputX > 0){
-            if(inputY > 0){
-                Console.WriteLine(1);
-            } else {
-                Console.WriteLine(4);
-            }
+        var inputStr = Console.ReadLine().Split(' ');
+        var hr = int.Parse(inputStr[0]);
+        var min = int.Parse(inputStr[1]);
+
+        if(min >= 45){
+            min -= 45;
         } else {
-            if(inputY > 0){
-                Console.WriteLine(2);
+            if (hr > 0){
+                hr -= 1;
             } else {
-                Console.WriteLine(3);
+                hr = 23;
             }
+            min = min + 60 - 45;
         }
+        Console.WriteLine($"{hr} {min}");
     }
 }
