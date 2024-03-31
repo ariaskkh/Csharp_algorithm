@@ -4,35 +4,32 @@ class Program
 {
     static void Main(string[] args)
     {
-        var inputTimeNow = Console.ReadLine().Split(' ');
-        var inputNeedTime = int.Parse(Console.ReadLine());
-        var hr = int.Parse(inputTimeNow[0]);
-        var min = int.Parse(inputTimeNow[1]);
+        var inputStr = Console.ReadLine().Split(' ');
+        var dice1 = int.Parse(inputStr[0]);
+        var dice2 = int.Parse(inputStr[1]);
+        var dice3 = int.Parse(inputStr[2]);
 
-        // 필요한 시간, 분
-        var hrP = inputNeedTime / 60;
-        var minP = inputNeedTime % 60;
-        
-        if(hrP == 0){
-            if(min + minP < 60){
-                min += minP;
-            } else {
-                if(hr == 23){
-                    hr = 0;
-                } else {
-                    hr += 1;
-                }
-                min = min + minP - 60;
-            }
-        } else { // hrP > 0
-            if(min + minP < 60){
-                hr = (hr + hrP) % 24;
-                min += minP;
-            } else {
-                hr = (hr + hrP + 1) % 24;
-                min = min + minP - 60;
-            }
+        var money = 0;
+        // 3개 같음
+        if(dice1 == dice2 & dice2 == dice3){
+            money = 10000 + dice1 * 1000;
+            Console.WriteLine(money);
+            return;
         }
-        Console.WriteLine($"{hr} {min}");
+        // 2개 같음
+        if((dice1 == dice2) | (dice1 == dice3)){
+            money = 1000 + dice1 * 100;
+            Console.WriteLine(money);
+            return;
+        }
+        if(dice2 == dice3){
+            money = 1000 + dice2 * 100;
+            Console.WriteLine(money);
+            return;
+        }
+        // 모두 다른 눈        
+        int[] numbers = {dice1, dice2, dice3};
+        money = numbers.Max()*100;
+        Console.WriteLine(money);
     }
 }
