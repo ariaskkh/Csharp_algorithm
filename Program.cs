@@ -4,19 +4,34 @@ class Program
 {
     static void Main(string[] args)
     {
-        var inputStr = Console.ReadLine().Split(' ');
-        var hr = int.Parse(inputStr[0]);
-        var min = int.Parse(inputStr[1]);
+        var inputTimeNow = Console.ReadLine().Split(' ');
+        var inputNeedTime = int.Parse(Console.ReadLine());
+        var hr = int.Parse(inputTimeNow[0]);
+        var min = int.Parse(inputTimeNow[1]);
 
-        if(min >= 45){
-            min -= 45;
-        } else {
-            if (hr > 0){
-                hr -= 1;
+        // 필요한 시간, 분
+        var hrP = inputNeedTime / 60;
+        var minP = inputNeedTime % 60;
+        
+        if(hrP == 0){
+            if(min + minP < 60){
+                min += minP;
             } else {
-                hr = 23;
+                if(hr == 23){
+                    hr = 0;
+                } else {
+                    hr += 1;
+                }
+                min = min + minP - 60;
             }
-            min = min + 60 - 45;
+        } else { // hrP > 0
+            if(min + minP < 60){
+                hr = (hr + hrP) % 24;
+                min += minP;
+            } else {
+                hr = (hr + hrP + 1) % 24;
+                min = min + minP - 60;
+            }
         }
         Console.WriteLine($"{hr} {min}");
     }
