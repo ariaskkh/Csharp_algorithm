@@ -4,11 +4,20 @@ class Program
 {
     static void Main(string[] args)
     {
-        var input = int.Parse(Console.ReadLine());
-        if (input % 4 == 0 & (input % 100 != 0 | input % 400 == 0)){
-            Console.WriteLine(1);
+        var inputX = int.Parse(Console.ReadLine());
+        var inputY = int.Parse(Console.ReadLine());
+        if(inputX > 0){
+            if(inputY > 0){
+                Console.WriteLine(1);
+            } else {
+                Console.WriteLine(4);
+            }
         } else {
-            Console.WriteLine(0);
+            if(inputY > 0){
+                Console.WriteLine(2);
+            } else {
+                Console.WriteLine(3);
+            }
         }
     }
 }
