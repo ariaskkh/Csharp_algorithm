@@ -6,34 +6,31 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var N = int.Parse(Console.ReadLine());
-		var intArr = Console.ReadLine().Split(' ');
+		var X = int.Parse(Console.ReadLine());
+		var upperNum = 0;
+		var underNum = 0;
 		
-		var answerArr = new int[N];
-		
-		for (var i = 0; i < N; i++)
+		// X 최대 범위 1000일 때 합 고려하여 20000으로
+		for (var i = 1; i <20000; i++)
 		{
-			var count = int.Parse(intArr[i]);
-			var idxOfPerson = i + 1;
-			
-			for(var j = 0; j < N; j++)
+			var totalNumOfBox = i * (i + 1)/2;
+			var dif = 0;
+			if(totalNumOfBox >= X)
 			{
-				if(count == 0 && answerArr[j] == 0)
+				// 짝수 => i / 1
+				dif = totalNumOfBox - X;
+				if (i % 2 == 0)
 				{
-					answerArr[j] = idxOfPerson;
-					break;
+					upperNum = i - dif;
+					underNum = 1 + dif;
+				} else {
+					
+					upperNum = 1 + dif;
+					underNum = i - dif;
 				}
-				if(answerArr[j] == 0)
-				{
-					count--;
-				}
+				break;
 			}
-			
 		}
-
-		for (var i = 0; i < N; i++)
-		{
-			Console.Write($"{answerArr[i]} ");
-		}	
+		Console.WriteLine($"{upperNum}/{underNum}");
 	}
 }
