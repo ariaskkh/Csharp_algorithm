@@ -6,31 +6,81 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var X = int.Parse(Console.ReadLine());
-		var upperNum = 0;
-		var underNum = 0;
+		var totalSwitchNum = int.Parse(Console.ReadLine());
 		
-		// X 최대 범위 1000일 때 합 고려하여 20000으로
-		for (var i = 1; i <20000; i++)
+		string[] switchStatusNumsInStr = Console.ReadLine().Split(' ');
+		int[] switchStatusNums = changeStrToNum(switchStatusNumsInStr);
+		var numOfPeople = int.Parse(Console.ReadLine());
+		
+		for (var i = 0; i < numOfPeople; i++)
 		{
-			var totalNumOfBox = i * (i + 1)/2;
-			var dif = 0;
-			if(totalNumOfBox >= X)
+			var personData = changeStrToNum(Console.ReadLine().Split(' ')); 
+			var numForCalc = personData[1];
+			// 남자
+			if(personData[0] == 1)
 			{
-				// 짝수 => i / 1
-				dif = totalNumOfBox - X;
-				if (i % 2 == 0)
+				for (var j = 1; j <= totalSwitchNum / numForCalc; j++)
 				{
-					upperNum = i - dif;
-					underNum = 1 + dif;
-				} else {
-					
-					upperNum = 1 + dif;
-					underNum = i - dif;
+					var tempNum = switchStatusNums[numForCalc * j - 1];
+					switchStatusNums[numForCalc * j - 1] = reverseSwitch(tempNum);
 				}
-				break;
-			}
+			} 
+			// 여자
+			else
+			{
+				// 중간 숫자 뒤집기
+				switchStatusNums[numForCalc - 1] = reverseSwitch(switchStatusNums[numForCalc - 1]);
+				
+				var numOfIter = 0;
+				if((numForCalc - 1) > (totalSwitchNum - numForCalc))
+				{
+					numOfIter = totalSwitchNum - numForCalc;
+				} else {
+					numOfIter = numForCalc - 1;
+				}
+				// 좌우 대칭으로 숫자 뒤집기
+				for(var j = 1; j <= numOfIter; j++)
+				{
+					if(switchStatusNums[((numForCalc - 1) + j)] == switchStatusNums[((numForCalc - 1) - j)])
+					{
+						switchStatusNums[(numForCalc -1) + j] = reverseSwitch(switchStatusNums[(numForCalc -1) + j]);
+						switchStatusNums[(numForCalc -1) - j] = reverseSwitch(switchStatusNums[(numForCalc -1) - j]);
+					} else 
+					{
+						break;
+					}
+					
+				}	
+			}	
 		}
-		Console.WriteLine($"{upperNum}/{underNum}");
+		for (var i = 0; i < switchStatusNums.Length; i++)
+			{
+				Console.Write($"{switchStatusNums[i]} ");
+				if((i + 1)% 20 == 0)
+				{
+					Console.WriteLine();
+				}
+				
+			}	
+	}
+	
+	static int[] changeStrToNum(string[] numsInStr)
+	{
+		var numsInInt = new int[numsInStr.Length];
+		for(var i = 0; i < numsInStr.Length; i++)
+			numsInInt[i] = int.Parse(numsInStr[i]);
+		
+		return numsInInt;
+	}
+	
+	static int reverseSwitch(int number)
+	{
+		if(number == 0)
+		{
+			return 1;	
+		}
+		return 0;
 	}
 }
+
+
