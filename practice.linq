@@ -6,27 +6,21 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var inputCharArr = Console.ReadLine().ToCharArray();
-		var inputIntArr = changeCharToNum(inputCharArr);
-		var result = new int[10];
+		var inputNum = int.Parse(Console.ReadLine());
 		
-		for (var i = 0; i < inputIntArr.Length; i++)
+		for (var i = 1; i <= inputNum; i++)
 		{
-			var idx = inputIntArr[i];
-			result[idx] += 1;
+			printMnayTimes(i, '*');	
+			Console.WriteLine();	
 		}
-		Console.WriteLine(getMaxNum(result));
 	}
 	
-	static int getMaxNum(int[] numArr)
+	static void printMnayTimes(int maxLength, char character)
 	{
-		// 6, 9 예외처리
-		var average = (double) (numArr[6] + numArr[9]) / 2;
-		
-		var tempSixAndNine = (int) Math.Ceiling(average);
-		numArr[6] = 0;
-		numArr[9] = 0;
-		return numArr.Max() > tempSixAndNine ? numArr.Max() : tempSixAndNine;
+		for (var i = 0; i < maxLength; i++)
+		{
+			Console.Write(character);
+		}
 	}
 	
 	static int[] changeCharToNum(char[] numsInChar)
@@ -37,15 +31,6 @@ class Program
 	static int[] changeStrToNum(string[] numsInStr)
 	{
 		return numsInStr.Select(x => int.Parse(x)).ToArray();
-	}
-	
-	static int reverseSwitch(int number)
-	{
-		if(number == 0)
-		{
-			return 1;	
-		}
-		return 0;
 	}
 }
 
