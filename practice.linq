@@ -7,25 +7,27 @@ class Program
 	static void Main(string[] args)
 	{
 		var inputNum = int.Parse(Console.ReadLine());
-		var maxStarNum = 2 * inputNum - 1;
+		var maxStarNum = 2 * inputNum;
 
-		for (var i = 1; i <= inputNum; i++)
+		for (var i = inputNum ; i > 0; i--)
 		{
-			var tmpStar = 2 * i - 1;
-			var numOfSpace = (maxStarNum - tmpStar) / 2;
+			var tmpSpace = (i - 1) * 2 ;
+			var numOfStar = (maxStarNum - tmpSpace) / 2;
 
-			printMnayTimes(numOfSpace, ' ');
-			printMnayTimes(tmpStar, '*');
+			printMnayTimes(numOfStar, '*');
+			printMnayTimes(tmpSpace, ' ');
+			printMnayTimes(numOfStar, '*');
 			Console.WriteLine();
 		}
 
-		for (var i = inputNum-1; i > 0; i--)
+		for (var i = 1; i < inputNum; i++)
 		{
-			var tmpStar = 2 * i - 1;
-			var numOfSpace = (maxStarNum - tmpStar) / 2;
+			var tmpSpace = 2 * i;
+			var numOfStar = (maxStarNum - tmpSpace) / 2;
 
-			printMnayTimes(numOfSpace, ' ');
-			printMnayTimes(tmpStar, '*');
+			printMnayTimes(numOfStar, '*');
+			printMnayTimes(tmpSpace, ' ');
+			printMnayTimes(numOfStar, '*');
 			Console.WriteLine();
 		}
 	}
