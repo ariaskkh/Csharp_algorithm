@@ -7,14 +7,19 @@ class Program
 	static void Main(string[] args)
 	{
 		var inputNum = int.Parse(Console.ReadLine());
-		
+		var maxStarNum = inputNum;
+
 		for (var i = 1; i <= inputNum; i++)
 		{
-			printMnayTimes(i, '*');	
-			Console.WriteLine();	
+			var tmpStar = i;
+			var numOfSpace = maxStarNum - tmpStar;
+
+			printMnayTimes(numOfSpace, ' ');
+			printMnayTimes(tmpStar, '*');
+			Console.WriteLine();
 		}
 	}
-	
+
 	static void printMnayTimes(int maxLength, char character)
 	{
 		for (var i = 0; i < maxLength; i++)
