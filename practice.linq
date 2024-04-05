@@ -9,7 +9,17 @@ class Program
 		var inputNum = int.Parse(Console.ReadLine());
 		var maxStarNum = 2 * inputNum - 1;
 
-		for (var i = inputNum; i > 0; i--)
+		for (var i = 1; i <= inputNum; i++)
+		{
+			var tmpStar = 2 * i - 1;
+			var numOfSpace = (maxStarNum - tmpStar) / 2;
+
+			printMnayTimes(numOfSpace, ' ');
+			printMnayTimes(tmpStar, '*');
+			Console.WriteLine();
+		}
+
+		for (var i = inputNum-1; i > 0; i--)
 		{
 			var tmpStar = 2 * i - 1;
 			var numOfSpace = (maxStarNum - tmpStar) / 2;
