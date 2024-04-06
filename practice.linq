@@ -14,7 +14,7 @@ class Program
 			var numOfStar = i;
 			var numOfSpace = maxStarNum - numOfStar;
 
-			printMnayTimes(numOfSpace, ' ');
+			//printMnayTimes(numOfSpace, ' ');
 			printMnayTimes(numOfStar, '*');
 			Console.WriteLine();
 		}
@@ -24,7 +24,7 @@ class Program
 			var numOfStar = i;
 			var numOfSpace = maxStarNum - numOfStar;
 
-			printMnayTimes(numOfSpace, ' ');
+			//printMnayTimes(numOfSpace, ' ');
 			printMnayTimes(numOfStar, '*');
 			Console.WriteLine();
 		}
