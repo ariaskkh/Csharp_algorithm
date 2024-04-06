@@ -11,23 +11,21 @@ class Program
 
 		for (var i = 1 ; i <= inputNum; i++)
 		{
-			var numOfOuterSpace = 0;
-			if (i == 1)
-			{
-				numOfOuterSpace = (maxStarNum - 1) / 2;
-				printManyTimes(numOfOuterSpace, ' ');
-				Console.WriteLine('*');
-				continue;
-			}
-			
 			var numOfInnerSpaceWithStar = (i * 2) - 1;
-			var numOfInnerSpace = numOfInnerSpaceWithStar - 2;
-			numOfOuterSpace = (maxStarNum - numOfInnerSpaceWithStar) / 2;			
+			var numOfOuterSpace = (maxStarNum - numOfInnerSpaceWithStar) / 2;			
 
 			printManyTimes(numOfOuterSpace, ' ');
-			Console.Write('*');
-			printManyTimes(numOfInnerSpace, ' ');
-			Console.Write('*');
+			for (var j = 0; j < numOfInnerSpaceWithStar; j++)
+			{
+				if (j % 2 == 0)
+				{
+					Console.Write('*');
+				}
+				else 
+				{
+					Console.Write(' ');
+				}
+			}
 			Console.WriteLine();
 		}
 	}
