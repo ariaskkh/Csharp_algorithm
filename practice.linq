@@ -7,29 +7,50 @@ class Program
 	static void Main(string[] args)
 	{
 		var inputNum = int.Parse(Console.ReadLine());		
-		var digit = 0;
-		
-		for (var i = 1; i < 10; i++)
+		var intList = new List<int>();
+		var intDict = new Dictionary<int, int>();
+		for (var i = 0; i < inputNum; i++)
 		{
-			if(inputNum / Math.Pow(10, i) < 1)
+			var number = int.Parse(Console.ReadLine());
+			intList.Add(number);
+			
+			if (intDict.ContainsKey(number))
 			{
-				digit = i;
-				break;
+				intDict[number] += 1;
+			}
+			else
+			{
+				intDict.Add(number, 1);
 			}
 		}
-		if (inputNum < 10)
+		intList.Sort();
+		
+		// 평균값
+		Console.WriteLine((int) Math.Round(intList.Average()));
+		// 중앙값
+		Console.WriteLine(intList[(inputNum - 1) / 2]);
+		
+		// 최빈값
+		var tempList = new List<int>();
+		var maxValue = intDict.Values.Max();
+		foreach (var pair in intDict)
 		{
-			Console.Write(inputNum);
-			return;
+			if (pair.Value == maxValue)
+			{
+				tempList.Add(pair.Key);
+			}
 		}
-		// 120 = (9) * 1 + (90) * 2 + (120 - 100 + 1) * 3
-		var answer = 0;
-		for (var i = 0; i < digit - 1; i++)
+		tempList.Sort();
+		if (tempList.Count > 1)
 		{
-			answer += (int)(9 * Math.Pow(10, i)) * (i + 1);
+			Console.WriteLine(tempList[1]);
 		}
-		answer += (int)(inputNum - Math.Pow(10, digit - 1) + 1) * digit;
-		Console.Write(answer);
+		else
+		{
+			Console.WriteLine(tempList[0]);
+		}
+		// 범위
+		Console.WriteLine(intList.Max() - intList.Min());
 	}
 	
 	static int[] changeCharToNum(char[] numsInChar)
