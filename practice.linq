@@ -12,20 +12,26 @@ class Program
 		for (var i = 1 ; i <= inputNum; i++)
 		{
 			var numOfInnerSpaceWithStar = (i * 2) - 1;
-			var numOfOuterSpace = (maxStarNum - numOfInnerSpaceWithStar) / 2;			
+			var numOfInnerSpaceWith = numOfInnerSpaceWithStar - 2;
+			var numOfOuterSpace = (maxStarNum - numOfInnerSpaceWithStar) / 2;
+			
+			if (i == 1)
+			{
+				printManyTimes(numOfOuterSpace, ' ');
+				Console.WriteLine('*');
+				continue;
+			}
+			
+			if (i == inputNum)
+			{
+				printManyTimes(maxStarNum, '*');
+				break;
+			}
 
 			printManyTimes(numOfOuterSpace, ' ');
-			for (var j = 0; j < numOfInnerSpaceWithStar; j++)
-			{
-				if (j % 2 == 0)
-				{
-					Console.Write('*');
-				}
-				else 
-				{
-					Console.Write(' ');
-				}
-			}
+			Console.Write('*');
+			printManyTimes(numOfInnerSpaceWith, ' ');
+			Console.Write('*');
 			Console.WriteLine();
 		}
 	}
