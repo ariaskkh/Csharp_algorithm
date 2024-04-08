@@ -6,51 +6,59 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var inputNum = int.Parse(Console.ReadLine());		
-		var intList = new List<int>();
-		var intDict = new Dictionary<int, int>();
-		for (var i = 0; i < inputNum; i++)
+		var inputNum = Console.ReadLine().Split(' ');		
+		var N = int.Parse(inputNum[0]);
+		var M = int.Parse(inputNum[1]);
+		int[,] innputArr = getArr(N, M);
+		
+		var numOfProblems = int.Parse(Console.ReadLine());
+		
+		var result = new List<int>();
+		
+		for (var i = 0; i < numOfProblems; i++)
 		{
-			var number = int.Parse(Console.ReadLine());
-			intList.Add(number);
+			result.Add(getSumOfProblem(innputArr));
+		}
+		
+		foreach (int sum in result)
+		{
+			Console.WriteLine(sum);
+		}
+	}
+	static int getSumOfProblem(int[,] innputArr)
+	{
+		int[] problemArr = changeStrToNum(Console.ReadLine().Split(' '));
+		var xStart = problemArr[0];
+		var yStart = problemArr[1];
+		var xEnd = problemArr[2];
+		var yEnd = problemArr[3];
+		
+		var result = 0;
+		
+		for (var i = xStart - 1; i <= xEnd - 1; i++)
+		{
+			for (var j = yStart - 1; j <= yEnd - 1; j++)
+			{
+				result += innputArr[i, j];
+			}	
+		}
+		return result;
 			
-			if (intDict.ContainsKey(number))
-			{
-				intDict[number] += 1;
-			}
-			else
-			{
-				intDict.Add(number, 1);
-			}
-		}
-		intList.Sort();
-		
-		// 평균값
-		Console.WriteLine((int) Math.Round(intList.Average()));
-		// 중앙값
-		Console.WriteLine(intList[(inputNum - 1) / 2]);
-		
-		// 최빈값
-		var tempList = new List<int>();
-		var maxValue = intDict.Values.Max();
-		foreach (var pair in intDict)
+	}
+	
+	static int[,] getArr(int N, int M)
+	{
+		int[,] resultArr = new int[N,M];
+		for (var i = 0; i < N; i++)
 		{
-			if (pair.Value == maxValue)
+			var tmpRowArr = Console.ReadLine().Split(' ');
+			for (var j = 0; j < M; j++)
 			{
-				tempList.Add(pair.Key);
+				resultArr[i, j] = int.Parse(tmpRowArr[j]);
 			}
+			
 		}
-		tempList.Sort();
-		if (tempList.Count > 1)
-		{
-			Console.WriteLine(tempList[1]);
-		}
-		else
-		{
-			Console.WriteLine(tempList[0]);
-		}
-		// 범위
-		Console.WriteLine(intList.Max() - intList.Min());
+		return resultArr;
 	}
 	
 	static int[] changeCharToNum(char[] numsInChar)
