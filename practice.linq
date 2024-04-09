@@ -6,46 +6,30 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var inputNum = Console.ReadLine().Split(' ');		
+		var inputNum = Console.ReadLine().Split(' ');
 		var N = int.Parse(inputNum[0]);
 		var M = int.Parse(inputNum[1]);
-		int[,] innputArr = getArr(N, M);
+		var A = getArr(N, M);
 		
-		var numOfProblems = int.Parse(Console.ReadLine());
+		var K= int.Parse(Console.ReadLine().Split(' ')[1]);
+		var B = getArr(M, K);
 		
-		var result = new List<int>();
-		
-		for (var i = 0; i < numOfProblems; i++)
-		{
-			result.Add(getSumOfProblem(innputArr));
-		}
-		
-		foreach (int sum in result)
-		{
-			Console.WriteLine(sum);
-		}
+		var result = solve(A, B, N, M, K);
+		print(result, N, K);
 	}
-	static int getSumOfProblem(int[,] innputArr)
+
+	static void print(int[,] result, int N, int K)
 	{
-		int[] problemArr = changeStrToNum(Console.ReadLine().Split(' '));
-		var xStart = problemArr[0];
-		var yStart = problemArr[1];
-		var xEnd = problemArr[2];
-		var yEnd = problemArr[3];
-		
-		var result = 0;
-		
-		for (var i = xStart - 1; i <= xEnd - 1; i++)
-		{
-			for (var j = yStart - 1; j <= yEnd - 1; j++)
+		for (var i = 0; i < N; i++)
+		{		
+			for (var j = 0; j < K; j++)
 			{
-				result += innputArr[i, j];
-			}	
+				Console.Write($"{result[i,j]} ");	
+			}
+			Console.WriteLine();
 		}
-		return result;
-			
 	}
-	
+
 	static int[,] getArr(int N, int M)
 	{
 		int[,] resultArr = new int[N,M];
@@ -55,10 +39,27 @@ class Program
 			for (var j = 0; j < M; j++)
 			{
 				resultArr[i, j] = int.Parse(tmpRowArr[j]);
-			}
-			
+			}	
 		}
 		return resultArr;
+	}
+	
+	static int[,] solve(int[,] A, int[,] B, int N, int M, int K)
+	{
+		int[,] result = new int[N,K];
+		for (var i = 0; i < N; i++)
+		{
+			for (var k = 0; k < K; k++)
+			{
+				var tmp = 0;
+				for (var j = 0; j < M; j++)		
+				{
+					tmp += A[i,j] * B[j,k];
+				}
+				result[i,k] = tmp;
+			}
+		}
+		return result;
 	}
 	
 	static int[] changeCharToNum(char[] numsInChar)
