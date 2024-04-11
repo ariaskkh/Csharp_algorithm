@@ -6,60 +6,62 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var inputNum = Console.ReadLine().Split(' ');
-		var N = int.Parse(inputNum[0]);
-		var M = int.Parse(inputNum[1]);
-		var A = getArr(N, M);
-		
-		var K= int.Parse(Console.ReadLine().Split(' ')[1]);
-		var B = getArr(M, K);
-		
-		var result = solve(A, B, N, M, K);
-		print(result, N, K);
-	}
-
-	static void print(int[,] result, int N, int K)
-	{
-		for (var i = 0; i < N; i++)
-		{		
-			for (var j = 0; j < K; j++)
-			{
-				Console.Write($"{result[i,j]} ");	
-			}
-			Console.WriteLine();
-		}
-	}
-
-	static int[,] getArr(int N, int M)
-	{
-		int[,] resultArr = new int[N,M];
-		for (var i = 0; i < N; i++)
-		{
-			var tmpRowArr = Console.ReadLine().Split(' ');
-			for (var j = 0; j < M; j++)
-			{
-				resultArr[i, j] = int.Parse(tmpRowArr[j]);
-			}	
-		}
-		return resultArr;
+		var N = int.Parse(Console.ReadLine());
+		int [,] paper = new int[100, 100];
+		int[][] confettiArr = getConfettiArr(N);
+		int [,] updatedPaper = solve(paper, confettiArr, N);
+		int result = getSumOf2dArr(updatedPaper);
+		Console.Write(result);
 	}
 	
-	static int[,] solve(int[,] A, int[,] B, int N, int M, int K)
+	static int getSumOf2dArr(int[,] paper)
 	{
-		int[,] result = new int[N,K];
-		for (var i = 0; i < N; i++)
+		int result = 0;
+		for (var i = 0; i < 100; i++)
 		{
-			for (var k = 0; k < K; k++)
+			for (var j = 0; j < 100; j++)
 			{
-				var tmp = 0;
-				for (var j = 0; j < M; j++)		
-				{
-					tmp += A[i,j] * B[j,k];
-				}
-				result[i,k] = tmp;
+				result += paper[i, j];
 			}
 		}
 		return result;
+	}
+	
+	static int[][] getConfettiArr(int N)
+	{
+		int[][] confettiArr = new int[N][];
+		for (var i = 0; i < N; i++)
+		{
+			var coordinate = changeStrToNum(Console.ReadLine().Split(' '));
+			confettiArr[i] = new int[] { coordinate[0], coordinate[1] };
+		}
+		return confettiArr;
+	}
+
+	static int[,] solve(int[,] paper, int[][] confettiArr, int N)
+	{
+		for (var i = 0; i < 100; i++)
+		{
+			for (var j = 0; j < 100; j++)
+			{
+				if (paper[i, j] == 1)
+				{
+					continue;
+				}
+				// 색종이별
+				for (var k = 0; k < N; k++)
+				{
+					var x = confettiArr[k][0];
+					var y = confettiArr[k][1];
+					if ((i >= x && i < x + 10) && (j >= y && j < y + 10))
+					{
+						paper[i,j] = 1;
+					}
+				}
+				
+			}
+		}
+		return paper;
 	}
 	
 	static int[] changeCharToNum(char[] numsInChar)
