@@ -17,8 +17,12 @@ class Program
 		var count = N;
 		for (var i = 0; i < N; i++)
 		{
+			if (i == 0)
+			{
+				continue;
+			}
 			// '='
-			if (charArr[i] == '=' && i - 1 >= 0)
+			if (charArr[i] == '=')
 			{
 				// dz=. 이게 z= 보다 먼저 처리되어야 함
 				if (charArr[i - 1] == 'z' && i - 2 >= 0 && charArr[i - 2] == 'd')
@@ -34,7 +38,7 @@ class Program
 				}
 			}
 			// '-'
-			if (charArr[i] == '-' && i - 1 >= 0)
+			if (charArr[i] == '-')
 			{
 				// c-, d-
 				if (charArr[i - 1] == 'c' || charArr[i - 1] == 'd')
@@ -44,7 +48,7 @@ class Program
 				}
 			}
 			// 'j'
-			if (charArr[i] == 'j' && i - 1 >= 0)
+			if (charArr[i] == 'j')
 			{
 				// lj, nj
 				if (charArr[i - 1] == 'l' || charArr[i - 1] == 'n')
