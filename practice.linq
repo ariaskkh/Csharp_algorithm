@@ -6,62 +6,55 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var N = int.Parse(Console.ReadLine());
-		int [,] paper = new int[100, 100];
-		int[][] confettiArr = getConfettiArr(N);
-		int [,] updatedPaper = solve(paper, confettiArr, N);
-		int result = getSumOf2dArr(updatedPaper);
-		Console.Write(result);
-	}
-	
-	static int getSumOf2dArr(int[,] paper)
-	{
-		int result = 0;
-		for (var i = 0; i < 100; i++)
-		{
-			for (var j = 0; j < 100; j++)
-			{
-				result += paper[i, j];
-			}
-		}
-		return result;
-	}
-	
-	static int[][] getConfettiArr(int N)
-	{
-		int[][] confettiArr = new int[N][];
-		for (var i = 0; i < N; i++)
-		{
-			var coordinate = changeStrToNum(Console.ReadLine().Split(' '));
-			confettiArr[i] = new int[] { coordinate[0], coordinate[1] };
-		}
-		return confettiArr;
+		var inputCharArr = Console.ReadLine().ToCharArray();
+		var result = solve(inputCharArr);
+		Console.WriteLine(result);
 	}
 
-	static int[,] solve(int[,] paper, int[][] confettiArr, int N)
+	static int solve(char[] charArr)
 	{
-		for (var i = 0; i < 100; i++)
+		var N = charArr.Length;
+		var count = N;
+		for (var i = 0; i < N; i++)
 		{
-			for (var j = 0; j < 100; j++)
+			// '='
+			if (charArr[i] == '=' && i - 1 >= 0)
 			{
-				if (paper[i, j] == 1)
+				// dz=. 이게 z= 보다 먼저 처리되어야 함
+				if (charArr[i - 1] == 'z' && i - 2 >= 0 && charArr[i - 2] == 'd')
 				{
+					count -= 2;
 					continue;
 				}
-				// 색종이별
-				for (var k = 0; k < N; k++)
+				// c=, s=, z=
+				if (charArr[i - 1] == 'c' || charArr[i - 1] == 's' || charArr[i - 1] == 'z')
 				{
-					var x = confettiArr[k][0];
-					var y = confettiArr[k][1];
-					if ((i >= x && i < x + 10) && (j >= y && j < y + 10))
-					{
-						paper[i,j] = 1;
-					}
+					count -= 1;
+					continue;
 				}
-				
+			}
+			// '-'
+			if (charArr[i] == '-' && i - 1 >= 0)
+			{
+				// c-, d-
+				if (charArr[i - 1] == 'c' || charArr[i - 1] == 'd')
+				{
+					count -= 1;
+					continue;
+				}
+			}
+			// 'j'
+			if (charArr[i] == 'j' && i - 1 >= 0)
+			{
+				// lj, nj
+				if (charArr[i - 1] == 'l' || charArr[i - 1] == 'n')
+				{
+					count -= 1;
+					continue;
+				}
 			}
 		}
-		return paper;
+		return count;
 	}
 	
 	static int[] changeCharToNum(char[] numsInChar)
