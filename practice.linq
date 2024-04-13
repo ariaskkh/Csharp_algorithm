@@ -14,94 +14,118 @@ class Program
 
 	static int solve(char[,] square, int N)
 	{
-		var rowMaxNumber = searchRowMaxNumber(square, N);
-		var columnMaxNumber = searchColumnMaxNumber(square, N);
-		return Math.Max(rowMaxNumber, columnMaxNumber);
+		return getMaxNumber(square, N);
 	}
+	
+	static int getMaxNumber(char[,] square, int N)
+	{
+		var totalMaxNumber = 0;
+		// row 방향 변경
+		for (var i = 0; i < N; i++)
+		{
+			for (var j = 0; j < N; j++)
+			{
+				var newArray = get2dArrayCopy(square);
+				// 마지막 번째 중복 확인
+				if (j + 1 < N)
+				{
+					var tmp = newArray[i, j];
+					newArray[i, j] = newArray[i, j + 1];
+					newArray[i, j + 1] = tmp;					
+				}
+				var rowMax = searchRowMaxNumber(newArray, N);
+				var colMax = searchColMaxNumber(newArray, N);
+				var maxNumber = Math.Max(rowMax, colMax);
+				totalMaxNumber = Math.Max(totalMaxNumber, maxNumber);
+			}
+		}
 
+		// column 방향 변경
+		for (var i = 0; i < N; i++)
+		{
+			for (var j = 0; j < N; j++)
+			{
+				var newArray = get2dArrayCopy(square);
+				if (j + 1 < N)
+				{
+					var tmp = newArray[j, i];
+					newArray[j, i] = newArray[j + 1, i];
+					newArray[j + 1, i] = tmp;
+				}
+				var rowMax = searchRowMaxNumber(newArray, N);
+				var colMax = searchColMaxNumber(newArray, N);
+				var maxNumber = Math.Max(rowMax, colMax);
+				totalMaxNumber = Math.Max(totalMaxNumber, maxNumber);
+			}
+		}
+		return totalMaxNumber;
+	}
+	
 	static int searchRowMaxNumber(char[,] square, int N)
 	{
+		//Console.WriteLine(square);
 		char[] colors = new char[] { 'C', 'P', 'Z', 'Y' };
 		var maxNumber = 0;
+		var tmp = 0;
 		foreach (var color in colors)
 		{
 			for (var i = 0; i < N; i++)
 			{
-				var swapNumber = 1;
-				var tmpMaxNumber = 0;
 				for (var j = 0; j < N; j++)
 				{
-
-					// 같은 색인 경우
+					//Console.WriteLine($"{square[i, j]}, {color}, {square[i, j] == color}");
 					if (square[i, j] == color)
 					{
-						tmpMaxNumber += 1;
+						tmp += 1;
+						maxNumber = Math.Max(maxNumber, tmp);
 						continue;
 					}
-					// 다른 색인 경우 swap 가능한지 확인
-					if (swapNumber == 1)
-					{
-						if (i - 1 >= 0 && square[i - 1, j] == color)
-						{
-							tmpMaxNumber += 1;
-							swapNumber -= 1;
-							continue;
-						}
-						if (i + 1 < N && square[i + 1, j] == color)
-						{
-							tmpMaxNumber += 1;
-							swapNumber -= 1;
-							continue;
-						}
-					}
-					break;
+					tmp = 0;
 				}
-				maxNumber = Math.Max(maxNumber, tmpMaxNumber);
+				tmp = 0;
 			}
 		}
 		return maxNumber;
 	}
 
-	static int searchColumnMaxNumber(char[,] square, int N)
+	static int searchColMaxNumber(char[,] square, int N)
 	{
 		char[] colors = new char[] { 'C', 'P', 'Z', 'Y' };
 		var maxNumber = 0;
+		var tmp = 0;
 		foreach (var color in colors)
 		{
 			for (var i = 0; i < N; i++)
 			{
-				var swapNumber = 1;
-				var tmpMaxNumber = 0;
 				for (var j = 0; j < N; j++)
 				{
-					// 같은 색인 경우
 					if (square[j, i] == color)
 					{
-						tmpMaxNumber += 1;
+						tmp += 1;
+						maxNumber = Math.Max(maxNumber, tmp);
 						continue;
 					}
-					// 다른 색인 경우 swap 가능한지 확인
-					if (swapNumber == 1)
-					{
-						if (i - 1 >= 0 && square[j, i - 1] == color)
-						{
-							tmpMaxNumber += 1;
-							swapNumber -= 1;
-							continue;
-						}
-						if (i + 1 < N && square[j, i + 1] == color)
-						{
-							tmpMaxNumber += 1;
-							swapNumber -= 1;
-							continue;
-						}
-					}
-					break;
+					tmp = 0;
 				}
-				maxNumber = Math.Max(maxNumber, tmpMaxNumber);
+				tmp = 0;
 			}
 		}
 		return maxNumber;
+	}
+
+	static char[,] get2dArrayCopy(char[,] square)
+	{
+		int rows = square.GetLength(0);
+		int cols = square.GetLength(1);
+		char[,] copyArr = new char[rows, cols];
+		for (int i = 0; i < rows; i++)
+		{
+			for (int j = 0; j < cols; j++)
+			{
+				copyArr[i,j] = square[i,j];
+			}
+		}
+		return copyArr;
 	}
 
 	static char[,] getSquareArr(int N)
