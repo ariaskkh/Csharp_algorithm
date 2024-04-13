@@ -33,8 +33,8 @@ class Program
 					newArray[i, j] = newArray[i, j + 1];
 					newArray[i, j + 1] = tmp;					
 				}
-				var rowMax = searchRowMaxNumber(newArray, N);
-				var colMax = searchColMaxNumber(newArray, N);
+				var rowMax = searchMaxNumber(newArray, N, true);
+				var colMax = searchMaxNumber(newArray, N, false);
 				var maxNumber = Math.Max(rowMax, colMax);
 				totalMaxNumber = Math.Max(totalMaxNumber, maxNumber);
 			}
@@ -52,8 +52,8 @@ class Program
 					newArray[j, i] = newArray[j + 1, i];
 					newArray[j + 1, i] = tmp;
 				}
-				var rowMax = searchRowMaxNumber(newArray, N);
-				var colMax = searchColMaxNumber(newArray, N);
+				var rowMax = searchMaxNumber(newArray, N, true);
+				var colMax = searchMaxNumber(newArray, N, false);
 				var maxNumber = Math.Max(rowMax, colMax);
 				totalMaxNumber = Math.Max(totalMaxNumber, maxNumber);
 			}
@@ -61,45 +61,21 @@ class Program
 		return totalMaxNumber;
 	}
 	
-	static int searchRowMaxNumber(char[,] square, int N)
+	static int searchMaxNumber(char[,] square, int N, bool isRow)
 	{
-		//Console.WriteLine(square);
 		char[] colors = new char[] { 'C', 'P', 'Z', 'Y' };
 		var maxNumber = 0;
-		var tmp = 0;
+		
 		foreach (var color in colors)
 		{
+			var tmp = 0;
 			for (var i = 0; i < N; i++)
 			{
 				for (var j = 0; j < N; j++)
 				{
-					//Console.WriteLine($"{square[i, j]}, {color}, {square[i, j] == color}");
-					if (square[i, j] == color)
-					{
-						tmp += 1;
-						maxNumber = Math.Max(maxNumber, tmp);
-						continue;
-					}
-					tmp = 0;
-				}
-				tmp = 0;
-			}
-		}
-		return maxNumber;
-	}
-
-	static int searchColMaxNumber(char[,] square, int N)
-	{
-		char[] colors = new char[] { 'C', 'P', 'Z', 'Y' };
-		var maxNumber = 0;
-		var tmp = 0;
-		foreach (var color in colors)
-		{
-			for (var i = 0; i < N; i++)
-			{
-				for (var j = 0; j < N; j++)
-				{
-					if (square[j, i] == color)
+					char curColor = isRow ? square[i, j] : square[j, i];
+					
+					if (curColor == color)
 					{
 						tmp += 1;
 						maxNumber = Math.Max(maxNumber, tmp);
