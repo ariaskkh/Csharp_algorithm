@@ -8,16 +8,16 @@ class Program
 	{
 		var inputNum = Console.ReadLine();
 		var N = int.Parse(inputNum);
-		var square = getSquareArr(N);
-		Console.WriteLine(solve(square, N));
+		var square = GetSquareArr(N);
+		Console.WriteLine(Solve(square, N));
 	}
 
-	static int solve(char[,] square, int N)
+	static int Solve(char[,] square, int N)
 	{
-		return getMaxNumber(square, N);
+		return GetMaxNumber(square, N);
 	}
 	
-	static int getMaxNumber(char[,] square, int N)
+	static int GetMaxNumber(char[,] square, int N)
 	{
 		var totalMaxNumber = 0;
 		// row 방향 변경
@@ -25,7 +25,7 @@ class Program
 		{
 			for (var j = 0; j < N; j++)
 			{
-				var newArray = get2dArrayCopy(square);
+				var newArray = Get2dArrayCopy(square);
 				// 마지막 번째 중복 확인
 				if (j + 1 < N)
 				{
@@ -33,8 +33,8 @@ class Program
 					newArray[i, j] = newArray[i, j + 1];
 					newArray[i, j + 1] = tmp;					
 				}
-				var rowMax = searchMaxNumber(newArray, N, true);
-				var colMax = searchMaxNumber(newArray, N, false);
+				var rowMax = SearchMaxNumber(newArray, N, true);
+				var colMax = SearchMaxNumber(newArray, N, false);
 				var maxNumber = Math.Max(rowMax, colMax);
 				totalMaxNumber = Math.Max(totalMaxNumber, maxNumber);
 			}
@@ -45,15 +45,15 @@ class Program
 		{
 			for (var j = 0; j < N; j++)
 			{
-				var newArray = get2dArrayCopy(square);
+				var newArray = Get2dArrayCopy(square);
 				if (j + 1 < N)
 				{
 					var tmp = newArray[j, i];
 					newArray[j, i] = newArray[j + 1, i];
 					newArray[j + 1, i] = tmp;
 				}
-				var rowMax = searchMaxNumber(newArray, N, true);
-				var colMax = searchMaxNumber(newArray, N, false);
+				var rowMax = SearchMaxNumber(newArray, N, true);
+				var colMax = SearchMaxNumber(newArray, N, false);
 				var maxNumber = Math.Max(rowMax, colMax);
 				totalMaxNumber = Math.Max(totalMaxNumber, maxNumber);
 			}
@@ -61,7 +61,7 @@ class Program
 		return totalMaxNumber;
 	}
 	
-	static int searchMaxNumber(char[,] square, int N, bool isRow)
+	static int SearchMaxNumber(char[,] square, int N, bool isRow)
 	{
 		char[] colors = new char[] { 'C', 'P', 'Z', 'Y' };
 		var maxNumber = 0;
@@ -89,7 +89,7 @@ class Program
 		return maxNumber;
 	}
 
-	static char[,] get2dArrayCopy(char[,] square)
+	static char[,] Get2dArrayCopy(char[,] square)
 	{
 		int rows = square.GetLength(0);
 		int cols = square.GetLength(1);
@@ -104,7 +104,7 @@ class Program
 		return copyArr;
 	}
 
-	static char[,] getSquareArr(int N)
+	static char[,] GetSquareArr(int N)
 	{
 		char[,] resultArr = new char[N, N];
 		for (var i = 0; i < N; i++)
@@ -118,7 +118,7 @@ class Program
 		return resultArr;
 	}
 
-	static int[,] getArr(int N, int M)
+	static int[,] GetArr(int N, int M)
 	{
 		int[,] resultArr = new int[N,M];
 		for (var i = 0; i < N; i++)
@@ -132,17 +132,17 @@ class Program
 		return resultArr;
 	}
 
-	static int[] changeCharToNum(char[] numsInChar)
+	static int[] ChangeCharToNum(char[] numsInChar)
 	{
 		return numsInChar.Select(x => int.Parse(x.ToString())).ToArray();
 	}
 	
-	static int[] changeStrToNum(string[] numsInStr)
+	static int[] ChangeStrToNum(string[] numsInStr)
 	{
 		return numsInStr.Select(x => int.Parse(x)).ToArray();
 	}
 
-	static void print(int[,] result, int N, int K)
+	static void Print(int[,] result, int N, int K)
 	{
 		for (var i = 0; i < N; i++)
 		{
