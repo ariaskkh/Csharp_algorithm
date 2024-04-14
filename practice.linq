@@ -68,26 +68,46 @@ class Program
 		
 		foreach (var color in colors)
 		{
-				for (var i = 0; i < N; i++)
-				{
-					var tmp = 0;
+			//				for (var i = 0; i < N; i++)
+			//				{
+			//					var tmp = 0;
+			//
+			//					 var maxNumberByLine = Enumerable.Range(0, N)
+			//								.Select(j => isRow ? square[i, j] : square[j, i])
+			//								.Aggregate(0, (count, curColor) =>
+			//								{
+			//									if (curColor == color)
+			//									{
+			//										tmp += 1;
+			//										return Math.Max(count, tmp);
+			//										
+			//									}
+			//									tmp = 0;
+			//									return count;
+			//								});
+			//
+			//					maxNumber = Math.Max(maxNumber, maxNumberByLine);
+			//				}
 
-					 var maxNumberByLine = Enumerable.Range(0, N)
-								.Select(j => isRow ? square[i, j] : square[j, i])
-								.Aggregate(0, (count, curColor) =>
-								{
-									if (curColor == color)
-									{
-										tmp += 1;
-										return Math.Max(count, tmp);
-										
-									}
-									tmp = 0;
-									return count;
-								});
+			var maxNumberByColor = Enumerable.Range(0, N)
+					.Select(i =>
+					{
+						var tmp = 0;
+						return Enumerable.Range(0, N)
+									   .Select(j => isRow ? square[i, j] : square[j, i])
+									   .Aggregate(0, (count, curColor) =>
+									   {
+										   if (curColor == color)
+										   {
+											   tmp += 1;
+											   return Math.Max(count, tmp);
 
-					maxNumber = Math.Max(maxNumber, maxNumberByLine);
-				}
+										   }
+										   tmp = 0;
+										   return count;
+									   });
+					}).Max();
+			maxNumber = Math.Max(maxNumber, maxNumberByColor);
 		}
 		return maxNumber;
 	}
