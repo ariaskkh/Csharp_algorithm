@@ -68,23 +68,26 @@ class Program
 		
 		foreach (var color in colors)
 		{
-			var tmp = 0;
-			for (var i = 0; i < N; i++)
-			{
-				for (var j = 0; j < N; j++)
+				for (var i = 0; i < N; i++)
 				{
-					char curColor = isRow ? square[i, j] : square[j, i];
-					
-					if (curColor == color)
-					{
-						tmp += 1;
-						maxNumber = Math.Max(maxNumber, tmp);
-						continue;
-					}
-					tmp = 0;
+					var tmp = 0;
+
+					 var maxNumberByLine = Enumerable.Range(0, N)
+								.Select(j => isRow ? square[i, j] : square[j, i])
+								.Aggregate(0, (count, curColor) =>
+								{
+									if (curColor == color)
+									{
+										tmp += 1;
+										return Math.Max(count, tmp);
+										
+									}
+									tmp = 0;
+									return count;
+								});
+
+					maxNumber = Math.Max(maxNumber, maxNumberByLine);
 				}
-				tmp = 0;
-			}
 		}
 		return maxNumber;
 	}
