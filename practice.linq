@@ -20,23 +20,34 @@ class Program
 	static int GetMaxNumber(char[,] square, int N)
 	{
 		var totalMaxNumber = 0;
+		
+		char[,] swapElement(char[,] newArray, int x1, int y1, int x2, int y2)
+		{
+			var tmp = newArray[x1, y1];
+			newArray[x1, y1] = newArray[x2, y2];
+			newArray[x2, y2] = tmp;
+			return newArray;
+		}
+		
+		int getTotalMaxNumber(char[,] newArray)
+		{
+			var rowMax = SearchMaxNumber(newArray, N, true);
+			var colMax = SearchMaxNumber(newArray, N, false);
+			var maxNumber = Math.Max(rowMax, colMax);
+			return Math.Max(totalMaxNumber, maxNumber);
+		}
+		
 		// row 방향 변경
 		for (var i = 0; i < N; i++)
 		{
 			for (var j = 0; j < N; j++)
 			{
 				var newArray = Get2dArrayCopy(square);
-				// 마지막 번째 중복 확인
 				if (j + 1 < N)
 				{
-					var tmp = newArray[i, j];
-					newArray[i, j] = newArray[i, j + 1];
-					newArray[i, j + 1] = tmp;					
+					 newArray = swapElement(newArray, i, j, i, j + 1);
 				}
-				var rowMax = SearchMaxNumber(newArray, N, true);
-				var colMax = SearchMaxNumber(newArray, N, false);
-				var maxNumber = Math.Max(rowMax, colMax);
-				totalMaxNumber = Math.Max(totalMaxNumber, maxNumber);
+				totalMaxNumber = getTotalMaxNumber(newArray);
 			}
 		}
 
@@ -48,14 +59,9 @@ class Program
 				var newArray = Get2dArrayCopy(square);
 				if (j + 1 < N)
 				{
-					var tmp = newArray[j, i];
-					newArray[j, i] = newArray[j + 1, i];
-					newArray[j + 1, i] = tmp;
+					newArray = swapElement(newArray, j, i, j + 1, i);
 				}
-				var rowMax = SearchMaxNumber(newArray, N, true);
-				var colMax = SearchMaxNumber(newArray, N, false);
-				var maxNumber = Math.Max(rowMax, colMax);
-				totalMaxNumber = Math.Max(totalMaxNumber, maxNumber);
+				totalMaxNumber = getTotalMaxNumber(newArray);
 			}
 		}
 		return totalMaxNumber;
