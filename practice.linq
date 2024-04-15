@@ -6,42 +6,55 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var inputNum = Console.ReadLine();
-		int[] inputArr = ChangeStrToNum(inputNum.Split(' '));
-		var N = inputArr[0];
-		var M = inputArr[1];
-		Console.WriteLine(Solve(N, M));
+		var inputNum = int.Parse(Console.ReadLine());
+		var resultArr = Solve(inputNum);
+		foreach(var result in resultArr)
+		{
+			Console.WriteLine(result);
+		}
 	}
 
-	static int Solve(int N, int M)
+	static int[] Solve(int N)
 	{
-		if (N == 1)
+		var answerArr = new int[N];
+		for (var i = 0; i < N; i++)
 		{
-			return 1;
+			var queue = new Queue<int>();
+			var count = 0;
+			var data = ChangeStrToNum(Console.ReadLine().Split(' '));
+			var NumOfPaper = data[0];
+			var targetIdx = data[1];
+			int[] priorities = ChangeStrToNum(Console.ReadLine().Split(' '));
+			foreach(var priority in priorities)
+			{
+				queue.Enqueue(priority);
+			}
+			while(true)
+			{
+				if (queue.Peek() == queue.Max())
+				{
+					if (targetIdx == 0)
+					{
+						break;
+					}
+					queue.Dequeue();
+					count++;
+					targetIdx--;
+					continue;
+				}
+				queue.Enqueue(queue.Dequeue());
+				if (targetIdx == 0)
+				{
+					targetIdx = queue.Count - 1;	
+				}
+				else
+				{
+					targetIdx--;
+				}
+			}
+			answerArr[i] = count + 1;
 		}
-		if (N == 2)
-		{
-			var result = 1 + (M - 1) / 2;
-			return result > 4 ? 4 : result; 
-		}
-		// M = 3부터는 자유
-		
-		// M = 1 -> 1
-		// M = 2 -> 2
-		// M = 3 -> N = 3 이상일 때 3
-		// M = 4 -> 4
-		// M = 5 -> 4
-		
-		if (M < 5)
-		{
-			return M;
-		}
-		if (M == 5)
-		{
-			return 4;
-		}
-		// N이 5보다 클 때
-		return 1 + 2 + (M - 5);
+		return answerArr;
 	}
 	
 	
