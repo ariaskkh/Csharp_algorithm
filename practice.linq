@@ -7,92 +7,44 @@ class Program
 	static void Main(string[] args)
 	{
 		var inputNum = Console.ReadLine();
-		var N = int.Parse(inputNum);
-		var square = GetSquareArr(N);
-		Console.WriteLine(Solve(square, N));
+		int[] inputArr = ChangeStrToNum(inputNum.Split(' '));
+		var N = inputArr[0];
+		var M = inputArr[1];
+		Console.WriteLine(Solve(N, M));
 	}
 
-	static int Solve(char[,] square, int N)
+	static int Solve(int N, int M)
 	{
-		return GetMaxNumber(square, N);
+		if (N == 1)
+		{
+			return 1;
+		}
+		if (N == 2)
+		{
+			var result = 1 + (M - 1) / 2;
+			return result > 4 ? 4 : result; 
+		}
+		// M = 3부터는 자유
+		
+		// M = 1 -> 1
+		// M = 2 -> 2
+		// M = 3 -> N = 3 이상일 때 3
+		// M = 4 -> 4
+		// M = 5 -> 4
+		
+		if (M < 5)
+		{
+			return M;
+		}
+		if (M == 5)
+		{
+			return 4;
+		}
+		// N이 5보다 클 때
+		return 1 + 2 + (M - 5);
 	}
 	
-	static int GetMaxNumber(char[,] square, int N)
-	{
-		var totalMaxNumber = 0;
-		
-		char[,] swapElement(char[,] newArray, int x1, int y1, int x2, int y2)
-		{
-			var tmp = newArray[x1, y1];
-			newArray[x1, y1] = newArray[x2, y2];
-			newArray[x2, y2] = tmp;
-			return newArray;
-		}
-		
-		int getTotalMaxNumber(char[,] newArray)
-		{
-			var rowMax = SearchMaxNumber(newArray, N, true);
-			var colMax = SearchMaxNumber(newArray, N, false);
-			var maxNumber = Math.Max(rowMax, colMax);
-			return Math.Max(totalMaxNumber, maxNumber);
-		}
-		
-		// row 방향 변경
-		for (var i = 0; i < N; i++)
-		{
-			for (var j = 0; j < N; j++)
-			{
-				var newArray = Get2dArrayCopy(square);
-				if (j + 1 < N)
-				{
-					 newArray = swapElement(newArray, i, j, i, j + 1);
-				}
-				totalMaxNumber = getTotalMaxNumber(newArray);
-			}
-		}
-
-		// column 방향 변경
-		for (var i = 0; i < N; i++)
-		{
-			for (var j = 0; j < N; j++)
-			{
-				var newArray = Get2dArrayCopy(square);
-				if (j + 1 < N)
-				{
-					newArray = swapElement(newArray, j, i, j + 1, i);
-				}
-				totalMaxNumber = getTotalMaxNumber(newArray);
-			}
-		}
-		return totalMaxNumber;
-	}
-
-	static int SearchMaxNumber(char[,] square, int N, bool isRow)
-	{
-		char[] colors = new char[] { 'C', 'P', 'Z', 'Y' };
-		return colors.Select(color =>
-							{
-								return Enumerable.Range(0, N)
-												.Select(i =>
-												{
-													var tmp = 0;
-													return Enumerable.Range(0, N)
-																   .Select(j => isRow ? square[i, j] : square[j, i])
-																   .Aggregate(0, (count, curColor) =>
-																   {
-																	   if (curColor == color)
-																	   {
-																		   tmp += 1;
-																		   return Math.Max(count, tmp);
-
-																	   }
-																	   tmp = 0;
-																	   return count;
-																   });
-												}).Max();
-										
-							}).Max();
-	}
+	
 
 	static char[,] Get2dArrayCopy(char[,] square)
 	{
