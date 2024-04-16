@@ -18,28 +18,31 @@ class Program
 		{
 			for (var j = 0; j < n; j++)
 			{
-				PrintStar(i, j, n);
+				if (IsSpace(i, j))
+				{
+					Console.Write(' ');
+				}
+				else
+				{
+					Console.Write('*');
+				}
 			}
 			Console.WriteLine();
 		}
 	}
 
-	static void PrintStar(int i, int j, int n)
+	static bool IsSpace(int i, int j)
 	{
-		if (n < 3)
+		while (i > 0 && j > 0)
 		{
-			Console.Write('*');
-			return;
+			if ((i % 3 == 1) && (j % 3 == 1))
+			{
+				return true;
+			}
+			i /= 3;
+			j /= 3;
 		}
-
-		if (((i / n) % 3 == 1) && ((j / n) % 3 == 1))
-		{
-			Console.Write(' ');
-		}
-		else
-		{
-			PrintStar(i, j, n / 3);
-		}
+		return false;
 	}
 
 	static char[,] Get2dArrayCopy(char[,] square)
