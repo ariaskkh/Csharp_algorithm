@@ -16,48 +16,57 @@ class Program
 
 	static int[] Solve(int N)
 	{
-		var answerArr = new int[N];
+		var orderArr = new int[N];
 		for (var i = 0; i < N; i++)
 		{
-			var queue = new Queue<int>();
-			var count = 0;
-			var data = ChangeStrToNum(Console.ReadLine().Split(' '));
-			var NumOfPaper = data[0];
-			var targetIdx = data[1];
+			var targetIdx = ChangeStrToNum(Console.ReadLine().Split(' '))[1];
 			int[] priorities = ChangeStrToNum(Console.ReadLine().Split(' '));
-			foreach(var priority in priorities)
-			{
-				queue.Enqueue(priority);
-			}
-			while(true)
-			{
-				if (queue.Peek() == queue.Max())
-				{
-					if (targetIdx == 0)
-					{
-						break;
-					}
-					queue.Dequeue();
-					count++;
-					targetIdx--;
-					continue;
-				}
-				queue.Enqueue(queue.Dequeue());
-				if (targetIdx == 0)
-				{
-					targetIdx = queue.Count - 1;	
-				}
-				else
-				{
-					targetIdx--;
-				}
-			}
-			answerArr[i] = count + 1;
+			var queue = new Queue<int>();
+			SetQueue(queue, priorities);
+			orderArr[i] = GetPrintOrder(queue, targetIdx);
 		}
-		return answerArr;
+		return orderArr;
 	}
 	
+	static Queue<int> SetQueue(Queue<int> queue, int[] priorities)
+	{
+		
+		foreach (var priority in priorities)
+		{
+			queue.Enqueue(priority);
+		}
+		return queue;
+	}
 	
+	static int GetPrintOrder(Queue<int> queue, int targetIdx)
+	{
+		var count = 0;
+		while (true)
+		{
+			if (queue.Peek() == queue.Max())
+			{
+				if (targetIdx == 0)
+				{
+					break;
+				}
+				queue.Dequeue();
+				count++;
+				targetIdx--;
+				continue;
+			}
+			queue.Enqueue(queue.Dequeue());
+			if (targetIdx == 0)
+			{
+				targetIdx = queue.Count - 1;
+			}
+			else
+			{
+				targetIdx--;
+			}
+		}
+		// index + 1 번째로 return
+		return count + 1;
+	}
 
 	static char[,] Get2dArrayCopy(char[,] square)
 	{
