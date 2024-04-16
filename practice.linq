@@ -7,65 +7,39 @@ class Program
 	static void Main(string[] args)
 	{
 		var inputNum = int.Parse(Console.ReadLine());
-		var resultArr = Solve(inputNum);
-		foreach(var result in resultArr)
+		Solve(inputNum);
+	}
+
+	static void Solve(int n)
+	{
+		// (1, 1), (1, 4), (1, 7), (4, 1), (4, 4) => (i % 3 == 1) && (j % 3 == 1)
+		// (3, 3), (3, 4) (3, 5), (4, 3), (4, 4), (4, 5), (5, 3), (5, 4), (5, 5) =>  (i / 3) % 3 == 1
+		for (var i = 0; i < n; i++)
 		{
-			Console.WriteLine(result);
+			for (var j = 0; j < n; j++)
+			{
+				PrintStar(i, j, n);
+			}
+			Console.WriteLine();
 		}
 	}
 
-	static int[] Solve(int N)
+	static void PrintStar(int i, int j, int n)
 	{
-		var orderArr = new int[N];
-		for (var i = 0; i < N; i++)
+		if (n < 3)
 		{
-			var targetIdx = ChangeStrToNum(Console.ReadLine().Split(' '))[1];
-			int[] priorities = ChangeStrToNum(Console.ReadLine().Split(' '));
-			var queue = new Queue<int>();
-			SetQueue(queue, priorities);
-			orderArr[i] = GetPrintOrder(queue, targetIdx);
+			Console.Write('*');
+			return;
 		}
-		return orderArr;
-	}
-	
-	static Queue<int> SetQueue(Queue<int> queue, int[] priorities)
-	{
-		
-		foreach (var priority in priorities)
+
+		if (((i / n) % 3 == 1) && ((j / n) % 3 == 1))
 		{
-			queue.Enqueue(priority);
+			Console.Write(' ');
 		}
-		return queue;
-	}
-	
-	static int GetPrintOrder(Queue<int> queue, int targetIdx)
-	{
-		var count = 0;
-		while (true)
+		else
 		{
-			if (queue.Peek() == queue.Max())
-			{
-				if (targetIdx == 0)
-				{
-					break;
-				}
-				queue.Dequeue();
-				count++;
-				targetIdx--;
-				continue;
-			}
-			queue.Enqueue(queue.Dequeue());
-			if (targetIdx == 0)
-			{
-				targetIdx = queue.Count - 1;
-			}
-			else
-			{
-				targetIdx--;
-			}
+			PrintStar(i, j, n / 3);
 		}
-		// index + 1 번째로 return
-		return count + 1;
 	}
 
 	static char[,] Get2dArrayCopy(char[,] square)
