@@ -1,34 +1,38 @@
 <Query Kind="Program" />
 
 using System;
+using System.Text;
 
 class Program
 {
 	static void Main(string[] args)
 	{
 		var inputNum = int.Parse(Console.ReadLine());
-		Solve(inputNum);
+		StringBuilder sb = Solve(inputNum);
+		Console.WriteLine(sb.ToString());
 	}
 
-	static void Solve(int n)
+	static StringBuilder Solve(int n)
 	{
 		// (1, 1), (1, 4), (1, 7), (4, 1), (4, 4) => (i % 3 == 1) && (j % 3 == 1)
 		// (3, 3), (3, 4) (3, 5), (4, 3), (4, 4), (4, 5), (5, 3), (5, 4), (5, 5) =>  (i / 3) % 3 == 1
+		var sb = new StringBuilder();
 		for (var i = 0; i < n; i++)
 		{
 			for (var j = 0; j < n; j++)
 			{
 				if (IsSpace(i, j))
 				{
-					Console.Write(' ');
+					sb.Append(' ');
 				}
 				else
 				{
-					Console.Write('*');
+					sb.Append('*');
 				}
 			}
-			Console.WriteLine();
+			sb.Append('\n');
 		}
+		return sb;
 	}
 
 	static bool IsSpace(int i, int j)
