@@ -73,20 +73,23 @@ class Program
             return Enumerable.Range(0, N)
                     .Select(i =>
                     {
-                        var tmp = 0;
                         return Enumerable.Range(0, N)
                                 .Select(j => isRow ? square[i, j] : square[j, i])
-                                .Aggregate(0, (count, curColor) =>
-                                {
-                                    if (curColor == color)
+                                .Aggregate(
+                                    (count: 0, tmpCount: 0), // Seed
+                                    (acc, curColor) => // Func
                                     {
-                                        tmp += 1;
-                                        return Math.Max(count, tmp);
+                                        if (curColor == color)
+                                        {
+                                            acc.tmpCount += 1;
+                                            return (Math.Max(acc.count, acc.tmpCount), acc.tmpCount);
 
-                                    }
-                                    tmp = 0;
-                                    return count;
-                                });
+                                        }
+                                        acc.tmpCount = 0;
+                                        return (acc.count, acc.tmpCount);
+                                    },
+                                    (acc) => acc.count // Result selector
+                                    );
                     }).Max();
 
         }).Max();
