@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 class Program
 {
@@ -67,32 +69,66 @@ class Program
 
     static int SearchMaxNumber(char[,] square, int N, bool isRow)
     {
+
+        //return colors.Select(color =>
+        //{
+        //    return Enumerable.Range(0, N)
+        //            .Select(i =>
+        //            {
+        //                return Enumerable.Range(0, N)
+        //                        .Select(j => isRow ? square[i, j] : square[j, i])
+        //                        .Aggregate(
+        //                            (count: 0, tmpCount: 0), // Seed
+        //                            (acc, curColor) => // Func
+        //                            {
+        //                                if (curColor == color)
+        //                                {
+        //                                    acc.tmpCount += 1;
+        //                                    return (Math.Max(acc.count, acc.tmpCount), acc.tmpCount);
+
+        //                                }
+        //                                acc.tmpCount = 0;
+        //                                return (acc.count, acc.tmpCount);
+        //                            },
+        //                            (acc) => acc.count // Result selector
+        //                            );
+        //            }).Max();
+
+        //}).Max();
+
         char[] colors = new char[] { 'C', 'P', 'Z', 'Y' };
-        return colors.Select(color =>
-        {
-            return Enumerable.Range(0, N)
-                    .Select(i =>
+        var n = Enumerable.Range(0, N);
+        var a = ForLoop<char, int, int>(colors, n, n)
+            .Select(tuple => isRow ? (tuple.item1, square[tuple.Item2, tuple.Item3]) : (tuple.Item1, square[tuple.Item3, tuple.Item2]))
+            .Aggregate(
+                (count: 0, tmpCount: 0), // Seed
+                (acc, (a, b)) => // Func
+                {
+                    if (a == b)
                     {
-                        return Enumerable.Range(0, N)
-                                .Select(j => isRow ? square[i, j] : square[j, i])
-                                .Aggregate(
-                                    (count: 0, tmpCount: 0), // Seed
-                                    (acc, curColor) => // Func
-                                    {
-                                        if (curColor == color)
-                                        {
-                                            acc.tmpCount += 1;
-                                            return (Math.Max(acc.count, acc.tmpCount), acc.tmpCount);
+                        acc.tmpCount += 1;
+                        return (Math.Max(acc.count, acc.tmpCount), acc.tmpCount);
+                    }
+                    acc.tmpCount = 0;
+                    return (acc.count, acc.tmpCount);
+                },
+                (acc) => acc.count // Result Selector
+                );
+        return a;
+    }
 
-                                        }
-                                        acc.tmpCount = 0;
-                                        return (acc.count, acc.tmpCount);
-                                    },
-                                    (acc) => acc.count // Result selector
-                                    );
-                    }).Max();
-
-        }).Max();
+    static IEnumerable<(T1, T2, T3)> ForLoop<T1, T2, T3>(IEnumerable<T1> arr1, IEnumerable<T2> arr2, IEnumerable<T3> arr3)
+    {
+        foreach (var item1 in arr1)
+        {
+            foreach (var item2 in arr2)
+            {
+                foreach (var item3 in arr3)
+                {
+                    yield return (item1, item2, item3);
+                }
+            }
+        }
     }
 
     static char[,] Get2dArrayCopy(char[,] square)
