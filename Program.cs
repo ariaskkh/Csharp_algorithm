@@ -5,88 +5,47 @@ using System.Runtime.CompilerServices;
 
 class Program
 {
-    static void Main(string[] args)
-    {
-        var inputNum = Console.ReadLine();
-        var N = int.Parse(inputNum);
-        var square = GetSquareArr(N);
-        Console.WriteLine(Solve(square, N));
-    }
+   static void Main(string[] args)
+	{
+		var input = Console.ReadLine().Split(' ');
+		var N = int.Parse(input[0].ToString());
+		var K = int.Parse(input[1].ToString());
+		Console.Write(Solve(N, K));
+	}
+	
+	static int Solve(int N, int K)
+	{
+		bool[] intArray = Enumerable.Repeat(false, N + 1).ToArray();
+		intArray[0] = intArray[1] = true;
+        var removedNumber = 0;
+		var count = 0;
 
-    static int Solve(char[,] square, int N)
-    {
-        return GetMaxNumber(square, N);
-    }
-
-    static int GetMaxNumber(char[,] square, int N)
-    {
-        var totalMaxNumber = 0;
-
-        char[,] swapElement(char[,] newArray, int x1, int y1, int x2, int y2)
+        int getRemovedNumber()
         {
-            var tmp = newArray[x1, y1];
-            newArray[x1, y1] = newArray[x2, y2];
-            newArray[x2, y2] = tmp;
-            return newArray;
-        }
-
-        int getTotalMaxNumber(char[,] newArray)
-        {
-            var rowMax = SearchMaxNumber(newArray, N, true);
-            var colMax = SearchMaxNumber(newArray, N, false);
-            var maxNumber = Math.Max(rowMax, colMax);
-            return Math.Max(totalMaxNumber, maxNumber);
-        }
-
-        IEnumerable<int> n = Enumerable.Range(0, N);
-
-        // 변경 없는 square
-        totalMaxNumber = IteratonFunction<int, int>(n, n)
-            .Where(item => item.Item2 + 1 < N)
-            .Select(item => Get2dArrayCopy(square))
-            .Select(getTotalMaxNumber)
-            .Max();
-        // row 방향 변경
-        totalMaxNumber = IteratonFunction<int, int>(n, n)
-            .Where(item => item.Item2 + 1 < N)
-            .Select(item => swapElement(Get2dArrayCopy(square), item.Item1, item.Item2, item.Item1, item.Item2 + 1))
-            .Select(getTotalMaxNumber)
-            .Max();
-        // column 방향 변경
-        totalMaxNumber = IteratonFunction<int, int>(n, n)
-            .Where(item => item.Item2 + 1 < N)
-            .Select(item => swapElement(Get2dArrayCopy(square), item.Item2, item.Item1, item.Item2 + 1, item.Item1))
-            .Select(getTotalMaxNumber)
-            .Max();
-        return totalMaxNumber;
-    }
-
-
-    static int SearchMaxNumber(char[,] square, int N, bool isRow)
-    {
-        char[] colors = new char[] { 'C', 'P', 'Z', 'Y' };
-        var n = Enumerable.Range(0, N);
-        return IteratonFunction<char, int>(colors, n)
-            .Select(tuple =>
+            for (var i = 2; i <= N; i++)
             {
-                // 특정 열(혹은 행)을 순회하는 j의 순서는 보장해야 함
-                return n.Select(j => isRow ? (tuple.Item1, square[tuple.Item2, j]) : (tuple.Item1, square[j, tuple.Item2]))
-                    .Aggregate(
-                    (count: 0, tmpCount: 0), // Seed
-                    (acc, current) => // Func
+                if (intArray[i] == false)
+                {
+                    // Prime 배수 처리
+                    for (var multiple = 1; multiple <= (N / i); multiple++)
                     {
-                        if (current.Item1 == current.Item2)
+                        if ((i * multiple <= N) && (intArray[i * multiple] == false))
                         {
-                            acc.tmpCount += 1;
-                            return (Math.Max(acc.count, acc.tmpCount), acc.tmpCount);
-                        }
-                        acc.tmpCount = 0;
-                        return (acc.count, acc.tmpCount);
-                    },
-                    (acc) => acc.count // Result Selector
-                    );
+                            intArray[i * multiple] = true;
+                            count++;
+                            removedNumber = i * multiple;
 
-            }).Max();
+                            if (count == K)
+                            {
+                                return removedNumber;
+                            }
+                        }
+                    }
+                }
+            }
+            return -1;
+        }
+        return getRemovedNumber();
     }
 
     static IEnumerable<(T1, T2)> IteratonFunction<T1, T2>(IEnumerable<T1> arr1, IEnumerable<T2> arr2)
