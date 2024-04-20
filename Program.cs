@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 class Program
 {
@@ -99,12 +100,12 @@ class Program
         char[] colors = new char[] { 'C', 'P', 'Z', 'Y' };
         var n = Enumerable.Range(0, N);
         var a = ForLoop<char, int, int>(colors, n, n)
-            .Select(tuple => isRow ? (tuple.item1, square[tuple.Item2, tuple.Item3]) : (tuple.Item1, square[tuple.Item3, tuple.Item2]))
+            .Select(tuple => isRow ? (tuple.Item1, square[tuple.Item2, tuple.Item3]) : (tuple.Item1, square[tuple.Item3, tuple.Item2]))
             .Aggregate(
                 (count: 0, tmpCount: 0), // Seed
-                (acc, (a, b)) => // Func
+                (acc, tuple) => // Func
                 {
-                    if (a == b)
+                    if (tuple.Item1 == tuple.Item2)
                     {
                         acc.tmpCount += 1;
                         return (Math.Max(acc.count, acc.tmpCount), acc.tmpCount);

@@ -8,4 +8,6 @@ build_property.PlatformNeutralAssembly =
 build_property.EnforceExtendedAnalyzerRules = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = Csharp_algorithm
-build_property.ProjectDir = /Users/dean/Desktop/programming/Csharp_algorithm/
+build_property.ProjectDir = C:\Users\dean.kim\Desktop\Practice\Csharp_algorithm\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 

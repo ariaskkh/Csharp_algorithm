@@ -1,26 +1,33 @@
 {
   "format": 1,
   "restore": {
-    "/Users/dean/Desktop/programming/Csharp_algorithm/Csharp_algorithm.csproj": {}
+    "C:\\Users\\dean.kim\\Desktop\\Practice\\Csharp_algorithm\\Csharp_algorithm.csproj": {}
   },
   "projects": {
-    "/Users/dean/Desktop/programming/Csharp_algorithm/Csharp_algorithm.csproj": {
+    "C:\\Users\\dean.kim\\Desktop\\Practice\\Csharp_algorithm\\Csharp_algorithm.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/dean/Desktop/programming/Csharp_algorithm/Csharp_algorithm.csproj",
+        "projectUniqueName": "C:\\Users\\dean.kim\\Desktop\\Practice\\Csharp_algorithm\\Csharp_algorithm.csproj",
         "projectName": "Csharp_algorithm",
-        "projectPath": "/Users/dean/Desktop/programming/Csharp_algorithm/Csharp_algorithm.csproj",
-        "packagesPath": "/Users/dean/.nuget/packages/",
-        "outputPath": "/Users/dean/Desktop/programming/Csharp_algorithm/obj/",
+        "projectPath": "C:\\Users\\dean.kim\\Desktop\\Practice\\Csharp_algorithm\\Csharp_algorithm.csproj",
+        "packagesPath": "C:\\Users\\dean.kim\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\dean.kim\\Desktop\\Practice\\Csharp_algorithm\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "/Users/dean/.nuget/NuGet/NuGet.Config"
+          "C:\\Users\\dean.kim\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net7.0"
         ],
         "sources": {
-          "https://api.nuget.org/v3/index.json": {}
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {},
+          "https://git.projectbro.com/api/v4/projects/11/packages/nuget/index.json": {}
         },
         "frameworks": {
           "net7.0": {
@@ -32,6 +39,11 @@
           "warnAsError": [
             "NU1605"
           ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
         }
       },
       "frameworks": {
@@ -53,7 +65,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/7.0.314/RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204\\RuntimeIdentifierGraph.json"
         }
       }
     }
