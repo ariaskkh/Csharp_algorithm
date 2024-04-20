@@ -38,41 +38,35 @@ class Program
             return Math.Max(totalMaxNumber, maxNumber);
         }
 
-        // row 방향 변경
-        for (var i = 0; i < N; i++)
-        {
-            for (var j = 0; j < N; j++)
-            {
-                var newArray = Get2dArrayCopy(square);
-                if (j + 1 < N)
-                {
-                    newArray = swapElement(newArray, i, j, i, j + 1);
-                }
-                totalMaxNumber = getTotalMaxNumber(newArray);
-            }
-        }
+        IEnumerable<int> n = Enumerable.Range(0, N);
 
+        // 변경 없는 square
+        totalMaxNumber = IteratonFunction<int, int>(n, n)
+            .Where(item => item.Item2 + 1 < N)
+            .Select(item => Get2dArrayCopy(square))
+            .Select(getTotalMaxNumber)
+            .Max();
+        // row 방향 변경
+        totalMaxNumber = IteratonFunction<int, int>(n, n)
+            .Where(item => item.Item2 + 1 < N)
+            .Select(item => swapElement(Get2dArrayCopy(square), item.Item1, item.Item2, item.Item1, item.Item2 + 1))
+            .Select(getTotalMaxNumber)
+            .Max();
         // column 방향 변경
-        for (var i = 0; i < N; i++)
-        {
-            for (var j = 0; j < N; j++)
-            {
-                var newArray = Get2dArrayCopy(square);
-                if (j + 1 < N)
-                {
-                    newArray = swapElement(newArray, j, i, j + 1, i);
-                }
-                totalMaxNumber = getTotalMaxNumber(newArray);
-            }
-        }
+        totalMaxNumber = IteratonFunction<int, int>(n, n)
+            .Where(item => item.Item2 + 1 < N)
+            .Select(item => swapElement(Get2dArrayCopy(square), item.Item2, item.Item1, item.Item2 + 1, item.Item1))
+            .Select(getTotalMaxNumber)
+            .Max();
         return totalMaxNumber;
     }
+
 
     static int SearchMaxNumber(char[,] square, int N, bool isRow)
     {
         char[] colors = new char[] { 'C', 'P', 'Z', 'Y' };
         var n = Enumerable.Range(0, N);
-        return ForLoop<char, int>(colors, n)
+        return IteratonFunction<char, int>(colors, n)
             .Select(tuple =>
             {
                 // 특정 열(혹은 행)을 순회하는 j의 순서는 보장해야 함
@@ -95,15 +89,13 @@ class Program
             }).Max();
     }
 
-    static IEnumerable<(T1, T2)> ForLoop<T1, T2>(IEnumerable<T1> arr1, IEnumerable<T2> arr2)
+    static IEnumerable<(T1, T2)> IteratonFunction<T1, T2>(IEnumerable<T1> arr1, IEnumerable<T2> arr2)
     {
-        foreach (var item1 in arr1)
-        {
-            foreach (var item2 in arr2)
-            {
-                yield return (item1, item2);
-            }
-        }
+        return arr1.Join<T1, T2, bool, (T1, T2)>(arr2, item1 => true, item2 => true, (item1, item2) => (item1, item2));
+    }
+    static IEnumerable<(T1, T2, T3)> ForLoop<T1, T2, T3>(IEnumerable<T1> arr1, IEnumerable<T2> arr2, IEnumerable<T3> arr3)
+    {
+        return arr1.Join(arr2, item1 => true, item2 => true, (item1, item2) => (item1, item2)).Join(arr3, item => true, item3 => true, (item, item3) => (item.item1, item.item2, item3));
     }
 
     static char[,] Get2dArrayCopy(char[,] square)
