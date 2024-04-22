@@ -2,48 +2,64 @@
 
 class Program
 {
-	static void Main(string[] args)
-	{
-		var inputNum = int.Parse(Console.ReadLine());
-		Solve(inputNum);
-	}
+    static void Main(string[] args)
+    {
+        var input = Console.ReadLine().Split(' ');
+        var N = int.Parse(input[0].ToString());
+        var K = int.Parse(input[1].ToString());
+        Console.Write(Solve(N, K));
+    }
 
-	static void Solve(int n)
-	{
-		// (1, 1), (1, 4), (1, 7), (4, 1), (4, 4) => (i % 3 == 1) && (j % 3 == 1)
-		// (3, 3), (3, 4) (3, 5), (4, 3), (4, 4), (4, 5), (5, 3), (5, 4), (5, 5) =>  (i / 3) % 3 == 1
-		for (var i = 0; i < n; i++)
-		{
-			for (var j = 0; j < n; j++)
-			{
-				PrintStar(i, j, n / 3);
-			}
-			Console.WriteLine();
-		}
-	}
+    public class Sieve
+    {
 
-	static void PrintStar(int i, int j, int n)
-	{
-		if (((i / n) % 3 == 1) && ((j / n) % 3 == 1))
-		{
-			Console.Write(' ');	
-		}
-		else
-		{
-            if (n < 3)
-            {
-                Console.Write('*');
-                return;
-            }
-            PrintStar(i, j, n / 3);	
+        private int _count = 0;
+        private readonly bool[] _boolArray;
+        public Sieve(int N)
+        {
+            _boolArray = new bool[N + 1];
+            _boolArray[0] = _boolArray[1] = true;
         }
-	}
+
+        public int GetNumberOfRemoved(int targetRemovedNumber)
+        {
+            for (var i = 2; i <= _boolArray.Length - 1; i++)
+            {
+                // Prime 일 때
+                if (_boolArray[i] == false)
+                {
+                    // Prime 배수 처리
+                    for (var multiple = i; multiple <= _boolArray.Length - 1; multiple += i)
+                    {
+                        if (_boolArray[multiple] == false)
+                        {
+                            _boolArray[multiple] = true;
+                            _count++;
+
+                            if (_count == targetRemovedNumber)
+                            {
+                                return multiple;
+                            }
+                        }
+                    }
+                }
+            }
+            _count = 0;
+            return _count;
+        }
+    }
+
+    static int Solve(int N, int K)
+    {
+        Sieve sieve = new Sieve(N);
+        return sieve.GetNumberOfRemoved(K);
+    }  
 
     static IEnumerable<(T1, T2)> IteratonFunction<T1, T2>(IEnumerable<T1> arr1, IEnumerable<T2> arr2)
     {
         return arr1.Join<T1, T2, bool, (T1, T2)>(arr2, item1 => true, item2 => true, (item1, item2) => (item1, item2));
     }
-    static IEnumerable<(T1, T2, T3)> ForLoop<T1, T2, T3>(IEnumerable<T1> arr1, IEnumerable<T2> arr2, IEnumerable<T3> arr3)
+    static IEnumerable<(T1, T2, T3)> IteratonFunction<T1, T2, T3>(IEnumerable<T1> arr1, IEnumerable<T2> arr2, IEnumerable<T3> arr3)
     {
         return arr1.Join(arr2, item1 => true, item2 => true, (item1, item2) => (item1, item2)).Join(arr3, item => true, item3 => true, (item, item3) => (item.item1, item.item2, item3));
     }
