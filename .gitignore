@@ -8,3 +8,5 @@ bin/*
 *.pdb
 *.AssemblyInfo.cs
 *.cache
+*.csproj
+*.sln
