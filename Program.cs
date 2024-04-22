@@ -1,52 +1,43 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
 
 class Program
 {
-   static void Main(string[] args)
+	static void Main(string[] args)
 	{
-		var input = Console.ReadLine().Split(' ');
-		var N = int.Parse(input[0].ToString());
-		var K = int.Parse(input[1].ToString());
-		Console.Write(Solve(N, K));
+		var inputNum = int.Parse(Console.ReadLine());
+		Solve(inputNum);
 	}
-	
-	static int Solve(int N, int K)
+
+	static void Solve(int n)
 	{
-		bool[] intArray = Enumerable.Repeat(false, N + 1).ToArray();
-		intArray[0] = intArray[1] = true;
-        var removedNumber = 0;
-		var count = 0;
+		// (1, 1), (1, 4), (1, 7), (4, 1), (4, 4) => (i % 3 == 1) && (j % 3 == 1)
+		// (3, 3), (3, 4) (3, 5), (4, 3), (4, 4), (4, 5), (5, 3), (5, 4), (5, 5) =>  (i / 3) % 3 == 1
+		for (var i = 0; i < n; i++)
+		{
+			for (var j = 0; j < n; j++)
+			{
+				PrintStar(i, j, n / 3);
+			}
+			Console.WriteLine();
+		}
+	}
 
-        int getRemovedNumber()
-        {
-            for (var i = 2; i <= N; i++)
+	static void PrintStar(int i, int j, int n)
+	{
+		if (((i / n) % 3 == 1) && ((j / n) % 3 == 1))
+		{
+			Console.Write(' ');	
+		}
+		else
+		{
+            if (n < 3)
             {
-                if (intArray[i] == false)
-                {
-                    // Prime 배수 처리
-                    for (var multiple = 1; multiple <= (N / i); multiple++)
-                    {
-                        if ((i * multiple <= N) && (intArray[i * multiple] == false))
-                        {
-                            intArray[i * multiple] = true;
-                            count++;
-                            removedNumber = i * multiple;
-
-                            if (count == K)
-                            {
-                                return removedNumber;
-                            }
-                        }
-                    }
-                }
+                Console.Write('*');
+                return;
             }
-            return -1;
+            PrintStar(i, j, n / 3);	
         }
-        return getRemovedNumber();
-    }
+	}
 
     static IEnumerable<(T1, T2)> IteratonFunction<T1, T2>(IEnumerable<T1> arr1, IEnumerable<T2> arr2)
     {
