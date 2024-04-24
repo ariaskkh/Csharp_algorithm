@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 
 class Program
 {
@@ -8,42 +9,72 @@ class Program
 		Solve(N);
 	}
 
-	static void Solve(int N)
+    //PrintStars(24, 0, 0);
+    //  PrintStars(12, 0, 12);
+    //    PrintStars(6, 0, 18);
+    //      PrintStars(3, 0, 21);
+    //      PrintStars(3, 3, 18);
+    //      PrintStars(3, 3, 24);
+    //    PrintStars(6, 6, 12);
+    //      PrintStars(3, 6, 15);
+    //      PrintStars(3, 9, 12);
+    //      PrintStars(3, 9, 18);
+    //    PrintStars(6, 6, 24);
+    //      PrintStars(3, 6, 27);
+    //      PrintStars(3, 9, 24);
+    //      PrintStars(3, 9, 30);
+    //  PrintStars(12, 12, 0);
+    //    PrintStars(6, 12, 6);
+    //      PrintStars(3, 12, 9);
+    //      PrintStars(3, 15, 6);
+    //      PrintStars(3, 15, 12);
+    //    PrintStars(6, 18, 0);
+    //      PrintStars(3, 18, 3);
+    //      PrintStars(3, 21, 0);
+    //      PrintStars(3, 21, 6);
+    //    PrintStars(6, 18, 12);
+    //      PrintStars(3, 18, 15);
+    //      PrintStars(3, 21, 12);
+    //      PrintStars(3, 21, 18);
+    //  PrintStars(12, 12, 24);
+    //    PrintStars(6, 12, 30);
+    //      PrintStars(3, 12, 33);
+    //      PrintStars(3, 15, 30);
+    //      PrintStars(3, 15, 36);
+    //    PrintStars(6, 18, 24);
+    //      PrintStars(3, 12, 27);
+    //      PrintStars(3, 21, 24);
+    //      PrintStars(3, 21, 30);
+    //    PrintStars(6, 18, 36);
+    //      PrintStars(3, 12, 39);
+    //      PrintStars(3, 21, 36);
+    //      PrintStars(3, 21, 42);
+
+    static void Solve(int N)
 	{
         var paper = new Paper(N);
-        paper.PrintSmallStar(N);
-        Console.WriteLine(paper.PrintToString());
+        paper.PrintStar(N, 0, 0);
+        Console.WriteLine(paper.GetString());
 	}
 
     public class Paper
     {
-        private var _N = 0;
         private bool[][] _isStar;
 
         public Paper() { }
         public Paper(int N)
         {
-            _N = N;
-            _isStar = Enumerable.Range(row => Enumerable.Repeat(false, N).ToArray()).ToArray();
+            _isStar = Enumerable.Range(0, N)
+                .Select(row => Enumerable.Repeat(false, N * 2 - 1).ToArray()).ToArray();
         }
 
-        public void PrintToString()
+        public string GetString()
         {
             var sb = new StringBuilder();
-            for (var i = 0; i < _N; i++)
+            foreach (var row in _isStar)
             {
-                for (var j = 0; j < _N; j++)
-                {
-                    if (_isStar[i][j] = true)
-                    {
-                        sb.Append('*');
-                    }
-                    else
-                    {
-                        sb.Append(' ');
-                    }
-                }
-                sb.Append("\n");
+                sb.Append(new String(row.Select(element => element ? '*' : ' ').ToArray()));
+                sb.Append(Environment.NewLine);
             }
             return sb.ToString();
         }
@@ -53,23 +84,47 @@ class Program
             _isStar[row][column] = true;
         }
 
-        
+       
         public void PrintSmallStar(int row, int column)
         {
-            var starPositions = new(int Row, int Column)
+            var starPositions = new (int Row, int Column)[]
            {
                // 3개 행 X 5개 열
                (0, 2),
-               (1, 1), (1,3)
-               (2, 1), (2, 2), (2, 3), (2, 4), (2, 5),
+               (1, 1), (1, 3),
+               (2, 0), (2, 1), (2, 2), (2, 3), (2, 4),
            };
 
            foreach (var position in starPositions)
             {
-                PrintTinyStar(position.Row, position.Column)
+                var nextRow = row + position.Row;
+                var nextColumn = column + position.Column;
+                PrintTinyStar(nextRow, nextColumn);
             }
         }
 
+        public void PrintStar(int N, int row, int column)
+        {
+            if (N == 3)
+            {
+                PrintSmallStar(row, column);
+                return;
+            }
+
+            var starPositions2 = new (int Row, int Column)[]
+            {
+                (0, 0),
+                (1, -1), (1, 1)
+            };
+
+            var nextN = N / 2;
+            foreach (var position in starPositions2)
+            {
+                var nextRow = row + position.Row * nextN;
+                var nextColumn = column + position.Column * nextN + nextN;
+                PrintStar(nextN, nextRow, nextColumn);
+            }
+        }
     }
 
 
