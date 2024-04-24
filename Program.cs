@@ -2,58 +2,76 @@
 
 class Program
 {
-    static void Main(string[] args)
-    {
-        var input = Console.ReadLine().Split(' ');
-        var N = int.Parse(input[0].ToString());
-        var K = int.Parse(input[1].ToString());
-        Console.Write(Solve(N, K));
-    }
+	static void Main(string[] args)
+	{
+		var N = int.Parse(Console.ReadLine());
+		Solve(N);
+	}
 
-    public class Sieve
-    {
+	static void Solve(int N)
+	{
+        var paper = new Paper(N);
+        paper.PrintSmallStar(N);
+        Console.WriteLine(paper.PrintToString());
+	}
 
-        private int _count = 0;
-        private readonly bool[] _boolArray;
-        public Sieve(int N)
+    public class Paper
+    {
+        private var _N = 0;
+        private bool[][] _isStar;
+
+        public Paper() { }
+        public Paper(int N)
         {
-            _boolArray = new bool[N + 1];
-            _boolArray[0] = _boolArray[1] = true;
+            _N = N;
+            _isStar = Enumerable.Range(row => Enumerable.Repeat(false, N).ToArray()).ToArray();
         }
 
-        public int GetNumberOfRemoved(int targetRemovedNumber)
+        public void PrintToString()
         {
-            for (var i = 2; i <= _boolArray.Length - 1; i++)
+            var sb = new StringBuilder();
+            for (var i = 0; i < _N; i++)
             {
-                // Prime 일 때
-                if (_boolArray[i] == false)
+                for (var j = 0; j < _N; j++)
                 {
-                    // Prime 배수 처리
-                    for (var multiple = i; multiple <= _boolArray.Length - 1; multiple += i)
+                    if (_isStar[i][j] = true)
                     {
-                        if (_boolArray[multiple] == false)
-                        {
-                            _boolArray[multiple] = true;
-                            _count++;
-
-                            if (_count == targetRemovedNumber)
-                            {
-                                return multiple;
-                            }
-                        }
+                        sb.Append('*');
+                    }
+                    else
+                    {
+                        sb.Append(' ');
                     }
                 }
+                sb.Append("\n");
             }
-            _count = 0;
-            return _count;
+            return sb.ToString();
         }
+
+        void PrintTinyStar(int row, int column)
+        {
+            _isStar[row][column] = true;
+        }
+
+        
+        public void PrintSmallStar(int row, int column)
+        {
+            var starPositions = new(int Row, int Column)
+           {
+               // 3개 행 X 5개 열
+               (0, 2),
+               (1, 1), (1,3)
+               (2, 1), (2, 2), (2, 3), (2, 4), (2, 5),
+           };
+
+           foreach (var position in starPositions)
+            {
+                PrintTinyStar(position.Row, position.Column)
+            }
+        }
+
     }
 
-    static int Solve(int N, int K)
-    {
-        Sieve sieve = new Sieve(N);
-        return sieve.GetNumberOfRemoved(K);
-    }  
 
     static IEnumerable<(T1, T2)> IteratonFunction<T1, T2>(IEnumerable<T1> arr1, IEnumerable<T2> arr2)
     {
