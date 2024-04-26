@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Text;
 
-class Program
+namespace Algorithm;
+public class Program
 {
 	static void Main(string[] args)
 	{

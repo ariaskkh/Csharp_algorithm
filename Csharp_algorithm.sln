@@ -1,25 +1,28 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.9.34728.123
+VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Csharp_algorithm", "Csharp_algorithm.csproj", "{A7B3103D-E1BF-42F8-AACC-95D91681BE5B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Csharp_algorithm", "Algorithm\Csharp_algorithm.csproj", "{DB1F9350-B90D-4AB3-A50B-2E05565F9D79}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Algorithm.Test", "Algorithm.Test\Algorithm.Test.csproj", "{A7143101-5022-4592-B063-1DEA685B7E0B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A7B3103D-E1BF-42F8-AACC-95D91681BE5B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A7B3103D-E1BF-42F8-AACC-95D91681BE5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A7B3103D-E1BF-42F8-AACC-95D91681BE5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A7B3103D-E1BF-42F8-AACC-95D91681BE5B}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {FE946408-E497-4B0C-9556-DC0CA9E321A8}
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DB1F9350-B90D-4AB3-A50B-2E05565F9D79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB1F9350-B90D-4AB3-A50B-2E05565F9D79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB1F9350-B90D-4AB3-A50B-2E05565F9D79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB1F9350-B90D-4AB3-A50B-2E05565F9D79}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7143101-5022-4592-B063-1DEA685B7E0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7143101-5022-4592-B063-1DEA685B7E0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7143101-5022-4592-B063-1DEA685B7E0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7143101-5022-4592-B063-1DEA685B7E0B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

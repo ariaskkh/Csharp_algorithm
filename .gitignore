@@ -1,12 +1,12 @@
-obj/*
+obj/
 Debug/
 Release/
-.vs/*/
 bin/*
-.vs/*
+bin/
+.vs/
 *.dll
 *.pdb
 *.AssemblyInfo.cs
 *.cache
-*.csproj
 *.sln
+*.linq
