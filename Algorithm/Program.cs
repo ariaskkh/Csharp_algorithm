@@ -3,90 +3,95 @@
 namespace Algorithm;
 public class Program
 {
-    static void Main(string[] args)
-    {
-        string inputString = Console.ReadLine();
-        Solve(inputString);
-    }
+	static void Main(string[] args)
+	{
+		string inputString = Console.ReadLine();
+		Solve(inputString);
+	}
 
     static void Solve(string inputString)
-    {
+	{
         var palindrome = new Palindrome();
-        var palindromeString = palindrome.makePlaindrome(inputString);
-        Console.WriteLine(palindromeString);
+        palindrome.MakePlaindrome(inputString);
+        Console.WriteLine(palindrome.PrintPalindrome());
     }
-
+    
 
     class Palindrome
     {
-        public string makePlaindrome(string inputString)
+        string _palindrome = "";
+        public void MakePlaindrome(string inputString)
         {
-            var orderedList = new List<char>(inputString.OrderBy(x => x).ToArray());
-
+            var charCounts = new Dictionary<char, int>();
             var palindromeFirstHalf = new List<char>();
             var palindromeSecondHalf = new List<char>();
-            char tmpCharacter = default;
-            int count = 0;
-            char odd = default;
+            char middleCharacter = default;
 
-            for (var i = 0; i <= orderedList.Count; i++)
+            charCounts = SetDictionary(charCounts, inputString);
+
+
+            foreach (var item in charCounts.OrderBy(c => c.Key))
             {
-                // 그 다음 단계에서 처리해야 함
-                // count 를 끝까지 처리
-
-                if (i == 0)
+                char character = item.Key;
+                int count = item.Value;
+                if (count % 2 != 0)
                 {
-                    tmpCharacter = orderedList[i];
-                    count++;
-                    continue;
+                    if (middleCharacter == default)
+                    {
+                        middleCharacter = character;
+                    }
+                    else
+                    {
+                        _palindrome =  "I'm Sorry Hansoo";
+                        return;
+                    }
                 }
-
-                if (i < orderedList.Count && orderedList[i] == tmpCharacter)
+                for (var j = 0; j < count / 2; j++)
                 {
-                    count++;
-                    continue;
-                }
-                else // 다른 문자 나옴
-                {
-                    if (count % 2 != 0) // 그 이전까지 홀수
-                    {
-                        if (odd == default)
-                        {
-                            odd = tmpCharacter;
-                        }
-                        else
-                        {
-                            return "I'm Sorry Hansoo";
-                        }
-                    }
-
-                    for (var j = 0; j < count / 2; j++)
-                    {
-                        palindromeFirstHalf.Add(tmpCharacter);
-                        palindromeSecondHalf.Insert(0, tmpCharacter);
-                    }
-                    if (i < orderedList.Count)
-                    {
-                        tmpCharacter = orderedList[i];
-                        count = 1;
-                    }
-
+                    palindromeFirstHalf.Add(character );
+                    palindromeSecondHalf.Insert(0, character );
                 }
             }
+            SetPalindromeString(middleCharacter, palindromeFirstHalf, palindromeSecondHalf);
+        }
 
-            if (odd == default)
+        void SetPalindromeString(char middleCharacter, List<char> palindromeFirstHalf, List<char> palindromeSecondHalf)
+        {
+            if (middleCharacter == default)
             {
-                return new string(palindromeFirstHalf.ToArray()) + new string(palindromeSecondHalf.ToArray());
+                _palindrome = new string(palindromeFirstHalf.ToArray()) + new string(palindromeSecondHalf.ToArray());
             }
             else
             {
-                return new string(palindromeFirstHalf.ToArray()) + odd + new string(palindromeSecondHalf.ToArray());
+                _palindrome = new string(palindromeFirstHalf.ToArray()) + middleCharacter + new string(palindromeSecondHalf.ToArray());
             }
+            
+        }
 
+        static Dictionary<char, int> SetDictionary(Dictionary<char, int > charCounts, string inputString)
+        {
+            foreach (var character in inputString)
+            {
+                if (charCounts.ContainsKey(character))
+                {
+                    charCounts[character]++;
+                }
+                else
+                {
+                    charCounts[character] = 1;
+                }
+            }
+            return charCounts;
+        }
+
+        public string PrintPalindrome()
+        {
+            return _palindrome;
         }
     }
+       
 
-static IEnumerable<(T1, T2)> IteratonFunction<T1, T2>(IEnumerable<T1> arr1, IEnumerable<T2> arr2)
+    static IEnumerable<(T1, T2)> IteratonFunction<T1, T2>(IEnumerable<T1> arr1, IEnumerable<T2> arr2)
     {
         return arr1.Join<T1, T2, bool, (T1, T2)>(arr2, item1 => true, item2 => true, (item1, item2) => (item1, item2));
     }
