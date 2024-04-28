@@ -1,81 +1,92 @@
 ﻿using System;
-using System.Text;
 
 namespace Algorithm;
 public class Program
 {
-	static void Main(string[] args)
-	{
-		string inputBoard = Console.ReadLine();
-		Solve(inputBoard);
-	}
-
-    static void Solve(string inputBoard)
-	{
-        var polyomino = new Polyomino();
-        var coveredBoard = polyomino.SetPolyomino(inputBoard);
-        Console.WriteLine(coveredBoard);
-	}
-
-    class Polyomino
+    static void Main(string[] args)
     {
-        string fail = "-1";
-        public string SetPolyomino(string inputBoard)
+        string inputString = Console.ReadLine();
+        Solve(inputString);
+    }
+
+    static void Solve(string inputString)
+    {
+        var palindrome = new Palindrome();
+        var palindromeString = palindrome.makePlaindrome(inputString);
+        Console.WriteLine(palindromeString);
+    }
+
+
+    class Palindrome
+    {
+        public string makePlaindrome(string inputString)
         {
-            StringBuilder _coveredBoard = new StringBuilder();
+            var orderedList = new List<char>(inputString.OrderBy(x => x).ToArray());
+
+            var palindromeFirstHalf = new List<char>();
+            var palindromeSecondHalf = new List<char>();
+            char tmpCharacter = default;
             int count = 0;
-            for (var i = 0; i < inputBoard.Length; i++)
+            char odd = default;
+
+            for (var i = 0; i <= orderedList.Count; i++)
             {
+                // 그 다음 단계에서 처리해야 함
+                // count 를 끝까지 처리
 
+                if (i == 0)
+                {
+                    tmpCharacter = orderedList[i];
+                    count++;
+                    continue;
+                }
 
-                if (inputBoard[i] == 'X')
+                if (i < orderedList.Count && orderedList[i] == tmpCharacter)
                 {
                     count++;
-                    if (i != inputBoard.Length - 1)
-                    {
-                        continue;
-                    }
+                    continue;
                 }
+                else // 다른 문자 나옴
+                {
+                    if (count % 2 != 0) // 그 이전까지 홀수
+                    {
+                        if (odd == default)
+                        {
+                            odd = tmpCharacter;
+                        }
+                        else
+                        {
+                            return "I'm Sorry Hansoo";
+                        }
+                    }
 
-                if (count > 0)
-                {
-                    var tmpBoard = PlaceBlocks(count);
-                    if (tmpBoard == fail)
+                    for (var j = 0; j < count / 2; j++)
                     {
-                        return fail;
+                        palindromeFirstHalf.Add(tmpCharacter);
+                        palindromeSecondHalf.Insert(0, tmpCharacter);
                     }
-                    else
+                    if (i < orderedList.Count)
                     {
-                        _coveredBoard.Append(tmpBoard);
-                        count = 0;
+                        tmpCharacter = orderedList[i];
+                        count = 1;
                     }
+
                 }
-                
-                if (inputBoard[i] == '.')
-                {
-                    _coveredBoard.Append('.');
-                }
-                
             }
-            return _coveredBoard.ToString();
-        }
 
-        string PlaceBlocks(int count)
-        {
-            if (count % 2 != 0) return fail;
-            StringBuilder _tmpBoard = new StringBuilder();
-                
-            var countA = count / 4;
-            var countB = (count % 4) / 2;
+            if (odd == default)
+            {
+                return new string(palindromeFirstHalf.ToArray()) + new string(palindromeSecondHalf.ToArray());
+            }
+            else
+            {
+                return new string(palindromeFirstHalf.ToArray()) + odd + new string(palindromeSecondHalf.ToArray());
+            }
 
-            _tmpBoard.Append(new String('A', countA * 4));
-            _tmpBoard.Append(new String('B', countB * 2));
-
-            return _tmpBoard.ToString();
         }
     }
 
-    static IEnumerable<(T1, T2)> IteratonFunction<T1, T2>(IEnumerable<T1> arr1, IEnumerable<T2> arr2)
+static IEnumerable<(T1, T2)> IteratonFunction<T1, T2>(IEnumerable<T1> arr1, IEnumerable<T2> arr2)
     {
         return arr1.Join<T1, T2, bool, (T1, T2)>(arr2, item1 => true, item2 => true, (item1, item2) => (item1, item2));
     }
