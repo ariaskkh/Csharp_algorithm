@@ -4,28 +4,30 @@ using System.Text;
 namespace Algorithm;
 public class Program
 {
-    static void Main(string[] args)
-    {
-        string inputBoard = Console.ReadLine();
-        Solve(inputBoard);
-    }
+	static void Main(string[] args)
+	{
+		string inputBoard = Console.ReadLine();
+		Solve(inputBoard);
+	}
 
     static void Solve(string inputBoard)
-    {
+	{
         var polyomino = new Polyomino();
         var coveredBoard = polyomino.SetPolyomino(inputBoard);
         Console.WriteLine(coveredBoard);
-    }
+	}
 
     class Polyomino
     {
-        string _board = "";
         string fail = "-1";
         public string SetPolyomino(string inputBoard)
         {
+            StringBuilder _coveredBoard = new StringBuilder();
             int count = 0;
             for (var i = 0; i < inputBoard.Length; i++)
             {
+
+
                 if (inputBoard[i] == 'X')
                 {
                     count++;
@@ -35,45 +37,45 @@ public class Program
                     }
                 }
 
-                if (inputBoard[i] == '.' && count == 0)
-                {
-                    _board += '.';
-                    continue;
-                }
-
-                // (count != 0 && '.' ) or (마지막 X) 인 상태
                 if (count > 0)
                 {
-                    if (count % 2 == 0)
-                    {
-                        int shareDividedByFour = count / 4;
-                        for (int j = 0; j < shareDividedByFour; j++)
-                        {
-                            _board += "AAAA";
-                            count -= 4;
-                        }
-
-                        if (count == 2)
-                        {
-                            _board += "BB";
-                            count -= 2;
-                        }
-                    }
-                    else
+                    var tmpBoard = PlaceBlocks(count);
+                    if (tmpBoard == fail)
                     {
                         return fail;
                     }
-                    if (inputBoard[i] == '.')
+                    else
                     {
-                        _board += '.';
+                        _coveredBoard.Append(tmpBoard);
+                        count = 0;
                     }
                 }
+                
+                if (inputBoard[i] == '.')
+                {
+                    _coveredBoard.Append('.');
+                }
+                
             }
-            return _board;
+            return _coveredBoard.ToString();
+        }
+
+        string PlaceBlocks(int count)
+        {
+            if (count % 2 != 0) return fail;
+            StringBuilder _tmpBoard = new StringBuilder();
+                
+            var countA = count / 4;
+            var countB = (count % 4) / 2;
+
+            _tmpBoard.Append(new String('A', countA * 4));
+            _tmpBoard.Append(new String('B', countB * 2));
+
+            return _tmpBoard.ToString();
         }
     }
 
-static IEnumerable<(T1, T2)> IteratonFunction<T1, T2>(IEnumerable<T1> arr1, IEnumerable<T2> arr2)
+    static IEnumerable<(T1, T2)> IteratonFunction<T1, T2>(IEnumerable<T1> arr1, IEnumerable<T2> arr2)
     {
         return arr1.Join<T1, T2, bool, (T1, T2)>(arr2, item1 => true, item2 => true, (item1, item2) => (item1, item2));
     }
