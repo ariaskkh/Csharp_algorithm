@@ -1,72 +1,80 @@
 ﻿using System;
+using System.Text;
 
 namespace Algorithm;
 public class Program
 {
 	static void Main(string[] args)
 	{
-		string inputString = Console.ReadLine();
-		Solve(inputString);
+		string inputBoard = Console.ReadLine();
+		Solve(inputBoard);
 	}
 
-    static void Solve(string inputString)
+    static void Solve(string inputBoard)
 	{
-        var palindrome = new Palindrome();
-        palindrome.MakePlaindrome(inputString);
-        Console.WriteLine(palindrome.PrintPalindrome());
+       var coveredBoard  = new Board(inputBoard).Cover();
+        Console.WriteLine(coveredBoard);
     }
-    
 
-    class Palindrome
+    class Board
     {
-        string _palindrome = "";
-        public void MakePlaindrome(string inputString)
+        private string _inputBoard = "";
+        private List<BoardX> _boardXList;
+        public Board(string inputBoard)
         {
-            var charCounts = new Dictionary<char, int>();
-            var palindromeFirstHalf = new List<char>();
-            var palindromeSecondHalf = new List<char>();
-            char middleCharacter = default;
-
-            charCounts = SetDictionary(charCounts, inputString);
-
-
-            foreach (var item in charCounts.OrderBy(c => c.Key))
-            {
-                char character = item.Key;
-                int count = item.Value;
-                if (count % 2 != 0)
-                {
-                    if (middleCharacter == default)
-                    {
-                        middleCharacter = character;
-                    }
-                    else
-                    {
-                        _palindrome =  "I'm Sorry Hansoo";
-                        return;
-                    }
-                }
-                for (var j = 0; j < count / 2; j++)
-                {
-                    palindromeFirstHalf.Add(character );
-                    palindromeSecondHalf.Insert(0, character );
-                }
-            }
-            SetPalindromeString(middleCharacter, palindromeFirstHalf, palindromeSecondHalf);
+            _inputBoard = inputBoard;
+            _boardXList = inputBoard.Split('.')
+                .Where(block => block.Length > 0)
+                .Select(block => new BoardX(block))
+                .OrderByDescending(boardX => boardX.boardLength)
+                .ToList();
         }
 
-        void SetPalindromeString(char middleCharacter, List<char> palindromeFirstHalf, List<char> palindromeSecondHalf)
+        public string Cover()
         {
-            if (middleCharacter == default)
+            bool hasOddBoard = _boardXList.Any(x => x.isOdd);
+            if (hasOddBoard)
             {
-                _palindrome = new string(palindromeFirstHalf.ToArray()) + new string(palindromeSecondHalf.ToArray());
-            }
-            else
-            {
-                _palindrome = new string(palindromeFirstHalf.ToArray()) + middleCharacter + new string(palindromeSecondHalf.ToArray());
+                return "-1";
             }
             
+            var newBoardXList = _boardXList
+                .Select(boardX => new { Input = boardX.inputBoardX, Output = boardX.Cover() })
+                .ToList();
+
+            string newBoard = _inputBoard;
+            foreach (var boardX in newBoardXList)
+            {
+                newBoard = newBoard.Replace(boardX.Input, boardX.Output);
+            }
+            return newBoard;
         }
+    }
+
+    class BoardX
+    {
+        public string inputBoardX;
+        public bool isOdd => inputBoardX.Length % 2 != 0;
+        public int boardLength => inputBoardX.Length;
+        
+        public BoardX(string inputBoardX)
+        {
+            this.inputBoardX = inputBoardX;
+        }
+
+        public string Cover()
+        {
+            if (isOdd) return "-1";
+            StringBuilder sb = new StringBuilder();
+            var countA = boardLength / 4;
+            var countB = boardLength % 4 / 2;
+
+            sb.Append(new string('A', countA * 4));
+            sb.Append(new string('B', countB * 2));
+
+            return sb.ToString();
+        }
+    
 
         static Dictionary<char, int> SetDictionary(Dictionary<char, int > charCounts, string inputString)
         {
@@ -82,11 +90,6 @@ public class Program
                 }
             }
             return charCounts;
-        }
-
-        public string PrintPalindrome()
-        {
-            return _palindrome;
         }
     }
        
