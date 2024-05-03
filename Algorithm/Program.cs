@@ -2,95 +2,88 @@
 using System.Text;
 
 namespace Algorithm;
+
 public class Program
 {
-	static void Main(string[] args)
-	{
-		string inputBoard = Console.ReadLine();
-		Solve(inputBoard);
-	}
-
-    static void Solve(string inputBoard)
-	{
-       var coveredBoard  = new Board(inputBoard).Cover();
-        Console.WriteLine(coveredBoard);
+    static void Main(string[] args)
+    {
+        int N = int.Parse(Console.ReadLine());
+        Solve(N);
     }
 
-    class Board
+    static void Solve(int N)
     {
-        private string _inputBoard = "";
-        private List<BoardX> _boardXList;
-        public Board(string inputBoard)
+        int[][] studentsData = new int[N][];
+        for (var i = 0; i < N; i++)
         {
-            _inputBoard = inputBoard;
-            _boardXList = inputBoard.Split('.')
-                .Where(block => block.Length > 0)
-                .Select(block => new BoardX(block))
-                .OrderByDescending(boardX => boardX.boardLength)
-                .ToList();
+            int[] classData = Console.ReadLine().Split(' ').Select(int.Parse).ToArray();
+            studentsData[i] = classData;
         }
 
-        public string Cover()
-        {
-            bool hasOddBoard = _boardXList.Any(x => x.isOdd);
-            if (hasOddBoard)
-            {
-                return "-1";
-            }
-            
-            var newBoardXList = _boardXList
-                .Select(boardX => new { Input = boardX.inputBoardX, Output = boardX.Cover() })
-                .ToList();
+        var classPresident = new ClassPresident(studentsData);
+        classPresident.SetPresident();
+        Console.WriteLine(classPresident.GetPresident());
+    }
 
-            string newBoard = _inputBoard;
-            foreach (var boardX in newBoardXList)
+    class ClassPresident
+    {
+        static int gradeCount = 5;
+        int[][] _studentsData;
+        int[] _numberOfSameClassList;
+        public ClassPresident(int[][] studentsData)
+        {
+            _studentsData = studentsData;
+            _numberOfSameClassList = new int[_studentsData.Length];
+        }
+
+        public void SetPresident()
+        {
+            for (var student1 = 0; student1 < _studentsData.Length; student1++)
             {
-                newBoard = newBoard.Replace(boardX.Input, boardX.Output);
+                List<int> sameClassmates = new List<int>();
+                for (var student2 = 0; student2 < _studentsData.Length; student2++)
+                {
+                    if (student1 == student2)
+                    {
+                        continue;
+                    }
+                    for (var grade = 0; grade < gradeCount; grade++)
+                    {
+                        if (_studentsData[student1][grade] == _studentsData[student2][grade])
+                        {
+                            if (!sameClassmates.Contains(student2))
+                            {
+                                sameClassmates.Add(student2);
+                            }
+                        }
+                    }
+                }
+                _numberOfSameClassList[student1] = sameClassmates.Count;
             }
-            return newBoard;
+        }
+
+        public int GetPresident()
+        {
+            var max = _numberOfSameClassList.Max();
+            var president = Array.IndexOf(_numberOfSameClassList, max) + 1;
+            return president;
         }
     }
 
-    class BoardX
+    static Dictionary<char, int> SetDictionary(Dictionary<char, int > charCounts, string inputString)
     {
-        public string inputBoardX;
-        public bool isOdd => inputBoardX.Length % 2 != 0;
-        public int boardLength => inputBoardX.Length;
-        
-        public BoardX(string inputBoardX)
+        foreach (var character in inputString)
         {
-            this.inputBoardX = inputBoardX;
-        }
-
-        public string Cover()
-        {
-            if (isOdd) return "-1";
-            StringBuilder sb = new StringBuilder();
-            var countA = boardLength / 4;
-            var countB = boardLength % 4 / 2;
-
-            sb.Append(new string('A', countA * 4));
-            sb.Append(new string('B', countB * 2));
-
-            return sb.ToString();
-        }
-    
-
-        static Dictionary<char, int> SetDictionary(Dictionary<char, int > charCounts, string inputString)
-        {
-            foreach (var character in inputString)
+            if (charCounts.ContainsKey(character))
             {
-                if (charCounts.ContainsKey(character))
-                {
-                    charCounts[character]++;
-                }
-                else
-                {
-                    charCounts[character] = 1;
-                }
+                charCounts[character]++;
             }
-            return charCounts;
+            else
+            {
+                charCounts[character] = 1;
+            }
         }
+        return charCounts;
     }
        
 
