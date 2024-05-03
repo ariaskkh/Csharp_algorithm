@@ -21,7 +21,7 @@ public class Program
         }
 
         var classPresident = new ClassPresident(studentsData);
-        classPresident.SetPresident();
+        classPresident.setSameClassmate();
         Console.WriteLine(classPresident.GetPresident());
     }
 
@@ -29,43 +29,40 @@ public class Program
     {
         static int gradeCount = 5;
         int[][] _studentsData;
-        int[] _numberOfSameClassList;
+        bool[][] _sameClassmateTable;
         public ClassPresident(int[][] studentsData)
         {
             _studentsData = studentsData;
-            _numberOfSameClassList = new int[_studentsData.Length];
+            _sameClassmateTable = Enumerable.Range(0, _studentsData.Length).Select(x => Enumerable.Repeat(false, _studentsData.Length).ToArray()).ToArray();
         }
 
-        public void SetPresident()
+        public void setSameClassmate()
         {
-            for (var student1 = 0; student1 < _studentsData.Length; student1++)
+            for (var student1 = 0; student1 < _studentsData.Length - 1; student1++)
             {
-                List<int> sameClassmates = new List<int>();
-                for (var student2 = 0; student2 < _studentsData.Length; student2++)
+                for (var student2 = student1 + 1; student2 < _studentsData.Length; student2++)
                 {
-                    if (student1 == student2)
-                    {
-                        continue;
-                    }
                     for (var grade = 0; grade < gradeCount; grade++)
                     {
                         if (_studentsData[student1][grade] == _studentsData[student2][grade])
                         {
-                            if (!sameClassmates.Contains(student2))
-                            {
-                                sameClassmates.Add(student2);
-                            }
+                            _sameClassmateTable[student1][student2] = true;
+                            _sameClassmateTable[student2][student1] = true;
                         }
                     }
                 }
-                _numberOfSameClassList[student1] = sameClassmates.Count;
             }
         }
 
         public int GetPresident()
         {
-            var max = _numberOfSameClassList.Max();
-            var president = Array.IndexOf(_numberOfSameClassList, max) + 1;
+            var classmateNumberList = new List<int>();
+            foreach (bool[] personClassmateData in _sameClassmateTable)
+            {
+                classmateNumberList.Add(personClassmateData.Count(x => x));
+            }
+            var max = classmateNumberList.Max();
+            var president = classmateNumberList.IndexOf(max) + 1;
             return president;
         }
     }
