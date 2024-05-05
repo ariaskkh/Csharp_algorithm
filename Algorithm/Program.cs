@@ -13,57 +13,92 @@ public class Program
 
     static void Solve(int N)
     {
-        int[][] studentsData = new int[N][];
-        for (var i = 0; i < N; i++)
-        {
-            int[] classData = Console.ReadLine().Split(' ').Select(int.Parse).ToArray();
-            studentsData[i] = classData;
-        }
-
-        var classPresident = new ClassPresident(studentsData);
-        classPresident.setSameClassmate();
-        Console.WriteLine(classPresident.GetPresident());
+        char[][] spaceArray = GetSpaceArray(N);
+        var space = new Space(spaceArray);
+        var count = space.GetSleepAvailableSpace();
+        Console.WriteLine(count.countRow + " " + count.countColumn);
     }
 
-    class ClassPresident
+    static char[][] GetSpaceArray(int N)
     {
-        static int gradeCount = 5;
-        int[][] _studentsData;
-        bool[][] _sameClassmateTable;
-        public ClassPresident(int[][] studentsData)
+        // input array 둘레를 벽(wall) X로 감싸기
+        // XXXXX
+        // X   X
+        // X   X
+        // XXXXX
+        char[][] spaceArrayWithWall = new char[N + 2][];
+        spaceArrayWithWall[0] = (new string('X', N + 2)).ToCharArray();
+        spaceArrayWithWall[N+1] = (new string('X', N + 2)).ToCharArray();
+        for (var i = 1; i < N + 1; i++)
         {
-            _studentsData = studentsData;
-            _sameClassmateTable = Enumerable.Range(0, _studentsData.Length).Select(x => Enumerable.Repeat(false, _studentsData.Length).ToArray()).ToArray();
+            spaceArrayWithWall[i] = ('X' + Console.ReadLine() + 'X').ToCharArray();
+        }
+        return spaceArrayWithWall;
+    }
+
+    public class Space
+    {
+        private readonly char[][] _spaceArray;
+        private readonly char[][] _spaceArrayReversed; // row, column 반전
+        public Space(char[][] spaceArray)
+        {
+            _spaceArray = spaceArray;
+            _spaceArrayReversed = GetReversedArray(spaceArray);
         }
 
-        public void setSameClassmate()
+        public char[][] GetReversedArray(char[][] spaceArray)
         {
-            for (var student1 = 0; student1 < _studentsData.Length - 1; student1++)
+            char[][] reversedArray = new char[spaceArray.Length][];
+
+            for (var i = 0; i < reversedArray.Length; i++)
             {
-                for (var student2 = student1 + 1; student2 < _studentsData.Length; student2++)
+                reversedArray[i] = new char[spaceArray[i].Length];
+                for (var j = 0; j < reversedArray.Length; j++)
                 {
-                    for (var grade = 0; grade < gradeCount; grade++)
-                    {
-                        if (_studentsData[student1][grade] == _studentsData[student2][grade])
-                        {
-                            _sameClassmateTable[student1][student2] = true;
-                            _sameClassmateTable[student2][student1] = true;
-                        }
-                    }
+                    reversedArray[i][j] = spaceArray[j][i];
                 }
             }
+            return reversedArray;
+        }
+        
+
+        public (int countRow, int countColumn) GetSleepAvailableSpace()
+        {
+            var countRow = 0;
+            foreach (char[] row in _spaceArray)
+            {
+                countRow += GetSleepAvailableSpaceForLine(row);
+            }
+
+            var countColumn = 0;
+            foreach (char[] row in _spaceArrayReversed)
+            {
+                countColumn += GetSleepAvailableSpaceForLine(row);
+            }
+
+            return (countRow, countColumn);
         }
 
-        public int GetPresident()
+        public int GetSleepAvailableSpaceForLine(char[] row)
         {
-            var classmateNumberList = new List<int>();
-            foreach (bool[] personClassmateData in _sameClassmateTable)
+            var availableSpaceCount = 0;
+            var unitSpaceCount = 0;
+            for (var i = 1; i < row.Length; i++)
             {
-                classmateNumberList.Add(personClassmateData.Count(x => x));
+                if (row[i] == 'X')
+                {
+                    if (unitSpaceCount >= 2)
+                    {
+                        availableSpaceCount++;
+                    }
+                    unitSpaceCount = 0;
+                }
+                else
+                {
+                    unitSpaceCount++;
+                }
             }
-            var max = classmateNumberList.Max();
-            var president = classmateNumberList.IndexOf(max) + 1;
-            return president;
+            return availableSpaceCount;
         }
     }
 
