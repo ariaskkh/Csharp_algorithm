@@ -6,79 +6,54 @@ public class Program
 {
     static void Main(string[] args)
     {
-        var input = Console.ReadLine().Split(' ').Select(x => int.Parse(x)).ToArray();
-        var N = input[0];
-        var myScore = input[1];
-        var maxRankNumber = input[2];
-
-        if (N == 0)
-        {
-            Console.WriteLine(1);
-            return;
-        }
-        List<int> rankList = ChangeStrToInt(Console.ReadLine().Split(' '));
-        Solve(rankList, myScore, maxRankNumber);
+        int N = int.Parse(Console.ReadLine());
+        int myVote = int.Parse(Console.ReadLine());
+        Solve(N, myVote);
     }
 
-    static void Solve(List<int> rankList, int myScore, int maxRankNumber)
+    static void Solve(int N, int myVote)
     {
-        var rankCalculator = new RankCalculator(rankList, maxRankNumber);
-        var rank = rankCalculator.GetRank(myScore);
-        Console.WriteLine(rank);
+        var voteList = GetValidVoteList(N);
+        var machine = new ElectionFraudMachine();
+        machine.BuyPeopleUntilWin(myVote, voteList);
+        Console.WriteLine(machine.GetMinTimesToWin());
     }
 
-    class RankCalculator
+    static public List<int> GetValidVoteList(int N)
     {
-        int _maxRankNumber;
-        List<int> _rankList;
-        int _rankListLength => _rankList.Count;
-
-        public RankCalculator(List<int> rankList, int maxRankNumber)
+        List<int> voteList = new List<int>();
+        for (var i = 0; i < N - 1; i++)
         {
-            _rankList = rankList;
-            _maxRankNumber = maxRankNumber;
+            voteList.Add(int.Parse(Console.ReadLine()));
         }
 
-        public int GetRank(int score)
-        {
-            if (IsOutOfRank(score))
-            {
-                return -1;
-            }
-
-            int count = 1;
-            foreach (int rank in _rankList)
-            {
-                if (rank > score)
-                {
-                    count++;
-                }
-                else
-                {
-                    break;
-                }
-            }
-            return count;
-        }
-
-        private bool IsOutOfRank(int myScore)
-        {
-            // 0 <= N <= maxRankNumber
-            // 10 <= maxRankNumber <= 50
-            if (_rankListLength == _maxRankNumber && _rankList[_rankListLength - 1] >= myScore)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
+        return voteList;
     }
 
-    static List<int> ChangeStrToInt(string[] numsInStr)
+    class ElectionFraudMachine
     {
-        return numsInStr.Select(x => int.Parse(x)).ToList();
+        private int _count = 0;
+        public void BuyPeopleUntilWin(int myVote, List<int> voteList)
+        {
+            if (voteList.Count == 0)
+            {
+                return;
+            }
+            var max = voteList.Max();
+            while (max >= myVote)
+            {
+                var targetIndex = voteList.IndexOf(voteList.Max());
+                voteList[targetIndex] -= 1;
+                myVote += 1;
+                _count++;
+                max = voteList.Max();
+            }
+        }
+
+        public int GetMinTimesToWin()
+        {
+            return _count;
+        }
     }
 
 
