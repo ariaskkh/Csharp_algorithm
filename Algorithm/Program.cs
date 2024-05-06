@@ -7,152 +7,64 @@ public class Program
 {
     static void Main(string[] args)
     {
-        Solve();
+        var input = Console.ReadLine().Split(' ');
+        var screenWidth = int.Parse(input[0]);
+        var basketWidth = int.Parse(input[1]);
+        Solve(screenWidth, basketWidth);
     }
 
-    static string[][] GetBoard(int size)
+    static void Solve(int screenWidth, int basketWidth)
     {
-        string[][] board = new string[size][]; ;
-        for (var i = 0; i < size; i++)
+        var N = int.Parse(Console.ReadLine());
+        int[] positions = new int[N];
+        for (var i = 0; i < N; i++)
         {
-            board[i] = Console.ReadLine().Split(' ').ToArray();
+            positions[i] = int.Parse(Console.ReadLine());
         }
-        return board;
+        var basket = new Basket(screenWidth, basketWidth);
+        basket.DropApples(positions);
+        Console.WriteLine(basket.GetMinMoveDistance());
     }
 
-    static void Solve()
+    class Basket
     {
-        var size = 5;
-        var board = GetBoard(size);
-        var bingoCount = GetCount(board);
-        Console.WriteLine(bingoCount);
+        int _screenWidth;
+        int _basketWitdh;
+        int _minMoveDistance;
+        public Basket(int screenWidth, int basketWitdh)
+        {
+            _screenWidth = screenWidth;
+            _basketWitdh = basketWitdh;
+        }
+
+        public void DropApples(int[] positions)
+        {
+            var screenLeft = 0;
+            var screenRight = _basketWitdh;
+            foreach (var position in positions)
+            {
+                var delta = 0;
+                if (position > screenRight)
+                {
+                    delta = position - screenRight;
+                    screenLeft += delta;
+                    screenRight += delta;
+                }
+                else if (position < screenLeft + 1)
+                {
+                    delta = screenLeft + 1 - position;
+                    screenLeft -= delta;
+                    screenRight -= delta;
+                }
+                _minMoveDistance += delta;
+            }
+        }
+
+        public int GetMinMoveDistance()
+        {
+            return _minMoveDistance;
+        }
     }
-
-    static int GetCount(string[][] board)
-    {
-        var bingo = new Bingo(board);
-        for (var i = 0; i < board.Length; i++)
-        {
-            string[] numbersCalled = Console.ReadLine().Split(' ').ToArray();
-            for (var j = 0; j < board.Length; j++)
-            {
-                bingo.Check(numbersCalled[j]);
-                if (bingo.IsBingo())
-                {
-                    return bingo.GetBingoCount();
-                }
-            }
-        }
-        return -1;
-    }
-
-    class Bingo
-    {
-        string[][] _board;
-        bool[][] _checkingBoard;
-        int _size => _board.Length;
-        int _countForBingo = 0;
-
-        public Bingo(string[][] board)
-        {
-            _board = board;
-            _checkingBoard = Enumerable.Range(0, _size).Select(_ => Enumerable.Repeat(false, _size).ToArray()).ToArray();
-        }
-
-        public void Check(string number)
-        {
-            for (var i = 0; i < _size; i++)
-            {
-                for (var j = 0; j < _size; j++)
-                {
-                    if (_board[i][j] == number)
-                    {
-                        _checkingBoard[i][j] = true;
-                    }
-                }
-            }
-
-            var n = Enumerable.Range(0, _size);
-            IteratonFunction(n, n).Select(tuple =>
-            {
-                if (_board[tuple.Item1][tuple.Item2] == number)
-                    _checkingBoard[tuple.Item1][tuple.Item2] = true;
-                return tuple;
-            }).ToArray();
-            _countForBingo++;
-        }
-
-        public bool IsBingo()
-        {
-            if (GetBingoCountRow() + GetBingoCountColumn() + GetBingoCountDiagonal() >= 3)
-                return true;
-            else
-                return false;
-        }
-
-        int GetBingoCountRow()
-        {
-            var bingoCount = 0;
-            for (var i = 0; i < _size; i++)
-            {
-                var tmpCount = 0;
-                for (var j = 0; j < _size; j++)
-                {
-                    if (_checkingBoard[i][j] == true)
-                        tmpCount++;
-                }
-                if (tmpCount == _size)
-                    bingoCount++;
-            }
-            return bingoCount;
-        }
-
-        int GetBingoCountColumn()
-        {
-            var bingoCount = 0;
-            for (var i = 0; i < _size; i++)
-            {
-                var tmpCount = 0;
-                for (var j = 0; j < _size; j++)
-                {
-                    if (_checkingBoard[j][i] == true)
-                        tmpCount++;
-                }
-                if (tmpCount == _size)
-                    bingoCount++;
-            }
-            return bingoCount;
-        }
-
-        int GetBingoCountDiagonal()
-        {
-            var bingoCount = 0;
-            var countLeftDiagonal = 0;
-            for (var i = 0; i < _size; i++)
-            {
-                if (_checkingBoard[i][i] == true)
-                    countLeftDiagonal++;
-            }
-
-            var countRightDiagonal = 0;
-            for (var i = 0; i < _size; i++)
-            {
-                if (_checkingBoard[i][(_size - 1)- i] == true)
-                    countRightDiagonal++;
-            }
-
-            if (countLeftDiagonal == _size)
-                bingoCount++;
-            if (countRightDiagonal == _size)
-                bingoCount++;
-            return bingoCount;
-        }   
-
-        public int GetBingoCount()
-        {
-            return _countForBingo;
-        }
-    }   
 
 
 
