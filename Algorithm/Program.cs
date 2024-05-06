@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using System.Xml.Linq;
 
 namespace Algorithm;
 
@@ -13,96 +14,83 @@ public class Program
 
     static void Solve(int N)
     {
-        char[][] spaceArray = GetSpaceArray(N);
-        var space = new Space(spaceArray);
-        var count = space.GetSleepAvailableSpace();
-        Console.WriteLine(count.countRow + " " + count.countColumn);
+        StringBuilder sb = new StringBuilder();
+        for (var i = 0; i < N; i++)
+        {
+            string functions = Console.ReadLine();
+            int listLength = int.Parse(Console.ReadLine());
+            string arrayStr = Console.ReadLine();
+
+            var filteredFunctions = functions.Replace("RR", "");
+            var countOfD = filteredFunctions.Count(ch => ch == 'D');
+
+            if (listLength < countOfD)
+                sb.AppendLine("error");
+            else
+            {
+                var langAC = new LangAC(arrayStr);
+                langAC.SetFunction(filteredFunctions);
+                sb.Append(langAC.PrintIntList());
+            }
+        }
+        Console.WriteLine(sb.ToString());
     }
 
-    static char[][] GetSpaceArray(int N)
+    class LangAC
     {
-        // input array 둘레를 벽(wall) X로 감싸기
-        // XXXXX
-        // X   X
-        // X   X
-        // XXXXX
-        char[][] spaceArrayWithWall = new char[N + 2][];
-        spaceArrayWithWall[0] = (new string('X', N + 2)).ToCharArray();
-        spaceArrayWithWall[N+1] = (new string('X', N + 2)).ToCharArray();
-        for (var i = 1; i < N + 1; i++)
+        List<string> _updatedIntList;
+        public LangAC(string arrayStr)
         {
-            spaceArrayWithWall[i] = ('X' + Console.ReadLine() + 'X').ToCharArray();
+            int emptyArrayStringLength = 2; // []
+            if (arrayStr.Length == emptyArrayStringLength)
+                _updatedIntList = new List<string>();
+            else
+                _updatedIntList = new List<string>(arrayStr.Substring(1, arrayStr.Length - 2).Split(','));
+
         }
-        return spaceArrayWithWall;
-    }
-
-    public class Space
-    {
-        private readonly char[][] _spaceArray;
-        private readonly char[][] _spaceArrayReversed; // row, column 반전
-        public Space(char[][] spaceArray)
+        public void SetFunction(string functions) // ex. RD, DDR
         {
-            _spaceArray = spaceArray;
-            _spaceArrayReversed = GetReversedArray(spaceArray);
-        }
-
-        public char[][] GetReversedArray(char[][] spaceArray)
-        {
-            char[][] reversedArray = new char[spaceArray.Length][];
-
-            for (var i = 0; i < reversedArray.Length; i++)
+            bool isReversed = false;
+            var leftDeleteCount = 0;
+            var rightDeleteCount = 0;
+            foreach (char function in functions)
             {
-                reversedArray[i] = new char[spaceArray[i].Length];
-                for (var j = 0; j < reversedArray.Length; j++)
+                if (function == 'D')
                 {
-                    reversedArray[i][j] = spaceArray[j][i];
+                    if (isReversed)
+                        rightDeleteCount++;
+                    else
+                        leftDeleteCount++;
                 }
-            }
-            return reversedArray;
-        }
-        
-
-        public (int countRow, int countColumn) GetSleepAvailableSpace()
-        {
-            var countRow = 0;
-            foreach (char[] row in _spaceArray)
-            {
-                countRow += GetSleepAvailableSpaceForLine(row);
+                else // 'R'
+                    isReversed = !isReversed;
             }
 
-            var countColumn = 0;
-            foreach (char[] row in _spaceArrayReversed)
-            {
-                countColumn += GetSleepAvailableSpaceForLine(row);
-            }
-
-            return (countRow, countColumn);
+            if (leftDeleteCount > 0)
+                _updatedIntList.RemoveRange(0, leftDeleteCount);
+            if (rightDeleteCount > 0)
+                _updatedIntList.RemoveRange(_updatedIntList.Count - rightDeleteCount, rightDeleteCount);
+            if (isReversed)
+                _updatedIntList.Reverse();
         }
 
-        public int GetSleepAvailableSpaceForLine(char[] row)
+        public string PrintIntList()
         {
-            var availableSpaceCount = 0;
-            var unitSpaceCount = 0;
-            for (var i = 1; i < row.Length; i++)
+            StringBuilder sb = new StringBuilder();
+            sb.Append('[');
+            for (var j = 0; j < _updatedIntList.Count; j++)
             {
-                if (row[i] == 'X')
-                {
-                    if (unitSpaceCount >= 2)
-                    {
-                        availableSpaceCount++;
-                    }
-                    unitSpaceCount = 0;
-                }
+                if (j < _updatedIntList.Count - 1)
+                    sb.Append(_updatedIntList[j] + ',');
                 else
-                {
-                    unitSpaceCount++;
-                }
+                    sb.Append(_updatedIntList[j]);
             }
-            return availableSpaceCount;
+            sb.AppendLine("]");
+            return sb.ToString();
         }
     }
 
-    static Dictionary<char, int> SetDictionary(Dictionary<char, int > charCounts, string inputString)
+    static Dictionary<char, int> SetDictionary(Dictionary<char, int> charCounts, string inputString)
     {
         foreach (var character in inputString)
         {
@@ -117,7 +105,7 @@ public class Program
         }
         return charCounts;
     }
-       
+
 
     static IEnumerable<(T1, T2)> IteratonFunction<T1, T2>(IEnumerable<T1> arr1, IEnumerable<T2> arr2)
     {
