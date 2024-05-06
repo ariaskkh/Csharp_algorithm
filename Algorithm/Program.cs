@@ -6,55 +6,133 @@ public class Program
 {
     static void Main(string[] args)
     {
-        int N = int.Parse(Console.ReadLine());
-        int myVote = int.Parse(Console.ReadLine());
-        Solve(N, myVote);
+        var size = 5;
+        var board = GetBoard(size);
+        Solve(board);
     }
 
-    static void Solve(int N, int myVote)
+    static string[][] GetBoard(int size)
     {
-        var voteList = GetValidVoteList(N);
-        var machine = new ElectionFraudMachine();
-        machine.BuyPeopleUntilWin(myVote, voteList);
-        Console.WriteLine(machine.GetMinTimesToWin());
-    }
-
-    static public List<int> GetValidVoteList(int N)
-    {
-        List<int> voteList = new List<int>();
-        for (var i = 0; i < N - 1; i++)
+        string[][] board = new string[size][]; ;
+        for (var i = 0; i < size; i++)
         {
-            voteList.Add(int.Parse(Console.ReadLine()));
+            board[i] = Console.ReadLine().Split(' ').ToArray();
         }
-
-        return voteList;
+        return board;
     }
 
-    class ElectionFraudMachine
+    static void Solve(string[][] board)
     {
-        private int _count = 0;
-        public void BuyPeopleUntilWin(int myVote, List<int> voteList)
+        var bingo = new Bingo(board);
+        for (var i = 0; i < board.Length; i++)
         {
-            if (voteList.Count == 0)
+            string[] numbersCalled = Console.Readline().Split(' ').ToArray();
+            for (var j = 0; j < board.Length; j++)
             {
-                return;
-            }
-            var max = voteList.Max();
-            while (max >= myVote)
-            {
-                var targetIndex = voteList.IndexOf(voteList.Max());
-                voteList[targetIndex] -= 1;
-                myVote += 1;
-                _count++;
-                max = voteList.Max();
+                bingo.Check(numbersCalled[j]);
+                if (bingo.IsBingo())
+                {
+                    return; // 여기 좀 처리하기
+                }
             }
         }
+        Console.WriteLine(bingo.GetCountForBingo());
+    }
 
-        public int GetMinTimesToWin()
+    class Bingo
+    {
+        string[][] _board;
+        bool[][] _checkingBoard;
+        int _size => _board.Length;
+        int countForBingo => { get; };
+        public Bingo(string[][] board)
         {
-            return _count;
+            _board = board;
+            _checkingBoard = Enumerable.Range(0, _size).Select(i => Enumerable.Repeat(false, _size).ToArray()).ToArray();
+        }
+
+        public void Check(string number)
+        {
+            for (var i = 0; i < _size; i++)
+            {
+                for (var j = 0; j < _size; j++)
+                {
+                    if (_board[i][j] == number)
+                    {
+                        _checkingBoard[i][j] = true;
+                    }
+                }
+            }
+            countForBingo++;
+            
+            //Enumerable.Range(0, size).Select(i => Enumerable.Range(0, size).Select(j =>
+            //{
+            //    if (_board[i][j] == number)
+            //    {
+            //        _checkingBoard[i][j] = true;
+            //    }
+            //    return j;
+            //}));
+        }
+
+        public void IsBingo()
+        {
+            if (BingoCheckRow() || BingoCheckColumn() || BingoCheckDiagonal())
+                return true
+            else
+                return false
+        }
+
+        bool BingoCheckRow()
+        {
+            foreach (var row in _checkingBoard)
+            {
+                if (row.Count(element => element == true) == _size)
+                    return true;
+            }
+            return false;
+        }
+
+        bool BingoCheckColumn()
+        {
+            for (var i = 0; i < _size; i++)
+            {
+                var count = 0;
+                for (var j = 0; j < _size; j++)
+                {
+                    if (_checkingBoard[j][i] == 0)
+                        count++;
+                }
+                if (count == _size)
+                    return true;
+                count = 0;
+            }
+            return false;
+        }
+
+        bool BingoCheckDiagonal()
+        {
+            
+            var count = 0;
+            for (var i = 0; i < _size; i++)
+            {
+                if (_checkingBoard[i][i] = true)
+                    count++;
+            }
+            if (count == _size)
+                return true;
+            else
+                return false;
+        }   
+
+        public int GetCountForBingo()
+        {
+            return countForBingo;
         }
     }
+
+    
+
 
 
 static Dictionary<char, int> SetDictionary(Dictionary<char, int> charCounts, string inputString)
