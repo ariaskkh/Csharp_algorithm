@@ -1,64 +1,86 @@
 ﻿using System;
 using System.Text;
-class Program
+
+namespace Algorithm;
+public class Program
 {
     static void Main(string[] args)
     {
-        var N = int.Parse(Console.ReadLine());
-        var cards = Enumerable.Range(1, N).ToList();
-        var card = new Card(cards);
-        card.Execute();
-        Console.WriteLine(card.Print());
+        var input = Console.ReadLine().Split(' ').Select(x => int.Parse(x)).ToArray();
+        var N = input[0];
+        var myScore = input[1];
+        var maxRankNumber = input[2];
+
+        if (N == 0)
+        {
+            Console.WriteLine(1);
+            return;
+        }
+        List<int> rankList = ChangeStrToInt(Console.ReadLine().Split(' '));
+        Solve(rankList, myScore, maxRankNumber);
     }
-    class Card
+
+    static void Solve(List<int> rankList, int myScore, int maxRankNumber)
     {
-        readonly List<int> _cards;
-        readonly List<int> _discardedCards;
-        public int _lastCard { get; set; }
-        public Card(List<int> cards)
+        var rankCalculator = new RankCalculator(rankList, maxRankNumber);
+        var rank = rankCalculator.GetRank(myScore);
+        Console.WriteLine(rank);
+    }
+
+    class RankCalculator
+    {
+        int _maxRankNumber;
+        List<int> _rankList;
+        int _rankListLength => _rankList.Count;
+
+        public RankCalculator(List<int> rankList, int maxRankNumber)
         {
-            _cards = cards;
-            _discardedCards = new List<int>();
-            _lastCard = 0;
+            _rankList = rankList;
+            _maxRankNumber = maxRankNumber;
         }
 
-        public void Execute()
+        public int GetRank(int score)
         {
-            List<int> newCards = new List<int>(_cards);
-            while (newCards.Count > 1)
+            if (IsOutOfRank(score))
             {
-                newCards = Discard(newCards);
-                newCards = MoveToBack(newCards);
+                return -1;
             }
-            _lastCard = newCards[0];
-        }
 
-        List<int> Discard(List<int> cards)
-        {
-            _discardedCards.Add(cards[0]);
-            cards.RemoveAt(0);
-            return cards;
-        }
-
-        List<int> MoveToBack(List<int> cards)
-        {
-            var tmpCard = cards[0];
-            cards.RemoveAt(0);
-            cards.Add(tmpCard);
-            return cards;
-        }
-
-        public string Print()
-        {
-            StringBuilder sb = new StringBuilder();
-            foreach (var card in _discardedCards)
+            int count = 1;
+            foreach (int rank in _rankList)
             {
-                sb.Append(card + " ");
+                if (rank > score)
+                {
+                    count++;
+                }
+                else
+                {
+                    break;
+                }
             }
-            sb.Append(_lastCard);
-            return sb.ToString();
+            return count;
+        }
+
+        private bool IsOutOfRank(int myScore)
+        {
+            // 0 <= N <= maxRankNumber
+            // 10 <= maxRankNumber <= 50
+            if (_rankListLength == _maxRankNumber && _rankList[_rankListLength - 1] >= myScore)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
+
+    static List<int> ChangeStrToInt(string[] numsInStr)
+    {
+        return numsInStr.Select(x => int.Parse(x)).ToList();
+    }
+
 
 static Dictionary<char, int> SetDictionary(Dictionary<char, int> charCounts, string inputString)
     {
