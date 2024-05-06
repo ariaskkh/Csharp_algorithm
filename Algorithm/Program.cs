@@ -1,96 +1,66 @@
 ﻿using System;
 using System.Text;
-using System.Xml.Linq;
-
-namespace Algorithm;
-
-public class Program
+class Program
 {
     static void Main(string[] args)
     {
-        int N = int.Parse(Console.ReadLine());
-        Solve(N);
+        var N = int.Parse(Console.ReadLine());
+        var cards = Enumerable.Range(1, N).ToList();
+        var card = new Card(cards);
+        card.Execute();
+        Console.WriteLine(card.Print());
     }
-
-    static void Solve(int N)
+    class Card
     {
-        StringBuilder sb = new StringBuilder();
-        for (var i = 0; i < N; i++)
+        readonly List<int> _cards;
+        readonly List<int> _discardedCards;
+        public int _lastCard { get; set; }
+        public Card(List<int> cards)
         {
-            string functions = Console.ReadLine();
-            int listLength = int.Parse(Console.ReadLine());
-            string arrayStr = Console.ReadLine();
+            _cards = cards;
+            _discardedCards = new List<int>();
+            _lastCard = 0;
+        }
 
-            var filteredFunctions = functions.Replace("RR", "");
-            var countOfD = filteredFunctions.Count(ch => ch == 'D');
-
-            if (listLength < countOfD)
-                sb.AppendLine("error");
-            else
+        public void Execute()
+        {
+            List<int> newCards = new List<int>(_cards);
+            while (newCards.Count > 1)
             {
-                var langAC = new LangAC(arrayStr);
-                langAC.SetFunction(filteredFunctions);
-                sb.Append(langAC.PrintIntList());
+                newCards = Discard(newCards);
+                newCards = MoveToBack(newCards);
             }
+            _lastCard = newCards[0];
         }
-        Console.WriteLine(sb.ToString());
-    }
 
-    class LangAC
-    {
-        List<string> _updatedIntList;
-        public LangAC(string arrayStr)
+        List<int> Discard(List<int> cards)
         {
-            int emptyArrayStringLength = 2; // []
-            if (arrayStr.Length == emptyArrayStringLength)
-                _updatedIntList = new List<string>();
-            else
-                _updatedIntList = new List<string>(arrayStr.Substring(1, arrayStr.Length - 2).Split(','));
-
+            _discardedCards.Add(cards[0]);
+            cards.RemoveAt(0);
+            return cards;
         }
-        public void SetFunction(string functions) // ex. RD, DDR
+
+        List<int> MoveToBack(List<int> cards)
         {
-            bool isReversed = false;
-            var leftDeleteCount = 0;
-            var rightDeleteCount = 0;
-            foreach (char function in functions)
-            {
-                if (function == 'D')
-                {
-                    if (isReversed)
-                        rightDeleteCount++;
-                    else
-                        leftDeleteCount++;
-                }
-                else // 'R'
-                    isReversed = !isReversed;
-            }
-
-            if (leftDeleteCount > 0)
-                _updatedIntList.RemoveRange(0, leftDeleteCount);
-            if (rightDeleteCount > 0)
-                _updatedIntList.RemoveRange(_updatedIntList.Count - rightDeleteCount, rightDeleteCount);
-            if (isReversed)
-                _updatedIntList.Reverse();
+            var tmpCard = cards[0];
+            cards.RemoveAt(0);
+            cards.Add(tmpCard);
+            return cards;
         }
 
-        public string PrintIntList()
+        public string Print()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append('[');
-            for (var j = 0; j < _updatedIntList.Count; j++)
+            foreach (var card in _discardedCards)
             {
-                if (j < _updatedIntList.Count - 1)
-                    sb.Append(_updatedIntList[j] + ',');
-                else
-                    sb.Append(_updatedIntList[j]);
+                sb.Append(card + " ");
             }
-            sb.AppendLine("]");
+            sb.Append(_lastCard);
             return sb.ToString();
         }
     }
 
-    static Dictionary<char, int> SetDictionary(Dictionary<char, int> charCounts, string inputString)
+static Dictionary<char, int> SetDictionary(Dictionary<char, int> charCounts, string inputString)
     {
         foreach (var character in inputString)
         {
