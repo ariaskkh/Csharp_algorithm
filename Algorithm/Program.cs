@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.NetworkInformation;
 using System.Text;
 
 namespace Algorithm;
@@ -6,9 +7,7 @@ public class Program
 {
     static void Main(string[] args)
     {
-        var size = 5;
-        var board = GetBoard(size);
-        Solve(board);
+        Solve();
     }
 
     static string[][] GetBoard(int size)
@@ -21,22 +20,30 @@ public class Program
         return board;
     }
 
-    static void Solve(string[][] board)
+    static void Solve()
+    {
+        var size = 5;
+        var board = GetBoard(size);
+        var bingoCount = GetCount(board);
+        Console.WriteLine(bingoCount);
+    }
+
+    static int GetCount(string[][] board)
     {
         var bingo = new Bingo(board);
         for (var i = 0; i < board.Length; i++)
         {
-            string[] numbersCalled = Console.Readline().Split(' ').ToArray();
+            string[] numbersCalled = Console.ReadLine().Split(' ').ToArray();
             for (var j = 0; j < board.Length; j++)
             {
                 bingo.Check(numbersCalled[j]);
                 if (bingo.IsBingo())
                 {
-                    return; // 여기 좀 처리하기
+                    return bingo.GetBingoCount();
                 }
             }
         }
-        Console.WriteLine(bingo.GetCountForBingo());
+        return -1;
     }
 
     class Bingo
@@ -44,11 +51,12 @@ public class Program
         string[][] _board;
         bool[][] _checkingBoard;
         int _size => _board.Length;
-        int countForBingo => { get; };
+        int _countForBingo = 0;
+
         public Bingo(string[][] board)
         {
             _board = board;
-            _checkingBoard = Enumerable.Range(0, _size).Select(i => Enumerable.Repeat(false, _size).ToArray()).ToArray();
+            _checkingBoard = Enumerable.Range(0, _size).Select(_ => Enumerable.Repeat(false, _size).ToArray()).ToArray();
         }
 
         public void Check(string number)
@@ -63,75 +71,88 @@ public class Program
                     }
                 }
             }
-            countForBingo++;
-            
-            //Enumerable.Range(0, size).Select(i => Enumerable.Range(0, size).Select(j =>
-            //{
-            //    if (_board[i][j] == number)
-            //    {
-            //        _checkingBoard[i][j] = true;
-            //    }
-            //    return j;
-            //}));
-        }
 
-        public void IsBingo()
-        {
-            if (BingoCheckRow() || BingoCheckColumn() || BingoCheckDiagonal())
-                return true
-            else
-                return false
-        }
-
-        bool BingoCheckRow()
-        {
-            foreach (var row in _checkingBoard)
+            var n = Enumerable.Range(0, _size);
+            IteratonFunction(n, n).Select(tuple =>
             {
-                if (row.Count(element => element == true) == _size)
-                    return true;
-            }
-            return false;
+                if (_board[tuple.Item1][tuple.Item2] == number)
+                    _checkingBoard[tuple.Item1][tuple.Item2] = true;
+                return tuple;
+            }).ToArray();
+            _countForBingo++;
         }
 
-        bool BingoCheckColumn()
+        public bool IsBingo()
         {
-            for (var i = 0; i < _size; i++)
-            {
-                var count = 0;
-                for (var j = 0; j < _size; j++)
-                {
-                    if (_checkingBoard[j][i] == 0)
-                        count++;
-                }
-                if (count == _size)
-                    return true;
-                count = 0;
-            }
-            return false;
-        }
-
-        bool BingoCheckDiagonal()
-        {
-            
-            var count = 0;
-            for (var i = 0; i < _size; i++)
-            {
-                if (_checkingBoard[i][i] = true)
-                    count++;
-            }
-            if (count == _size)
+            if (GetBingoCountRow() + GetBingoCountColumn() + GetBingoCountDiagonal() >= 3)
                 return true;
             else
                 return false;
+        }
+
+        int GetBingoCountRow()
+        {
+            var bingoCount = 0;
+            for (var i = 0; i < _size; i++)
+            {
+                var tmpCount = 0;
+                for (var j = 0; j < _size; j++)
+                {
+                    if (_checkingBoard[i][j] == true)
+                        tmpCount++;
+                }
+                if (tmpCount == _size)
+                    bingoCount++;
+            }
+            return bingoCount;
+        }
+
+        int GetBingoCountColumn()
+        {
+            var bingoCount = 0;
+            for (var i = 0; i < _size; i++)
+            {
+                var tmpCount = 0;
+                for (var j = 0; j < _size; j++)
+                {
+                    if (_checkingBoard[j][i] == true)
+                        tmpCount++;
+                }
+                if (tmpCount == _size)
+                    bingoCount++;
+            }
+            return bingoCount;
+        }
+
+        int GetBingoCountDiagonal()
+        {
+            var bingoCount = 0;
+            var countLeftDiagonal = 0;
+            for (var i = 0; i < _size; i++)
+            {
+                if (_checkingBoard[i][i] == true)
+                    countLeftDiagonal++;
+            }
+
+            var countRightDiagonal = 0;
+            for (var i = 0; i < _size; i++)
+            {
+                if (_checkingBoard[i][(_size - 1)- i] == true)
+                    countRightDiagonal++;
+            }
+
+            if (countLeftDiagonal == _size)
+                bingoCount++;
+            if (countRightDiagonal == _size)
+                bingoCount++;
+            return bingoCount;
         }   
 
-        public int GetCountForBingo()
+        public int GetBingoCount()
         {
-            return countForBingo;
+            return _countForBingo;
         }
-    }
-
-    
+    }   
 
 
 
