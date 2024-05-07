@@ -7,88 +7,56 @@ public class Program
 {
     static void Main(string[] args)
     {
-        var charArray = Console.ReadLine().ToCharArray();
-        
-        Solve(charArray);
+        var input = Console.ReadLine().Split(' ');
+        int initialNumber = int.Parse(input[0]);
+        int p = int.Parse(input[1]);
+        Solve(initialNumber, p);
     }
 
-    static void Solve(char[] charArray)
+    static void Solve(int initialNumber, int p)
     {
-        Console.WriteLine(GetNumber(charArray));
+        var sequence = new Sequence(initialNumber, p);
+        sequence.Execute();
+        Console.WriteLine(sequence.GetNumberOfLeftNumbers());
     }
 
-    static int GetNumber(char[] charArray)
+    public class Sequence
     {
-        if (!isValid(charArray))
+        int _initialNumber;
+        int _p;
+        int _numberOfLeftNumbers;
+        public Sequence(int initialNumber, int p)
         {
-            return 0;
+            _initialNumber = initialNumber;
+            _p = p;
         }
-        var totalCount = 0;
-        var tempCount = 0;
-        Stack<dynamic> stack = new Stack<dynamic>();
-        foreach (char ch in charArray)
+
+        public void Execute()
         {
-            
-            if (ch == '(')
+            var sequenceList = new List<int>() { _initialNumber };
+            int number = _initialNumber;
+            while (true)
             {
-                stack.Push(ch);
-            }
-            else if (ch == '[')
-            {
-                stack.Push(ch);
-            }
-            else if (ch == ')')
-            {
-
-                if (stack.Peek().GetType() == typeof(int))
+                var sum = 0;
+                foreach (char ch in number.ToString())
                 {
-                    while (stack.Peek().GetType() == typeof(int))
-                    {
-                        tempCount += stack.Pop();
-                    }
+                    int n = int.Parse(ch.ToString());
+                    sum += (int)Math.Pow(n, _p);
                 }
-                if (stack.Peek() == '(')
+                if (sequenceList.Contains(sum))
                 {
-                    stack.Pop();
-                    if (tempCount == 0)
-                    {
-                        stack.Push(2);
-                    }
-                    else
-                    {
-                        stack.Push(tempCount * 2);
-                        tempCount = 0;
-                    }
+                    _numberOfLeftNumbers = sequenceList.IndexOf(sum);
+                    return;
                 }
+                sequenceList.Add(sum);
+                number = sum;
             }
-            else // ch == ']'
-            {
-                if (stack.Peek().GetType() == typeof(int))
-                {
-                    while (stack.Peek().GetType() == typeof(int))
-                    {
-                        tempCount += stack.Pop();
-                    }
-                }
-                if (stack.Peek() == '[')
-                {
-                    stack.Pop();
-                    if (tempCount == 0)
-                    {
-                        stack.Push(3);
-                    }
-                    else
-                    {
-                        stack.Push(tempCount * 3);
-                        tempCount = 0;
-                    }
-
-                }
-            }
-
         }
-        totalCount = stack.Sum(x => x);
-        return totalCount;
+
+        public int GetNumberOfLeftNumbers()
+        {
+            return _numberOfLeftNumbers;
+        }
     }
 
     static bool isValid(char[] charArray)
@@ -105,7 +73,9 @@ public class Program
 
    
 
-    static Dictionary<char, int> SetDictionary(Dictionary<char, int > charCounts, string inputString)
+
+
+static Dictionary<char, int> SetDictionary(Dictionary<char, int> charCounts, string inputString)
     {
         foreach (var character in inputString)
         {
