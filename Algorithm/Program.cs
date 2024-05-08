@@ -7,48 +7,58 @@ public class Program
 {
     static void Main(string[] args)
     {
-        var input = Console.ReadLine().Split(' ');
-        var screenWidth = int.Parse(input[0]);
-        var basketWidth = int.Parse(input[1]);
-        Solve(screenWidth, basketWidth);
+        var charArray = Console.ReadLine().ToCharArray();
+        
+        Solve(charArray);
     }
 
-    static void Solve(int screenWidth, int basketWidth)
+    static void Solve(char[] charArray)
     {
-        var N = int.Parse(Console.ReadLine());
-        int[] positions = new int[N];
-        for (var i = 0; i < N; i++)
-        {
-            positions[i] = int.Parse(Console.ReadLine());
-        }
-        var basket = new Basket(screenWidth, basketWidth);
-        basket.DropApples(positions);
-        Console.WriteLine(basket.GetMinMoveDistance());
+        Console.WriteLine(GetNumber(charArray));
     }
 
-    class Basket
+    static int GetNumber(char[] charArray)
     {
-        int _screenWidth;
-        int _basketWitdh;
-        int _minMoveDistance;
-        public Basket(int screenWidth, int basketWitdh)
+        if (!isValid(charArray))
         {
-            _screenWidth = screenWidth;
-            _basketWitdh = basketWitdh;
+            return 0;
         }
-
-        public void DropApples(int[] positions)
+        var totalCount = 0;
+        var tempCount = 0;
+        Stack<dynamic> stack = new Stack<dynamic>();
+        foreach (char ch in charArray)
         {
-            var screenLeft = 0;
-            var screenRight = _basketWitdh;
-            foreach (var position in positions)
+            
+            if (ch == '(')
             {
-                var delta = 0;
-                if (position > screenRight)
+                stack.Push(ch);
+            }
+            else if (ch == '[')
+            {
+                stack.Push(ch);
+            }
+            else if (ch == ')')
+            {
+
+                if (stack.First().GetType() == typeof(int))
                 {
-                    delta = position - screenRight;
-                    screenLeft += delta;
-                    screenRight += delta;
+                    while (stack.First().GetType() == typeof(int))
+                    {
+                        tempCount += stack.Pop();
+                    }
+                }
+                if (stack.First() == '(')
+                {
+                    stack.Pop();
+                    if (tempCount == 0)
+                    {
+                        stack.Push(2);
+                    }
+                    else
+                    {
+                        stack.Push(tempCount * 2);
+                        tempCount = 0; // 이거 다른 곳 옮길 수 있나?
+                    }
                 }
                 else if (position < screenLeft + 1)
                 {
@@ -58,17 +68,51 @@ public class Program
                 }
                 _minMoveDistance += delta;
             }
-        }
+            else // ch == ']'
+            {
+                if (stack.First().GetType() == typeof(int))
+                {
+                    while (stack.First().GetType() == typeof(int))
+                    {
+                        tempCount += stack.Pop();
+                    }
+                }
+                if (stack.First() == '[')
+                {
+                    stack.Pop();
+                    if (tempCount == 0)
+                    {
+                        stack.Push(3);
+                    }
+                    else
+                    {
+                        stack.Push(tempCount * 3);
+                        tempCount = 0;
+                    }
 
-        public int GetMinMoveDistance()
-        {
-            return _minMoveDistance;
+                }
+            }
+
         }
+        totalCount = stack.Sum(x => x);
+        return totalCount;
     }
 
+    static bool isValid(char[] charArray)
+    {
+        if (charArray.Count(ch => ch == '(') != charArray.Count(ch => ch == ')'))
+            return false;
+        if (charArray.Count(ch => ch == '[') != charArray.Count(ch => ch == ']'))
+            return false;
+        string st = new string(charArray);
+        if (st.Contains("(]") || st.Contains("[)"))
+            return false;
+        return true;
+    }
 
+   
 
-static Dictionary<char, int> SetDictionary(Dictionary<char, int> charCounts, string inputString)
+    static Dictionary<char, int> SetDictionary(Dictionary<char, int > charCounts, string inputString)
     {
         foreach (var character in inputString)
         {
