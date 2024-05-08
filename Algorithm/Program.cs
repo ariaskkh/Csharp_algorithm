@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Net.NetworkInformation;
 using System.Text;
 
 namespace Algorithm;
+
 public class Program
 {
     static void Main(string[] args)
@@ -40,14 +40,14 @@ public class Program
             else if (ch == ')')
             {
 
-                if (stack.First().GetType() == typeof(int))
+                if (stack.Peek().GetType() == typeof(int))
                 {
-                    while (stack.First().GetType() == typeof(int))
+                    while (stack.Peek().GetType() == typeof(int))
                     {
                         tempCount += stack.Pop();
                     }
                 }
-                if (stack.First() == '(')
+                if (stack.Peek() == '(')
                 {
                     stack.Pop();
                     if (tempCount == 0)
@@ -57,27 +57,20 @@ public class Program
                     else
                     {
                         stack.Push(tempCount * 2);
-                        tempCount = 0; // 이거 다른 곳 옮길 수 있나?
+                        tempCount = 0;
                     }
                 }
-                else if (position < screenLeft + 1)
-                {
-                    delta = screenLeft + 1 - position;
-                    screenLeft -= delta;
-                    screenRight -= delta;
-                }
-                _minMoveDistance += delta;
             }
             else // ch == ']'
             {
-                if (stack.First().GetType() == typeof(int))
+                if (stack.Peek().GetType() == typeof(int))
                 {
-                    while (stack.First().GetType() == typeof(int))
+                    while (stack.Peek().GetType() == typeof(int))
                     {
                         tempCount += stack.Pop();
                     }
                 }
-                if (stack.First() == '[')
+                if (stack.Peek() == '[')
                 {
                     stack.Pop();
                     if (tempCount == 0)
@@ -127,7 +120,7 @@ public class Program
         }
         return charCounts;
     }
-
+       
 
     static IEnumerable<(T1, T2)> IteratonFunction<T1, T2>(IEnumerable<T1> arr1, IEnumerable<T2> arr2)
     {
