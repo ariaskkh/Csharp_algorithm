@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using static System.Console;
 
 namespace Algorithm;
 
@@ -7,57 +8,87 @@ public class Program
 {
     static void Main(string[] args)
     {
-        var input = Console.ReadLine().Split(' ');
-        int initialNumber = int.Parse(input[0]);
-        int p = int.Parse(input[1]);
-        Solve(initialNumber, p);
+        var input = ReadLine().Split(' ').Select(int.Parse).ToArray() ;
+        var row = input[0];
+        var column = input[1];
+        
+        Solve(row, column);
     }
 
-    static void Solve(int initialNumber, int p)
+    static void Solve(int row, int column)
     {
-        var sequence = new Sequence(initialNumber, p);
-        sequence.Execute();
-        Console.WriteLine(sequence.GetNumberOfLeftNumbers());
-    }
-
-    public class Sequence
-    {
-        int _initialNumber;
-        int _p;
-        int _numberOfLeftNumbers;
-        public Sequence(int initialNumber, int p)
+        char[][] floorBlockArray = new char[row][];
+        for (var i = 0; i < floorBlockArray.Length; i++)
         {
-            _initialNumber = initialNumber;
-            _p = p;
+            floorBlockArray[i] = ReadLine().ToCharArray();
+        }
+        WriteLine(Floor.GetFloorBlockCount(floorBlockArray));
+    }
+
+
+    public class Floor
+    {
+        public static int GetFloorBlockCount(char[][] floorBlockArray)
+        {
+            return GetFloorBlockCountRow(floorBlockArray) + GetFloorBlockCountColumn(floorBlockArray);
         }
 
-        public void Execute()
+        static int GetFloorBlockCountRow(char[][] floorBlockArray)
         {
-            var sequenceList = new List<int>() { _initialNumber };
-            int number = _initialNumber;
-            while (true)
+            var totalCount = 0;
+            for (var i = 0; i < floorBlockArray.Length; i++)
             {
-                var sum = 0;
-                foreach (char ch in number.ToString())
+                bool started = false;
+                for (var j = 0; j < floorBlockArray[0].Length; j++)
                 {
-                    int n = int.Parse(ch.ToString());
-                    sum += (int)Math.Pow(n, _p);
+                    if (floorBlockArray[i][j] == '-' && !started)
+                    {
+                        started = true;
+                    }
+                    else if (floorBlockArray[i][j] == '|' && started)
+                    {
+                        totalCount++;
+                        started = false;
+                    } else
+                    {
+                        continue;
+                    }
                 }
-                if (sequenceList.Contains(sum))
-                {
-                    _numberOfLeftNumbers = sequenceList.IndexOf(sum);
-                    return;
-                }
-                sequenceList.Add(sum);
-                number = sum;
+                if (started) // 마지막이 '-'로 끝난 경우 처리
+                    totalCount++;
             }
+            return totalCount;
         }
 
-        public int GetNumberOfLeftNumbers()
+        static int GetFloorBlockCountColumn(char[][] floorBlockArray)
         {
-            return _numberOfLeftNumbers;
+            var totalCount = 0;
+            for (var i = 0; i < floorBlockArray[0].Length; i++)
+            {
+                bool started = false;
+                for (var j = 0; j < floorBlockArray.Length; j++)
+                {
+                    if (floorBlockArray[j][i] == '|' && !started)
+                    {
+                        started = true;
+                    }
+                    else if (floorBlockArray[j][i] == '-' && started)
+                    {
+                        totalCount++;
+                        started = false;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+                if (started) // 마지막이 '|'로 끝난 경우 처리
+                    totalCount++;
+            }
+            return totalCount;
         }
     }
+ 
 
     static bool isValid(char[] charArray)
     {
