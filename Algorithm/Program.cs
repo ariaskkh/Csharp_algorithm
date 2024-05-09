@@ -8,86 +8,96 @@ public class Program
 {
     static void Main(string[] args)
     {
-        var input = ReadLine().Split(' ').Select(int.Parse).ToArray() ;
-        var row = input[0];
-        var column = input[1];
-        int[][] cheesePlate = new int[row][];
-        for (var i = 0; i < cheesePlate.Length; i++)
+        var N = int.Parse(ReadLine());
+        string[][] optionArray = new string[N][];
+        for (var i = 0; i < N; i++)
         {
-            cheesePlate[i] = ChangeCharToNum(ReadLine().ToCharArray());
+            optionArray[i] = ReadLine().Split(' ');
         }
-        Solve(row, column, cheesePlate);
+        Solve(optionArray);
     }
 
-    static void Solve(int row, int column, int[][] cheesePlate)
+    static void Solve(string[][] optionArray)
     {
-        var cheese = new Chesse();
-        WriteLine(cheese.GetAllMeltingTime(cheesePlate));
-        WriteLine(cheese.GetLastCheeseCpimt());
-    }
- 
 
-    class Chesse
-    {
-        int _lastCheeseCount = 0;
-        public int GetAllMeltingTime(int[][] cheesePlate)
+        var option = new Option(optionArray);
+        option.SetShortCutKey();
+        var newOptionArray = option.GetOptions();
+
+        foreach (string[] newOption in newOptionArray)
         {
-            var newCheesePlate = cheesePlate; // copy 해야함
-            var lastCheeseCount = 0;
-            var consumedTime = 0;
-            while (true)
+            StringBuilder sb = new StringBuilder();
+            foreach (string word in newOption)
             {
-                newCheesePlate = GetPlateAfterAnHour(newCheesePlate);
-                int cheeseCount = newCheesePlate.Select(row => row.Count(x => x == 1)).Sum();
-                
-                if (cheeseCount == 0)
-                {
-                    break;
-                }
-                consumedTime++;
-                _lastCheeseCount = cheeseCount;
+                sb.Append(word + ' ');
             }
-            return consumedTime;
+            WriteLine(sb);
+        }
+    }
+
+    class Option
+    {
+        string[][] _optionArray;
+        List<char> _shortCutKeyList = new List<char>();
+
+        public Option(string[][] optionArray)
+        {
+            _optionArray = optionArray;
         }
 
-        int[][] GetPlateAfterAnHour(int[][] cheesePlate) // 이름 좀..
+        public void SetShortCutKey()
         {
-            //var n = Enumerable.Range(1, cheesePlate.Length - 1);
-            //IterationFunction(n, n).Select(item => cheesePlate[item.Item1][item.Item2]) // enumerable의 확장 메소드를 정의할수도?
-
-            var newCheesePlate = Get2DArray(cheesePlate, '0'); // 0으로 시작하지 말고 copy를 가지고 만들자
-            for (int i = 1; i < cheesePlate.Length - 1; i++)
+            for (var i = 0; i < _optionArray.Length; i++)
             {
-                for (int j = 1; j < cheesePlate[i].Length - 1; j++)
+                bool hasShortCutKeySet = false;
+                // 제일 앞 글자
+                for (var j = 0; j < _optionArray[i].Length; j++)
                 {
-                    var tempCount = 0;
-                    var dx = new int[] { 1, 0, -1, 0 };
-                    var dy = new int[] { 0, 1, 0, -1, };
-                    // 4방향 모두 치즈(1) 면 그대로 치즈 아니면 녹아서 0으로 바뀜
-                    for (var d = 0; d < 4; d++)
+                    var st = _optionArray[i][j];
+                    if (!_shortCutKeyList.Any(c => char.ToUpperInvariant(c) == char.ToUpperInvariant(st[0])) && hasShortCutKeySet == false)
                     {
-                        var x = i + dx[i];
-                        var y = j + dy[j];
-                        if (cheesePlate[x][y] == 1)
-                        {
-                            tempCount++;
-                        }
-                        if (tempCount == 4) //치즈로 사방 막힘
-                        {
-                            newCheesePlate[i][j] = 1;
-                        }
+                        _shortCutKeyList.Add(st[0]);
+                        _optionArray[i][j] = "[" + st[0] + "]" + st.Substring(1);
+                        hasShortCutKeySet = true;
                     }
                 }
+
+                if (!hasShortCutKeySet)
+                {
+                    // 전체 글자
+                    for (var j = 0; j < _optionArray[i].Length; j++)
+                    {
+                        int index = default(int);
+                        char ch = default(char);
+                        for (var k = 0; k < _optionArray[i][j].Length; k++)
+                        {
+
+                            char tempCh = _optionArray[i][j][k];
+                            if (!_shortCutKeyList.Any(ch => char.ToUpperInvariant(ch) == char.ToUpperInvariant(tempCh)) && hasShortCutKeySet == false)
+                            {
+                                _shortCutKeyList.Add(tempCh);
+                                index = k;
+                                ch = tempCh;
+                                hasShortCutKeySet = true;
+                            }
+                        }
+
+                        if (index != default(int) && ch != default(char) && hasShortCutKeySet == true)
+                        {
+                            _optionArray[i][j] = _optionArray[i][j].Substring(0, index) + "[" + ch + "]" + _optionArray[i][j].Substring(index + 1);
+                        }
+
+                    }
+                }
+
             }
-            return newCheesePlate;
         }
 
-        public int GetLastCheeseCpimt()
+        public string[][] GetOptions()
         {
-            return _lastCheeseCount;
+            return _optionArray;
         }
     }
-
 
     static T[][] Get2DArray<T>(T[][] array, T element)
     {
@@ -97,7 +107,7 @@ public class Program
         return newArray;
     }
 
-static Dictionary<char, int> SetDictionary(Dictionary<char, int> charCounts, string inputString)
+    static Dictionary<char, int> SetDictionary(Dictionary<char, int> charCounts, string inputString)
     {
         foreach (var character in inputString)
         {
