@@ -19,12 +19,11 @@ public class Program
 
     static void Solve(string[][] optionArray)
     {
-
         var option = new Option(optionArray);
         option.SetShortCutKey();
-        var newOptionArray = option.GetOptions();
+        var optionsWithShortCutKey = option.GetOptionsWIthShortCutKey();
 
-        foreach (string[] newOption in newOptionArray)
+        foreach (string[] newOption in optionsWithShortCutKey)
         {
             StringBuilder sb = new StringBuilder();
             foreach (string word in newOption)
@@ -38,66 +37,86 @@ public class Program
     class Option
     {
         string[][] _optionArray;
+        string[][] _optionsWithShortCutKey;
         List<char> _shortCutKeyList = new List<char>();
 
         public Option(string[][] optionArray)
         {
             _optionArray = optionArray;
+            _optionsWithShortCutKey = Copy2DArray(optionArray);
         }
 
         public void SetShortCutKey()
         {
-            for (var i = 0; i < _optionArray.Length; i++)
+            for (var row = 0; row < _optionsWithShortCutKey.Length; row++)
             {
                 bool hasShortCutKeySet = false;
-                // 제일 앞 글자
-                for (var j = 0; j < _optionArray[i].Length; j++)
+                hasShortCutKeySet = SetShortCutKeyOfWordFirstLetter(row, hasShortCutKeySet); // set return이 있는 게 좀 걸림.
+                if (!hasShortCutKeySet)
+                    SetShortCutKeyOfWhole(row, hasShortCutKeySet);
+            }
+        }
+
+        bool SetShortCutKeyOfWordFirstLetter(int row, bool hasShortCutKeySet)
+        {
+            for (var column = 0; column < _optionsWithShortCutKey[row].Length; column++)
+            {
+                var st = _optionsWithShortCutKey[row][column];
+                var firstChar = _optionsWithShortCutKey[row][column][0];
+                if (!_shortCutKeyList.Any(c => char.ToUpperInvariant(c) == char.ToUpperInvariant(firstChar)) && hasShortCutKeySet == false)
                 {
-                    var st = _optionArray[i][j];
-                    if (!_shortCutKeyList.Any(c => char.ToUpperInvariant(c) == char.ToUpperInvariant(st[0])) && hasShortCutKeySet == false)
+                    _shortCutKeyList.Add(firstChar);
+                    _optionsWithShortCutKey[row][column] = "[" + firstChar + "]" + st.Substring(1);
+                    hasShortCutKeySet = true;
+                }
+            }
+            return hasShortCutKeySet;
+        }
+
+        void SetShortCutKeyOfWhole(int row, bool hasShortCutKeySet)
+        {
+            for (var j = 0; j < _optionsWithShortCutKey[row].Length; j++)
+            {
+                int targetIndex = default(int);
+                char targetChar = default(char);
+                for (var k = 0; k < _optionsWithShortCutKey[row][j].Length; k++)
+                {
+
+                    char ch = _optionsWithShortCutKey[row][j][k];
+                    if (!_shortCutKeyList.Any(c => char.ToUpperInvariant(c) == char.ToUpperInvariant(ch)) && hasShortCutKeySet == false)
                     {
-                        _shortCutKeyList.Add(st[0]);
-                        _optionArray[i][j] = "[" + st[0] + "]" + st.Substring(1);
+                        _shortCutKeyList.Add(ch);
+                        targetIndex = k;
+                        targetChar = ch;
                         hasShortCutKeySet = true;
                     }
                 }
 
-                if (!hasShortCutKeySet)
-                {
-                    // 전체 글자
-                    for (var j = 0; j < _optionArray[i].Length; j++)
-                    {
-                        int index = default(int);
-                        char ch = default(char);
-                        for (var k = 0; k < _optionArray[i][j].Length; k++)
-                        {
-
-                            char tempCh = _optionArray[i][j][k];
-                            if (!_shortCutKeyList.Any(ch => char.ToUpperInvariant(ch) == char.ToUpperInvariant(tempCh)) && hasShortCutKeySet == false)
-                            {
-                                _shortCutKeyList.Add(tempCh);
-                                index = k;
-                                ch = tempCh;
-                                hasShortCutKeySet = true;
-                            }
-                        }
-
-                        if (index != default(int) && ch != default(char) && hasShortCutKeySet == true)
-                        {
-                            _optionArray[i][j] = _optionArray[i][j].Substring(0, index) + "[" + ch + "]" + _optionArray[i][j].Substring(index + 1);
-                        }
-
-                    }
-                }
-
+                if (targetIndex != default(int) && targetChar != default(char) && hasShortCutKeySet == true)
+                    _optionsWithShortCutKey[row][j] = _optionsWithShortCutKey[row][j].Substring(0, targetIndex) + "[" + targetChar + "]" + _optionsWithShortCutKey[row][j].Substring(targetIndex + 1);
             }
         }
 
-        public string[][] GetOptions()
+        public string[][] GetOptionsWIthShortCutKey()
         {
-            return _optionArray;
+            return _optionsWithShortCutKey;
         }
     }
+
+    static T[][] Copy2DArray<T>(T[][] array)
+    {
+        T[][] newArray = new T[array.Length][];
+        for (var i = 0; i < array.Length; i++)
+        {
+            newArray[i] = new T[array[i].Length];
+            for (var j = 0; j < array[i].Length; j++)
+            {
+                newArray[i][j] = array[i][j];
+            }
+        }
+        return newArray;
+    }
+
 
     static T[][] Get2DArray<T>(T[][] array, T element)
     {
