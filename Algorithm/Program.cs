@@ -11,100 +11,91 @@ public class Program
         var input = ReadLine().Split(' ').Select(int.Parse).ToArray() ;
         var row = input[0];
         var column = input[1];
-        
-        Solve(row, column);
+        int[][] cheesePlate = new int[row][];
+        for (var i = 0; i < cheesePlate.Length; i++)
+        {
+            cheesePlate[i] = ChangeCharToNum(ReadLine().ToCharArray());
+        }
+        Solve(row, column, cheesePlate);
     }
 
-    static void Solve(int row, int column)
+    static void Solve(int row, int column, int[][] cheesePlate)
     {
-        char[][] floorBlockArray = new char[row][];
-        for (var i = 0; i < floorBlockArray.Length; i++)
-        {
-            floorBlockArray[i] = ReadLine().ToCharArray();
-        }
-        WriteLine(Floor.GetFloorBlockCount(floorBlockArray));
-    }
-
-
-    public class Floor
-    {
-        public static int GetFloorBlockCount(char[][] floorBlockArray)
-        {
-            return GetFloorBlockCountRow(floorBlockArray) + GetFloorBlockCountColumn(floorBlockArray);
-        }
-
-        static int GetFloorBlockCountRow(char[][] floorBlockArray)
-        {
-            var totalCount = 0;
-            for (var i = 0; i < floorBlockArray.Length; i++)
-            {
-                bool started = false;
-                for (var j = 0; j < floorBlockArray[0].Length; j++)
-                {
-                    if (floorBlockArray[i][j] == '-' && !started)
-                    {
-                        started = true;
-                    }
-                    else if (floorBlockArray[i][j] == '|' && started)
-                    {
-                        totalCount++;
-                        started = false;
-                    } else
-                    {
-                        continue;
-                    }
-                }
-                if (started) // 마지막이 '-'로 끝난 경우 처리
-                    totalCount++;
-            }
-            return totalCount;
-        }
-
-        static int GetFloorBlockCountColumn(char[][] floorBlockArray)
-        {
-            var totalCount = 0;
-            for (var i = 0; i < floorBlockArray[0].Length; i++)
-            {
-                bool started = false;
-                for (var j = 0; j < floorBlockArray.Length; j++)
-                {
-                    if (floorBlockArray[j][i] == '|' && !started)
-                    {
-                        started = true;
-                    }
-                    else if (floorBlockArray[j][i] == '-' && started)
-                    {
-                        totalCount++;
-                        started = false;
-                    }
-                    else
-                    {
-                        continue;
-                    }
-                }
-                if (started) // 마지막이 '|'로 끝난 경우 처리
-                    totalCount++;
-            }
-            return totalCount;
-        }
+        var cheese = new Chesse();
+        WriteLine(cheese.GetAllMeltingTime(cheesePlate));
+        WriteLine(cheese.GetLastCheeseCpimt());
     }
  
 
-    static bool isValid(char[] charArray)
+    class Chesse
     {
-        if (charArray.Count(ch => ch == '(') != charArray.Count(ch => ch == ')'))
-            return false;
-        if (charArray.Count(ch => ch == '[') != charArray.Count(ch => ch == ']'))
-            return false;
-        string st = new string(charArray);
-        if (st.Contains("(]") || st.Contains("[)"))
-            return false;
-        return true;
+        int _lastCheeseCount = 0;
+        public int GetAllMeltingTime(int[][] cheesePlate)
+        {
+            var newCheesePlate = cheesePlate; // copy 해야함
+            var lastCheeseCount = 0;
+            var consumedTime = 0;
+            while (true)
+            {
+                newCheesePlate = GetPlateAfterAnHour(newCheesePlate);
+                int cheeseCount = newCheesePlate.Select(row => row.Count(x => x == 1)).Sum();
+                
+                if (cheeseCount == 0)
+                {
+                    break;
+                }
+                consumedTime++;
+                _lastCheeseCount = cheeseCount;
+            }
+            return consumedTime;
+        }
+
+        int[][] GetPlateAfterAnHour(int[][] cheesePlate) // 이름 좀..
+        {
+            //var n = Enumerable.Range(1, cheesePlate.Length - 1);
+            //IterationFunction(n, n).Select(item => cheesePlate[item.Item1][item.Item2]) // enumerable의 확장 메소드를 정의할수도?
+
+            var newCheesePlate = Get2DArray(cheesePlate, '0'); // 0으로 시작하지 말고 copy를 가지고 만들자
+            for (int i = 1; i < cheesePlate.Length - 1; i++)
+            {
+                for (int j = 1; j < cheesePlate[i].Length - 1; j++)
+                {
+                    var tempCount = 0;
+                    var dx = new int[] { 1, 0, -1, 0 };
+                    var dy = new int[] { 0, 1, 0, -1, };
+                    // 4방향 모두 치즈(1) 면 그대로 치즈 아니면 녹아서 0으로 바뀜
+                    for (var d = 0; d < 4; d++)
+                    {
+                        var x = i + dx[i];
+                        var y = j + dy[j];
+                        if (cheesePlate[x][y] == 1)
+                        {
+                            tempCount++;
+                        }
+                        if (tempCount == 4) //치즈로 사방 막힘
+                        {
+                            newCheesePlate[i][j] = 1;
+                        }
+                    }
+                }
+            }
+            return newCheesePlate;
+        }
+
+        public int GetLastCheeseCpimt()
+        {
+            return _lastCheeseCount;
+        }
     }
 
-   
 
-
+    static T[][] Get2DArray<T>(T[][] array, T element)
+    {
+        T[][] newArray = new T[array.Length][];
+        for (var i = 0; i < array.Length; i++)
+            newArray[i] = Enumerable.Repeat(element, array.Length).ToArray();
+        return newArray;
+    }
 
 static Dictionary<char, int> SetDictionary(Dictionary<char, int> charCounts, string inputString)
     {
@@ -123,11 +114,11 @@ static Dictionary<char, int> SetDictionary(Dictionary<char, int> charCounts, str
     }
        
 
-    static IEnumerable<(T1, T2)> IteratonFunction<T1, T2>(IEnumerable<T1> arr1, IEnumerable<T2> arr2)
+    static IEnumerable<(T1, T2)> IterationFunction<T1, T2>(IEnumerable<T1> arr1, IEnumerable<T2> arr2)
     {
         return arr1.Join<T1, T2, bool, (T1, T2)>(arr2, item1 => true, item2 => true, (item1, item2) => (item1, item2));
     }
-    static IEnumerable<(T1, T2, T3)> IteratonFunction<T1, T2, T3>(IEnumerable<T1> arr1, IEnumerable<T2> arr2, IEnumerable<T3> arr3)
+    static IEnumerable<(T1, T2, T3)> IterationFunction<T1, T2, T3>(IEnumerable<T1> arr1, IEnumerable<T2> arr2, IEnumerable<T3> arr3)
     {
         return arr1.Join(arr2, item1 => true, item2 => true, (item1, item2) => (item1, item2)).Join(arr3, item => true, item3 => true, (item, item3) => (item.item1, item.item2, item3));
     }
