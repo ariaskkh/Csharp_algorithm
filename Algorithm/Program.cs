@@ -9,99 +9,104 @@ public class Program
     static void Main(string[] args)
     {
         var N = int.Parse(ReadLine());
-        string[][] optionArray = new string[N][];
-        for (var i = 0; i < N; i++)
-        {
-            optionArray[i] = ReadLine().Split(' ');
-        }
-        Solve(optionArray);
+        var targetNumber = int.Parse(ReadLine());
+        Solve(N, targetNumber);
     }
 
-    static void Solve(string[][] optionArray)
+    static void Solve(int N, int targetNumber)
     {
-        var option = new Option(optionArray);
-        option.SetShortCutKey();
-        var optionsWithShortCutKey = option.GetOptionsWIthShortCutKey();
-
-        foreach (string[] newOption in optionsWithShortCutKey)
-        {
-            StringBuilder sb = new StringBuilder();
-            foreach (string word in newOption)
-            {
-                sb.Append(word + ' ');
-            }
-            WriteLine(sb);
-        }
+        var snail = new SnailTable(N);
+        Write(snail.GetSnailTable());
+        Write(snail.GetNumberCoordinate(targetNumber));
     }
 
-    class Option
+    class SnailTable
     {
-        string[][] _optionArray;
-        string[][] _optionsWithShortCutKey;
-        List<char> _shortCutKeyList = new List<char>();
-
-        public Option(string[][] optionArray)
+        int _tableLength = 0;
+        int[][] _snailTable;
+        public SnailTable(int N)
         {
-            _optionArray = optionArray;
-            _optionsWithShortCutKey = Copy2DArray(optionArray);
+            _tableLength = N;
+            _snailTable = new int[N][];
+
+            for (var i = 0; i < N; i++)
+            {
+                _snailTable[i] = Enumerable.Repeat(0, N).ToArray();
+            }
+
+            SetSnail();
         }
 
-        public void SetShortCutKey()
+        // (3,3)
+        // (3-1,3)
+        // (3-1,3+1)
+        // (3-1+2,3+1)
+        // (3-1+2,3+1-2)
+        void SetSnail()
         {
-            for (var row = 0; row < _optionsWithShortCutKey.Length; row++)
+            var nextX = _tableLength / 2;
+            var nextY = _tableLength / 2;
+
+            var dx = new int[] { -1, 0, 1, 0 };
+            var dy = new int[] { 0, 1, 0, -1 };
+
+            var direction = 0;
+            var passedDistance = 0;
+            var maxDistance = 1;
+            var numberOfChangeDirection = 0;
+            for (var i = 0; i < _tableLength * _tableLength; i++)
             {
-                bool hasShortCutKeySet = false;
-                hasShortCutKeySet = SetShortCutKeyOfWordFirstLetter(row, hasShortCutKeySet); // set return이 있는 게 좀 걸림.
-                if (!hasShortCutKeySet)
-                    SetShortCutKeyOfWhole(row, hasShortCutKeySet);
+                _snailTable[nextX][nextY] = i + 1;
+
+                nextX += dx[direction % 4];
+                nextY += dy[direction % 4];
+
+                UpdateCountAndDistances(ref passedDistance, ref maxDistance, ref direction, ref numberOfChangeDirection);
             }
         }
 
-        bool SetShortCutKeyOfWordFirstLetter(int row, bool hasShortCutKeySet)
+        void UpdateCountAndDistances(ref int passedDistance, ref int maxDistance, ref int direction, ref int numberOfChangeDirection)
         {
-            for (var column = 0; column < _optionsWithShortCutKey[row].Length; column++)
+            passedDistance++;
+
+            // max 도달 시 방향 전환
+            if (passedDistance == maxDistance)
             {
-                var st = _optionsWithShortCutKey[row][column];
-                var firstChar = _optionsWithShortCutKey[row][column][0];
-                if (!_shortCutKeyList.Any(c => char.ToUpperInvariant(c) == char.ToUpperInvariant(firstChar)) && hasShortCutKeySet == false)
-                {
-                    _shortCutKeyList.Add(firstChar);
-                    _optionsWithShortCutKey[row][column] = "[" + firstChar + "]" + st.Substring(1);
-                    hasShortCutKeySet = true;
-                }
+                direction++;
+                passedDistance = 0;
+                numberOfChangeDirection++;
             }
-            return hasShortCutKeySet;
-        }
 
-        void SetShortCutKeyOfWhole(int row, bool hasShortCutKeySet)
-        {
-            for (var j = 0; j < _optionsWithShortCutKey[row].Length; j++)
+            // 2번 방향 전환 시 이동거리++
+            if (numberOfChangeDirection == 2)
             {
-                int targetIndex = default(int);
-                char targetChar = default(char);
-                for (var k = 0; k < _optionsWithShortCutKey[row][j].Length; k++)
-                {
-
-                    char ch = _optionsWithShortCutKey[row][j][k];
-                    if (!_shortCutKeyList.Any(c => char.ToUpperInvariant(c) == char.ToUpperInvariant(ch)) && hasShortCutKeySet == false)
-                    {
-                        _shortCutKeyList.Add(ch);
-                        targetIndex = k;
-                        targetChar = ch;
-                        hasShortCutKeySet = true;
-                    }
-                }
-
-                if (targetIndex != default(int) && targetChar != default(char) && hasShortCutKeySet == true)
-                    _optionsWithShortCutKey[row][j] = _optionsWithShortCutKey[row][j].Substring(0, targetIndex) + "[" + targetChar + "]" + _optionsWithShortCutKey[row][j].Substring(targetIndex + 1);
+                maxDistance++;
+                numberOfChangeDirection = 0;
             }
         }
 
-        public string[][] GetOptionsWIthShortCutKey()
+        public string GetSnailTable()
         {
-            return _optionsWithShortCutKey;
+            //return _snailTable;
+            var sb = new StringBuilder();
+            foreach (int[] row in _snailTable)
+            {
+                foreach (int number in row)
+                    sb.Append($"{number} ");
+                sb.AppendLine();
+            }
+            return sb.ToString();
+        }
+
+        public string GetNumberCoordinate(int targetNumber)
+        {
+            var n = Enumerable.Range(0, _tableLength);
+            string[] coordinate = IterationFunction(n, n).Where(item => _snailTable[item.Item1][item.Item2] == targetNumber)
+                .Select(item => $"{item.Item1 + 1} {item.Item2 + 1}").ToArray();
+            return coordinate[0];
         }
     }
+
 
     static T[][] Copy2DArray<T>(T[][] array)
     {
