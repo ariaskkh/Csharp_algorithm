@@ -1,91 +1,97 @@
-﻿using static System.Console;
-
-namespace Algorithm;
-
-public class Program
+﻿using System;
+using System.Text;
+using static System.Console;
+class Program
 {
     static void Main(string[] args)
     {
-        var input = ReadLine().Split(' ').Select(int.Parse).ToArray() ;
-        var row = input[0];
-        var column = input[1];
-        int[][] cheesePlate = new int[row][];
-        for (var i = 0; i < cheesePlate.Length; i++)
-        {
-            cheesePlate[i] = ChangeCharToNum(ReadLine().ToCharArray());
-        }
-        Solve(row, column, cheesePlate);
+        var N = int.Parse(ReadLine());
+        var cardList = Enumerable.Range(1, N).Select(n => new Card(n)).ToList();
+        var deck = new Deck<Card>(cardList);
+        deck.Execute();
+        var discardedCardList = deck.GetDiscardedCardList();
+        var result = string.Join(" ", discardedCardList.Select(card => card.CardNumber));
+        WriteLine(result);
     }
-
-    static void Solve(int row, int column, int[][] cheesePlate)
+    class Deck<T>
     {
-        var cheese = new Chesse();
-        WriteLine(cheese.GetAllMeltingTime(cheesePlate));
-        WriteLine(cheese.GetLastCheeseCpimt());
-    }
- 
+        readonly List<T> _originalCardList;
+        readonly List<T> _discardedCardList;
+        public Deck(List<T> cardList)
+        {
+            _originalCardList = cardList;
+            _discardedCardList = new List<T>();
+        }
 
-    class Chesse
+        public void Execute()
+        {
+            List<T> newCardList = CopyList<T>(_originalCardList);
+            while (newCardList.Count > 0)
+            {
+                newCardList = Discard(newCardList);
+                if (newCardList.Count > 1)
+                    newCardList = MoveToBack(newCardList);
+            }
+        }
+
+        List<T> Discard(List<T> cardList)
+        {
+            var newCardList = CopyList<T>(cardList);
+            _discardedCardList.Add(newCardList[0]);
+            newCardList.RemoveAt(0);
+            return newCardList;
+        }
+
+        List<T> MoveToBack(List<T> cardList)
+        {
+            var newCardList = CopyList<T>(cardList);
+            var tmpCard = newCardList[0];
+            newCardList.RemoveAt(0);
+            newCardList.Add(tmpCard);
+            return newCardList;
+        }
+
+        public List<T> GetDiscardedCardList()
+        {
+            return _discardedCardList;
+        }
+    }
+
+    class Card
     {
-        int _lastCheeseCount = 0;
-        public int GetAllMeltingTime(int[][] cheesePlate)
+        public int CardNumber { get; set; }
+        public Card(int number)
         {
-            var newCheesePlate = cheesePlate; // copy 해야함
-            var lastCheeseCount = 0;
-            var consumedTime = 0;
-            while (true)
-            {
-                newCheesePlate = GetPlateAfterAnHour(newCheesePlate);
-                int cheeseCount = newCheesePlate.Select(row => row.Count(x => x == 1)).Sum();
-                
-                if (cheeseCount == 0)
-                {
-                    break;
-                }
-                consumedTime++;
-                _lastCheeseCount = cheeseCount;
-            }
-            return consumedTime;
-        }
-
-        int[][] GetPlateAfterAnHour(int[][] cheesePlate) // 이름 좀..
-        {
-            //var n = Enumerable.Range(1, cheesePlate.Length - 1);
-            //IterationFunction(n, n).Select(item => cheesePlate[item.Item1][item.Item2]) // enumerable의 확장 메소드를 정의할수도?
-
-            var newCheesePlate = Get2DArray(cheesePlate, '0'); // 0으로 시작하지 말고 copy를 가지고 만들자
-            for (int i = 1; i < cheesePlate.Length - 1; i++)
-            {
-                for (int j = 1; j < cheesePlate[i].Length - 1; j++)
-                {
-                    var tempCount = 0;
-                    var dx = new int[] { 1, 0, -1, 0 };
-                    var dy = new int[] { 0, 1, 0, -1, };
-                    // 4방향 모두 치즈(1) 면 그대로 치즈 아니면 녹아서 0으로 바뀜
-                    for (var d = 0; d < 4; d++)
-                    {
-                        var x = i + dx[i];
-                        var y = j + dy[j];
-                        if (cheesePlate[x][y] == 1)
-                        {
-                            tempCount++;
-                        }
-                        if (tempCount == 4) //치즈로 사방 막힘
-                        {
-                            newCheesePlate[i][j] = 1;
-                        }
-                    }
-                }
-            }
-            return newCheesePlate;
-        }
-
-        public int GetLastCheeseCpimt()
-        {
-            return _lastCheeseCount;
+            CardNumber = number;
         }
     }
 
+
+    /////////////////////////////  util 함수  ////////////////////////////////
+
+    static T[] CopyArray<T>(T[] array)
+    {
+        T[] newArray = new T[array.Length];
+        for (var i = 0; i < array.Length; i++)
+        {
+            newArray[i] = array[i];
+        }
+        return newArray;
+    }
+
+    static T[][] Copy2DArray<T>(T[][] array)
+    {
+        T[][] newArray = new T[array.Length][];
+        for (var i = 0; i < array.Length; i++)
+        {
+            newArray[i] = new T[array[i].Length];
+            for (var j = 0; j < array[i].Length; j++)
+            {
+                newArray[i][j] = array[i][j];
+            }
+        }
+        return newArray;
+    }
 
     static T[][] Get2DArray<T>(T[][] array, T element)
     {
@@ -95,7 +101,18 @@ public class Program
         return newArray;
     }
 
-static Dictionary<char, int> SetDictionary(Dictionary<char, int> charCounts, string inputString)
+    static List<T> CopyList<T>(List<T> list)
+    {
+        var newList = new List<T>();
+        for (var i = 0; i < list.Count; i++)
+        {
+            newList.Add(list[i]);
+        }
+        return newList;
+    }
+
+
+    static Dictionary<char, int> SetDictionary(Dictionary<char, int> charCounts, string inputString)
     {
         foreach (var character in inputString)
         {
