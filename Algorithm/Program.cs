@@ -12,65 +12,79 @@ public class Program
 
     static void Solve(int N)
     {
-        int[][] studentsData = new int[N][];
-        for (var i = 0; i < N; i++)
+        Student[] studentsData = new Student[N];
+        for (var index = 0; index < N; index++)
         {
-            int[] classData = ReadLine().Split(' ').Select(int.Parse).ToArray();
-            studentsData[i] = classData;
+			int[] classData = ReadLine().Split(' ').Select(int.Parse).ToArray();
+            studentsData[index] = new Student(index, classData);
         }
 
-        var classPresident = new ClassPresident(studentsData);
-        classPresident.CheckSameClassmate();
-        WriteLine(classPresident.GetPresident());
+        var classPresidentManager = new ClassPresidentManager(studentsData);
+        classPresidentManager.CheckSameClassmate();
+        WriteLine(classPresidentManager.GetPresident());
     }
 
-    class ClassPresident
+    class ClassPresidentManager
     {
         static int MAX_GRADE = 5;
-        int[][] _originalStudentsClassData;
-        bool[][] _sameClassmateTable;
-        public ClassPresident(int[][] studentsClassData)
+        Student[] _studentsData;
+        public ClassPresidentManager(Student[] studentsData)
         {
-            _originalStudentsClassData = studentsClassData;
-            _sameClassmateTable = Enumerable.Range(0, _originalStudentsClassData.Length)
-				.Select(x => Enumerable.Repeat(false, _originalStudentsClassData.Length).ToArray())
-				.ToArray();
+            _studentsData = studentsData;
         }
 
         public void CheckSameClassmate()
         {
-            bool WasSameClass(int student1, int student2, int grade)
+            bool WasInSameClass(int[] classData1, int[] classData2)
 			{
-				if (_sameClassmateTable[student1][student2] == false
-					&& _originalStudentsClassData[student1][grade] == _originalStudentsClassData[student2][grade])
-					return true;
-				else
-					return false;
+				return Enumerable.Range(0, MAX_GRADE).Any(grade => classData1[grade] == classData2[grade]);
 			}
 
-			void SetSameClassMateTable(int student1, int student2)
+			void AddClassmate(Student student1, Student student2 )
 			{
-                _sameClassmateTable[student1][student2] = true;
-                _sameClassmateTable[student2][student1] = true;
-            }
+				student1.AddSameClassmate(student2);
+				student2.AddSameClassmate(student1);
+			}
 
-			Enumerable.Range(0, _originalStudentsClassData.Length - 1)
-				.ForEach(student1 => Enumerable.Range(student1 + 1, _originalStudentsClassData.Length - (student1 + 1))
-						.ForEach(student2 => Enumerable.Range(0, MAX_GRADE)
-								.Where(grade => WasSameClass(student1, student2, grade))
-								.ForEach(grade => SetSameClassMateTable(student1, student2))
-						)
-				);
-		}
+			_studentsData.ForEach(student1 => _studentsData
+					.Where(student2 => WasInSameClass(student1.ClassData, student2.ClassData))
+					.ForEach(student2 => AddClassmate(student1, student2)));
+        }
 
         public int GetPresident()
         {
-			var counts = _sameClassmateTable.Select(classmateData => classmateData.Count(isTrue => isTrue)).ToList();
-            var max = counts.Max();
-            var president = counts.IndexOf(max) + 1;
-            return president;
+			var max = _studentsData.Select(student => student.GetSameClassmateNumber()).Max();
+			var president = _studentsData.Where(student => student.GetSameClassmateNumber() == max)
+					.Select(student => student.StudentId).FirstOrDefault();
+			return president;
         }
     }
+
+	class Student
+	{
+		public int StudentId { get; } = -1;
+		public int[] ClassData { get; }
+		List<Student> _sameClassmateList = new List<Student>();
+
+        public Student(int studentIndex, int[] classData)
+		{
+			StudentId = studentIndex + 1;
+			ClassData = classData;
+        }
+
+		public void AddSameClassmate(Student student)
+		{
+			if (_sameClassmateList.Contains(student))
+				return;
+			else
+				_sameClassmateList.Add(student);
+        }
+
+		public int GetSameClassmateNumber()
+		{
+			return _sameClassmateList.Count;
+		}
+	}
 
     /////////////////////////////  util 함수  ////////////////////////////////
 
