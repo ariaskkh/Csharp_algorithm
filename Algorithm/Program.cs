@@ -1,180 +1,80 @@
-﻿using System.Text;
-using static System.Console;
+﻿using static System.Console;
 
 namespace Algorithm;
 
 public class Program
 {
-    static string ERROR_MESSAGE = "error";
-
-    enum CommandType
-    {
-        D = 'D',
-        R = 'R'
-    }
-
     static void Main(string[] args)
     {
         int N = int.Parse(ReadLine());
-        StringBuilder sb = Solve(N);
-        WriteLine(sb.ToString()); // 시간 제한 없었으면 List를 받아서 for loop으로 출력이 더 이쁜 듯.
+        Solve(N);
     }
 
-    static StringBuilder Solve(int N)
+    static void Solve(int N)
     {
-        var sb = new StringBuilder();
+        int[][] studentsData = new int[N][];
         for (var i = 0; i < N; i++)
         {
-            string commands = ReadLine().Replace("RR", "");
-            int listLength = int.Parse(ReadLine());
-            string arrayStr = ReadLine();
-
-            var filteredCommands = commands;
-            var countOfD = filteredCommands.Count(ch => ch == (char) CommandType.D);
-
-            if (listLength < countOfD)
-                sb.AppendLine(ErrorHandler());
-            else
-                sb.AppendLine(GetACCalculatedNumberList(arrayStr, filteredCommands));
+            int[] classData = ReadLine().Split(' ').Select(int.Parse).ToArray();
+            studentsData[i] = classData;
         }
-        return sb;
+
+        var classPresident = new ClassPresident(studentsData);
+        classPresident.CheckSameClassmate();
+        WriteLine(classPresident.GetPresident());
     }
 
-    static string ErrorHandler()
+    class ClassPresident
     {
-        return ERROR_MESSAGE;
-    }
-
-    static string GetACCalculatedNumberList(string arrayStr, string filteredCommands)
-    {
-        var langACCalculator = new LangACCalculator(arrayStr);
-        langACCalculator.ApplyCommands(filteredCommands);
-        return langACCalculator.GetCalculatedNumberList();
-    }
-
-    class LangACCalculator
-    {
-        readonly List<string> _calculatedNumberList;
-        public LangACCalculator(string arrayStr)
+        static int MAX_GRADE = 5;
+        int[][] _originalStudentsClassData;
+        bool[][] _sameClassmateTable;
+        public ClassPresident(int[][] studentsClassData)
         {
-            int EMPTY_ARRAY_LENGTH = 2; // []
-            if (arrayStr.Length == EMPTY_ARRAY_LENGTH)
-                _calculatedNumberList = new List<string>();
-            else
-                _calculatedNumberList = new List<string>(arrayStr.Substring(1, arrayStr.Length - 2).Split(','));
-
+            _originalStudentsClassData = studentsClassData;
+            _sameClassmateTable = Enumerable.Range(0, _originalStudentsClassData.Length)
+				.Select(x => Enumerable.Repeat(false, _originalStudentsClassData.Length).ToArray())
+				.ToArray();
         }
-        public void ApplyCommands(string commands) // ex. RD, DDR
+
+        public void CheckSameClassmate()
         {
-            bool isReversed = false;
-            var leftDeleteCount = 0;
-            var rightDeleteCount = 0;
-            foreach (char command in commands)
-            {
-                // 다형성 class 생성으로 if문 없애는 게 가능한가?
-                if (command == (char) CommandType.D)
-                {
-                    var commandD = new CommandD(isReversed);
-                    DeleteCount deleteCount = commandD.ApplyCommand((leftDeleteCount, rightDeleteCount));
-                    leftDeleteCount = deleteCount.LeftDeleteCount;
-                    rightDeleteCount = deleteCount.RightDeleteCount;
-                }
-                else // 'R'
-                {
-                    isReversed = new CommandR().ApplyCommand(isReversed);
-                }
+            bool WasSameClass(int student1, int student2, int grade)
+			{
+				if (_sameClassmateTable[student1][student2] == false
+					&& _originalStudentsClassData[student1][grade] == _originalStudentsClassData[student2][grade])
+					return true;
+				else
+					return false;
+			}
+
+			void SetSameClassMateTable(int student1, int student2)
+			{
+                _sameClassmateTable[student1][student2] = true;
+                _sameClassmateTable[student2][student1] = true;
             }
-            RemoveLeftElements(leftDeleteCount);
-            RemoveRightElements(rightDeleteCount);
-            ReverseListOrder(isReversed);
-        }
 
-        void RemoveLeftElements(int leftDeleteCount)
+			Enumerable.Range(0, _originalStudentsClassData.Length - 1)
+				.ForEach(student1 => Enumerable.Range(student1 + 1, _originalStudentsClassData.Length - (student1 + 1))
+						.ForEach(student2 => Enumerable.Range(0, MAX_GRADE)
+								.Where(grade => WasSameClass(student1, student2, grade))
+								.ForEach(grade => SetSameClassMateTable(student1, student2))
+						)
+				);
+		}
+
+        public int GetPresident()
         {
-            if (leftDeleteCount > 0)
-                _calculatedNumberList.RemoveRange(0, leftDeleteCount);
+			var counts = _sameClassmateTable.Select(classmateData => classmateData.Count(isTrue => isTrue)).ToList();
+            var max = counts.Max();
+            var president = counts.IndexOf(max) + 1;
+            return president;
         }
+    }
 
-        void RemoveRightElements(int rightDeleteCount)
-        {
-            if (rightDeleteCount > 0)
-                _calculatedNumberList.RemoveRange(_calculatedNumberList.Count - rightDeleteCount, rightDeleteCount);
-        }
+    /////////////////////////////  util 함수  ////////////////////////////////
 
-        void ReverseListOrder(bool isReversed)
-        {
-            if (isReversed)
-                _calculatedNumberList.Reverse();
-        }
-
-        public string GetCalculatedNumberList()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.Append('[');
-			sb.Append(string.Join(',', _calculatedNumberList));
-			sb.Append("]");
-			return sb.ToString();
-		}
-	}
-
-	interface ICommand<in TInput, out TOutput>
-	{
-		TOutput ApplyCommand(TInput input);
-	}
-
-	class CommandR : ICommand<bool, bool>
-	{
-		public bool ApplyCommand(bool isReversed)
-		{
-			return !isReversed;
-		}
-	}
-
-	class CommandD : ICommand<(int leftDeleteCount, int rightDeleteCount), DeleteCount>
-	{
-		readonly bool _isReversed;
-		public CommandD(bool isReversed)
-		{
-			_isReversed = isReversed;
-		}
-		public DeleteCount ApplyCommand((int leftDeleteCount, int rightDeleteCount) countData)
-		{
-			var deleteCount = new DeleteCount(_isReversed, countData.leftDeleteCount, countData.rightDeleteCount);
-			deleteCount.CalculateDeleteCount();
-			return deleteCount;
-		}
-	}
-
-	interface IDeleteCount
-	{
-		void CalculateDeleteCount();
-	}
-
-	class DeleteCount : IDeleteCount
-	{
-		public int LeftDeleteCount { get; set; }
-		public int RightDeleteCount { get; set; }
-		bool _isReversed;
-		public DeleteCount(bool isReversed, int leftDeleteCount, int rightDeleteCount)
-		{
-			_isReversed = isReversed;
-			LeftDeleteCount = leftDeleteCount;
-			RightDeleteCount = rightDeleteCount;
-		}
-
-		public void CalculateDeleteCount()
-		{
-			if (_isReversed)
-				RightDeleteCount++;
-			else
-				LeftDeleteCount++;
-		}
-	}
-
-
-	/////////////////////////////  util 함수  ////////////////////////////////
-
-	static T[] CopyArray<T>(T[] array)
+    static T[] CopyArray<T>(T[] array)
 	{
 		T[] newArray = new T[array.Length];
 		for (var i = 0; i < array.Length; i++)
@@ -304,6 +204,18 @@ public class Program
 				Console.Write($"{result[i, j]} ");
 			}
 			Console.WriteLine();
+		}
+	}
+}
+
+public static class EnumerableExtensions
+{
+	// Select와 다르게 LINQ에서 Side effect를 위한 확장 메서드
+	public static void ForEach<T>(this IEnumerable<T> enumeration, Action<T> action)
+	{
+		foreach (T item in enumeration)
+		{
+			action(item);
 		}
 	}
 }
