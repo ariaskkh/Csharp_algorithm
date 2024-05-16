@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Xml.Linq;
 using static System.Console;
 
 namespace Algorithm;
@@ -6,7 +7,7 @@ public class Program
 {
     static void Main(string[] args)
     {
-        string source = "bbaabd";
+        string source = "execute";
         Solve(source);
     }
 
@@ -16,35 +17,67 @@ public class Program
         // 2. 알파벳 별로 개수 저장
         // 3. 한개씩 꺼내서 dest에 넣고 count -= 1
         // 4. 알파벳 없을 때 (source == 0) dest 출력
-        StringBuilder dest = new StringBuilder();
-        var sourceCharArray = source.ToCharArray().OrderBy(x => x);
-        var alphabetDict = new Dictionary<char, int>();
+        var converter = new StringConverter(source);
+        converter.Convert();
+        WriteLine(converter.GetConvertedString());
+    }
 
-        foreach (char ch in sourceCharArray)
+    class StringConverter
+    {
+        string _originalSource;
+        Dictionary<char, int> _alphabetDict = new Dictionary<char, int>();
+        StringBuilder _dest = new StringBuilder();
+        public StringConverter(string source)
         {
-            if (alphabetDict.ContainsKey(ch))
-                alphabetDict[ch] += 1;
-            else
-                alphabetDict.Add(ch, 1);
+            _originalSource = source;
+            SetAlphabetDict(source);
         }
 
-        while (alphabetDict.Keys.Count != 0)
+        void SetAlphabetDict(string source)
         {
-            foreach (var element in alphabetDict)
+            foreach (char ch in source.ToCharArray().OrderBy(x => x))
             {
-                dest.Append(element.Key);
-                alphabetDict[element.Key] -= 1; 
-                if (alphabetDict[element.Key] == 0)
+                if (_alphabetDict.ContainsKey(ch))
+                    _alphabetDict[ch] += 1;
+                else
+                    _alphabetDict.Add(ch, 1);
+            }
+        }
+
+        public void Convert()
+        {
+            while (_alphabetDict.Keys.Count != 0)
+            {
+                _dest.Append(GetOrderedAlphabetString(_alphabetDict));
+                CalculateDic();
+            }
+        }
+
+        string GetOrderedAlphabetString(Dictionary<char, int> _alphabetDict)
+        {
+            var keys = _alphabetDict.Select(element => element.Key);
+            return string.Join("", keys);
+        }
+
+        void CalculateDic()
+        {
+            foreach (var element in _alphabetDict)
+            {
+                _alphabetDict[element.Key] -= 1;
+                if (_alphabetDict[element.Key] == 0)
                 {
-                    alphabetDict.Remove(element.Key);
+                    _alphabetDict.Remove(element.Key);
                 }
             }
         }
 
-        WriteLine(dest);
+        public string GetConvertedString()
+        {
+            return _dest.ToString();
+        }
     }
 
-    
+
 
 
     /////////////////////////////  util 함수  ////////////////////////////////
@@ -181,4 +214,17 @@ public class Program
             Console.WriteLine();
         }
     }
+}
+
+
+public static class EnumerableExtensions
+{
+    public static void ForEach<T>(this IEnumerable<T> enumeration, Action<T> action)
+    {
+        foreach (T item in enumeration)
+        {
+            action(item);
+        }
+    }
+
 }
