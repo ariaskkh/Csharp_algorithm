@@ -1,105 +1,50 @@
-﻿using static System.Console;
+﻿using System.Text;
+using static System.Console;
 
 namespace Algorithm;
 public class Program
 {
     static void Main(string[] args)
     {
-        var input = ReadLine().Split(' ');
-        var screenWidth = int.Parse(input[0]);
-        var basketWidth = int.Parse(input[1]);
-
-        if (screenWidth <= basketWidth)
-            return;
-
-        var N = int.Parse(ReadLine());
-        var applePositions = new int[N];
-        for (var i = 0; i < N; i++)
-            applePositions[i] = int.Parse(ReadLine());
-        Solve(screenWidth, basketWidth, applePositions);
+        string source = "bbaabd";
+        Solve(source);
     }
 
-    static void Solve(int screenWidth, int basketWidth, int[] applePositions)
+    static void Solve(string source)
     {
-        var appleGame = new AppleGame(screenWidth, basketWidth);
-        appleGame.DropApples(applePositions);
-        WriteLine(appleGame.GetMinBasketMoveDistance());
+        // 1. 정렬
+        // 2. 알파벳 별로 개수 저장
+        // 3. 한개씩 꺼내서 dest에 넣고 count -= 1
+        // 4. 알파벳 없을 때 (source == 0) dest 출력
+        StringBuilder dest = new StringBuilder();
+        var sourceCharArray = source.ToCharArray().OrderBy(x => x);
+        var alphabetDict = new Dictionary<char, int>();
+
+        foreach (char ch in sourceCharArray)
+        {
+            if (alphabetDict.ContainsKey(ch))
+                alphabetDict[ch] += 1;
+            else
+                alphabetDict.Add(ch, 1);
+        }
+
+        while (alphabetDict.Keys.Count != 0)
+        {
+            foreach (var element in alphabetDict)
+            {
+                dest.Append(element.Key);
+                alphabetDict[element.Key] -= 1; 
+                if (alphabetDict[element.Key] == 0)
+                {
+                    alphabetDict.Remove(element.Key);
+                }
+            }
+        }
+
+        WriteLine(dest);
     }
 
-    class AppleGame
-    {
-        int _screenWidth;
-        Basket _basket;
-
-        public AppleGame(int screenWidth, int basketWidth)
-        {
-            _screenWidth = screenWidth;
-            _basket = new Basket(basketWidth);
-        }
-
-        public void DropApples(int[] applePositions)
-        {
-            if (applePositions.Any(position => position > _screenWidth))
-                return;
-
-            foreach (var position in applePositions)
-                _basket.MoveToTakeAnApple(position);
-        }
-
-        public int GetMinBasketMoveDistance()
-        {
-            return _basket.GetMinMoveDistance();
-        }
-    }
-
-    class Basket
-    {
-        int _basketWidth;
-        int _minMoveDistance;
-        int _basketLeftPosition;
-        int _basketRightPosition;
-        public Basket(int basketWitdh, int basketLeftPosition = 0, int basketRightPosition = -1) // basket 위치 지정해서 들어올 수 있게 optional 처리
-        {
-            _basketWidth = basketWitdh;
-            _basketLeftPosition = basketLeftPosition;
-            _basketRightPosition = basketRightPosition != -1 ? basketRightPosition : basketWitdh;
-        }
-
-        public void MoveToTakeAnApple(int applePosition)
-        {
-            int MoveRight(int applePosition)
-            {
-                var distance = applePosition - _basketRightPosition;
-                _basketLeftPosition += distance;
-                _basketRightPosition += distance;
-                return distance;
-            }
-
-            int MoveLeft(int applePosition)
-            {
-                var distance = _basketLeftPosition + 1 - applePosition;
-                _basketLeftPosition -= distance;
-                _basketRightPosition -= distance;
-                return distance;
-            }
-
-            var distance = 0;
-            if (applePosition > _basketRightPosition)
-            {
-                distance = MoveRight(applePosition);
-            }
-            else if (applePosition < _basketLeftPosition + 1)
-            {
-                distance = MoveLeft(applePosition);
-            }
-            _minMoveDistance += distance;
-        }
-
-        public int GetMinMoveDistance()
-        {
-            return _minMoveDistance;
-        }
-    }
+    
 
 
     /////////////////////////////  util 함수  ////////////////////////////////
