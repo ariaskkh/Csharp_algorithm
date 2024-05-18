@@ -1,87 +1,161 @@
 ﻿using System.Text;
-using System.Xml.Linq;
 using static System.Console;
 
 namespace Algorithm;
+
 public class Program
 {
     static void Main(string[] args)
     {
-        string source = "execute";
-        Solve(source);
-    }
-
-    static void Solve(string source)
-    {
-        // 1. 정렬
-        // 2. 알파벳 별로 개수 저장
-        // 3. 한개씩 꺼내서 dest에 넣고 count -= 1
-        // 4. 알파벳 없을 때 (source == 0) dest 출력
-        var converter = new StringConverter(source);
-        converter.Convert();
-        WriteLine(converter.GetConvertedString());
-    }
-
-    class StringConverter
-    {
-        string _originalSource;
-        Dictionary<char, int> _alphabetDict = new Dictionary<char, int>();
-        StringBuilder _dest = new StringBuilder();
-        public StringConverter(string source)
+        var N = int.Parse(ReadLine());
+        string[] optionArray = new string[N];
+        for (var i = 0; i < N; i++)
         {
-            _originalSource = source;
-            SetAlphabetDict(source);
+            optionArray[i] = ReadLine();
         }
+        Solve(optionArray);
+    }
 
-        void SetAlphabetDict(string source)
+    static void Solve(string[] optionArray)
+    {
+        var generator = new ShortcutKeyGenerator(optionArray);
+        generator.SetShortcutKey();
+        var optionsWithShortcutKey = generator.GetOptionsWithShortcutKey();
+        foreach (string option in optionsWithShortcutKey)
         {
-            foreach (char ch in source.ToCharArray().OrderBy(x => x))
+            WriteLine(option);
+        }
+    }
+
+    class ShortcutKeyGenerator
+    {
+        Option[] _optionArray = new Option[] { };
+        List<char> _shortcutKeyList = new List<char>();
+
+        public ShortcutKeyGenerator(string[] optionArray)
+        {
+            _optionArray = new Option[optionArray.Length];
+            for (var i = 0; i < optionArray.Length; i++)
             {
-                if (_alphabetDict.ContainsKey(ch))
-                    _alphabetDict[ch] += 1;
-                else
-                    _alphabetDict.Add(ch, 1);
+                _optionArray[i] = new Option(optionArray[i]);
             }
         }
 
-        public void Convert()
+        public void SetShortcutKey()
         {
-            while (_alphabetDict.Keys.Count != 0)
+            foreach (var option in _optionArray)
             {
-                _dest.Append(GetOrderedAlphabetString(_alphabetDict));
-                CalculateDic();
+                SetFirstLetterShortcutKey(option, out bool hasShortCutKeySet);
+                if (!hasShortCutKeySet)
+                    SetAllWordShortCutKey(option, hasShortCutKeySet);
             }
         }
 
-        string GetOrderedAlphabetString(Dictionary<char, int> _alphabetDict)
+        void SetFirstLetterShortcutKey(Option option, out bool hasShortcutKeySet)
         {
-            var keys = _alphabetDict.Select(element => element.Key);
-            return string.Join("", keys);
-        }
-
-        void CalculateDic()
-        {
-            foreach (var element in _alphabetDict)
+            hasShortcutKeySet = false;
+            foreach (var word in option.OptionWords)
             {
-                _alphabetDict[element.Key] -= 1;
-                if (_alphabetDict[element.Key] == 0)
+                var firstChar = word[0];
+                var firstWordIndex = 0;
+                if (CanAddShortcutKey(firstChar, hasShortcutKeySet))
                 {
-                    _alphabetDict.Remove(element.Key);
+                    _shortcutKeyList.Add(firstChar);
+                    option.SetShortcutKey(firstChar, word, firstWordIndex);
+                    hasShortcutKeySet = true;
                 }
             }
         }
 
-        public string GetConvertedString()
+        void SetAllWordShortCutKey(Option option, bool hasShortcutKeySet)
         {
-            return _dest.ToString();
+            foreach (var word in option.OptionWords)
+            {
+                int targetIndex = default(int);
+                char targetChar = default(char);
+                for (var idx = 0; idx < word.Length; idx++)
+                {
+                    char ch = word[idx];
+                    if (CanAddShortcutKey(ch, hasShortcutKeySet))
+                    {
+                        _shortcutKeyList.Add(ch);
+                        targetIndex = idx;
+                        targetChar = ch;
+                        hasShortcutKeySet = true;
+                    }
+                }
+                if (targetIndex != default(int) && targetChar != default(char) && hasShortcutKeySet == true)
+                    option.SetShortcutKey(targetChar, word, targetIndex);
+            }
+        }
+
+        bool CanAddShortcutKey(char ch, bool hasShortcutKeySet)
+        {
+            return !_shortcutKeyList.Any(key => char.ToUpperInvariant(key) == char.ToUpperInvariant(ch)) && hasShortcutKeySet == false;
+        }
+
+        public List<string> GetOptionsWithShortcutKey()
+        {
+            var optionsWithShortcutKey = new List<string>();
+            foreach (var option in _optionArray)
+            {
+                StringBuilder sb = new StringBuilder();
+                var hasShortCutKeySet = false;
+                foreach (var word in option.OptionWords)
+                {
+                    if (word == option.ShortcutKeyData.word && hasShortCutKeySet == false)
+                    {
+                        sb.Append(MarkShortcutKey(word, option.ShortcutKeyData.index));
+                        sb.Append(' ');
+                        hasShortCutKeySet = true;
+                    }
+                    else
+                    {
+                        sb.Append(word);
+                        sb.Append(' ');
+                    }
+                }
+                optionsWithShortcutKey.Add(sb.ToString());
+            }
+            return optionsWithShortcutKey;
+
+            string MarkShortcutKey(string word, int index)
+            {
+                StringBuilder sbWord = new StringBuilder();
+                sbWord.Append(word[..index]);
+                sbWord.Append('[');
+                sbWord.Append(word[index]);
+                sbWord.Append(']');
+                sbWord.Append(word[(index + 1)..]);
+                return sbWord.ToString();
+            }
+        }
+    }
+
+    class Option
+    {
+        string _optionFullName;
+        public string[] OptionWords;
+        public int OptionWordCount => OptionWords.Length;
+
+        public (char shortCutKey, string word, int index) ShortcutKeyData;
+
+        public Option(string option)
+        {
+            _optionFullName = option;
+            OptionWords = option.Split(' ');
+        }
+
+        public void SetShortcutKey(char shortCutKey, string word, int shortCutKeyIndexOfWord)
+        {
+            ShortcutKeyData = (shortCutKey, word, shortCutKeyIndexOfWord);
         }
     }
 
 
 
-
-    /////////////////////////////  util 함수  ////////////////////////////////
-    static T[] CopyArray<T>(T[] array)
+/////////////////////////////  util 함수  ////////////////////////////////
+static T[] CopyArray<T>(T[] array)
     {
         T[] newArray = new T[array.Length];
         for (var i = 0; i < array.Length; i++)
