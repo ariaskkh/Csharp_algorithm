@@ -1,157 +1,96 @@
-﻿using System.Text;
-using static System.Console;
+﻿using System;
+using System.Text;
 
 namespace Algorithm;
-
 public class Program
 {
     static void Main(string[] args)
     {
-        var N = int.Parse(ReadLine());
-        string[] optionArray = new string[N];
-        for (var i = 0; i < N; i++)
+        var input = Console.ReadLine().Split(' ').Select(x => int.Parse(x)).ToArray();
+        var N = input[0];
+        var myScore = input[1];
+        var maxRankNumber = input[2];
+        
+        if (N == 0)
         {
-            optionArray[i] = ReadLine();
+            Console.WriteLine(1);
+            return;
         }
-        Solve(optionArray);
+
+        List<int> rankScoreList = ChangeStrToInt(Console.ReadLine().Split(' '));
+        Solve(rankScoreList, myScore, maxRankNumber);
     }
 
-    static void Solve(string[] optionArray)
+    static void Solve(List<int> rankScoreList, int myScore, int maxRankNumber)
     {
-        var generator = new ShortcutKeyGenerator(optionArray);
-        generator.SetShortcutKey();
-        var optionsWithShortcutKey = generator.GetOptionsWithShortcutKey();
-        foreach (string option in optionsWithShortcutKey)
-        {
-            WriteLine(option);
-        }
+        var rankCalculator = new RankCalculator(rankScoreList, maxRankNumber);
+        var myRank = rankCalculator.GetRank(myScore);
+        Console.WriteLine(myRank);
     }
 
-    class ShortcutKeyGenerator
+    class RankCalculator
     {
-        Option[] _optionArray = new Option[] { };
-        List<char> _shortcutKeyList = new List<char>();
+        int _maxRankNumber;
+        List<GameData> _GameDataList = new List<GameData> { };
+        int _rankListLength => _GameDataList.Count;
 
-        public ShortcutKeyGenerator(string[] optionArray)
+        public RankCalculator(List<int> rankScoreList, int maxRankNumber)
         {
-            _optionArray = new Option[optionArray.Length];
-            for (var i = 0; i < optionArray.Length; i++)
+           for (var i = 0; i < rankScoreList.Count; i++)
             {
-                _optionArray[i] = new Option(optionArray[i]);
+                var rank = i + 1;
+                _GameDataList.Add(new GameData(rankScoreList[i], rank));
             }
+            _maxRankNumber = maxRankNumber;
         }
 
-        public void SetShortcutKey()
+        public int GetRank(int score)
         {
-            foreach (var option in _optionArray)
+            if (IsOutOfRank(score))
             {
-                SetFirstLetterShortcutKey(option, out bool hasShortCutKeySet);
-                if (!hasShortCutKeySet)
-                    SetAllWordShortCutKey(option, hasShortCutKeySet);
+                return -1;
             }
-        }
 
-        void SetFirstLetterShortcutKey(Option option, out bool hasShortcutKeySet)
-        {
-            hasShortcutKeySet = false;
-            foreach (var word in option.OptionWords)
+            int count = 1;
+            foreach (GameData gameData in _GameDataList)
             {
-                var firstChar = word[0];
-                var firstWordIndex = 0;
-                if (CanAddShortcutKey(firstChar, hasShortcutKeySet))
+                if (gameData.Score > score)
                 {
-                    _shortcutKeyList.Add(firstChar);
-                    option.SetShortcutKey(firstChar, word, firstWordIndex);
-                    hasShortcutKeySet = true;
+                    count++;
+                }
+                else
+                {
+                    break;
                 }
             }
+            return count;
         }
 
-        void SetAllWordShortCutKey(Option option, bool hasShortcutKeySet)
+        private bool IsOutOfRank(int myScore)
         {
-            foreach (var word in option.OptionWords)
+            // 0 <= N <= maxRankNumber
+            // 10 <= maxRankNumber <= 50
+            if (_rankListLength == _maxRankNumber && _GameDataList[_rankListLength - 1].Score >= myScore)
             {
-                int targetIndex = default(int);
-                char targetChar = default(char);
-                for (var idx = 0; idx < word.Length; idx++)
-                {
-                    char ch = word[idx];
-                    if (CanAddShortcutKey(ch, hasShortcutKeySet))
-                    {
-                        _shortcutKeyList.Add(ch);
-                        targetIndex = idx;
-                        targetChar = ch;
-                        hasShortcutKeySet = true;
-                    }
-                }
-                if (targetIndex != default(int) && targetChar != default(char) && hasShortcutKeySet == true)
-                    option.SetShortcutKey(targetChar, word, targetIndex);
+                return true;
             }
-        }
-
-        bool CanAddShortcutKey(char ch, bool hasShortcutKeySet)
-        {
-            return !_shortcutKeyList.Any(key => char.ToUpperInvariant(key) == char.ToUpperInvariant(ch)) && hasShortcutKeySet == false;
-        }
-
-        public List<string> GetOptionsWithShortcutKey()
-        {
-            var optionsWithShortcutKey = new List<string>();
-            foreach (var option in _optionArray)
+            else
             {
-                StringBuilder sb = new StringBuilder();
-                var hasShortCutKeySet = false;
-                foreach (var word in option.OptionWords)
-                {
-                    if (word == option.ShortcutKeyData.word && hasShortCutKeySet == false)
-                    {
-                        sb.Append(MarkShortcutKey(word, option.ShortcutKeyData.index));
-                        sb.Append(' ');
-                        hasShortCutKeySet = true;
-                    }
-                    else
-                    {
-                        sb.Append(word);
-                        sb.Append(' ');
-                    }
-                }
-                optionsWithShortcutKey.Add(sb.ToString());
-            }
-            return optionsWithShortcutKey;
-
-            string MarkShortcutKey(string word, int index)
-            {
-                StringBuilder sbWord = new StringBuilder();
-                sbWord.Append(word[..index]);
-                sbWord.Append('[');
-                sbWord.Append(word[index]);
-                sbWord.Append(']');
-                sbWord.Append(word[(index + 1)..]);
-                return sbWord.ToString();
+                return false;
             }
         }
     }
 
-    class Option
+    class GameData
     {
-        string _optionFullName;
-        public string[] OptionWords;
-        public int OptionWordCount => OptionWords.Length;
-
-        public (char shortCutKey, string word, int index) ShortcutKeyData;
-
-        public Option(string option)
+        public int Score { get; set; } = 0;
+        public int Rank { get; set; } = -1;
+        public GameData(int score, int rank)
         {
-            _optionFullName = option;
-            OptionWords = option.Split(' ');
-        }
-
-        public void SetShortcutKey(char shortCutKey, string word, int shortCutKeyIndexOfWord)
-        {
-            ShortcutKeyData = (shortCutKey, word, shortCutKeyIndexOfWord);
+            Score = score;
+            Rank = rank;
         }
     }
-
 
 
 /////////////////////////////  util 함수  ////////////////////////////////
@@ -267,14 +206,14 @@ static T[] CopyArray<T>(T[] array)
         return resultArr;
     }
 
-    static int[] ChangeCharToNum(char[] numsInChar)
+    static int[] ChangeCharToInt(char[] numsInChar)
     {
         return numsInChar.Select(x => int.Parse(x.ToString())).ToArray();
     }
 
-    static int[] ChangeStrToNum(string[] numsInStr)
+    static List<int> ChangeStrToInt(string[] numsInStr)
     {
-        return numsInStr.Select(x => int.Parse(x)).ToArray();
+        return numsInStr.Select(x => int.Parse(x)).ToList();
     }
 
     static void Print(int[,] result, int N, int K)
