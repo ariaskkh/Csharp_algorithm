@@ -1,100 +1,119 @@
-﻿using System;
-using System.Text;
+﻿using static System.Console;
 
 namespace Algorithm;
+
 public class Program
 {
     static void Main(string[] args)
     {
-        var input = Console.ReadLine().Split(' ').Select(x => int.Parse(x)).ToArray();
-        var N = input[0];
-        var myScore = input[1];
-        var maxRankNumber = input[2];
-        
-        if (N == 0)
-        {
-            Console.WriteLine(1);
-            return;
-        }
-
-        List<int> rankScoreList = ChangeStrToInt(Console.ReadLine().Split(' '));
-        Solve(rankScoreList, myScore, maxRankNumber);
+        int N = int.Parse(ReadLine());
+        Solve(N);
     }
 
-    static void Solve(List<int> rankScoreList, int myScore, int maxRankNumber)
+    static void Solve(int N)
     {
-        var rankCalculator = new RankCalculator(rankScoreList, maxRankNumber);
-        var myRank = rankCalculator.GetRank(myScore);
-        Console.WriteLine(myRank);
+        char[][] spaceArray = GetSpaceArray(N);
+        var space = new Space(spaceArray);
+        var count = space.GetSleepAvailableSpace();
+        WriteLine(count.countRow + " " + count.countColumn);
     }
 
-    class RankCalculator
+    static char[][] GetSpaceArray(int N)
     {
-        int _maxRankNumber;
-        List<GameData> _GameDataList = new List<GameData> { };
-        int _rankListLength => _GameDataList.Count;
-
-        public RankCalculator(List<int> rankScoreList, int maxRankNumber)
+        // input array 둘레를 벽(wall) X로 감싸기
+        // XXXXX
+        // X   X
+        // X   X
+        // XXXXX
+        char[][] spaceArrayWithWall = new char[N + 2][];
+        spaceArrayWithWall[0] = (new string('X', N + 2)).ToCharArray();
+        spaceArrayWithWall[N + 1] = (new string('X', N + 2)).ToCharArray();
+        for (var i = 1; i < N + 1; i++)
         {
-           for (var i = 0; i < rankScoreList.Count; i++)
-            {
-                var rank = i + 1;
-                _GameDataList.Add(new GameData(rankScoreList[i], rank));
-            }
-            _maxRankNumber = maxRankNumber;
+            spaceArrayWithWall[i] = ('X' + ReadLine() + 'X').ToCharArray();
+        }
+        return spaceArrayWithWall;
+    }
+
+    public class Space
+    {
+        private readonly List<Line> _spaceList;
+        private readonly List<Line> _spaceLineReversed; // row, column 반전
+        public Space(char[][] spaceArray)
+        {
+            _spaceList = ConvertSpaceArray(spaceArray);
+            _spaceLineReversed = ConvertSpaceArray(GetReversed2DArray(spaceArray));
         }
 
-        public int GetRank(int score)
+        List<Line> ConvertSpaceArray(char[][] spaceArray)
         {
-            if (IsOutOfRank(score))
+            var convertedSpaceArray = new List<Line>();
+            foreach (var line in spaceArray)
             {
-                return -1;
+                convertedSpaceArray.Add(new Line(line));
+            }
+            return convertedSpaceArray;
+        }
+
+        public (int countRow, int countColumn) GetSleepAvailableSpace()
+        {
+            var countRow = 0;
+            foreach (Line line in _spaceList)
+            {
+                countRow += line.GetAvailableSpace();
             }
 
-            int count = 1;
-            foreach (GameData gameData in _GameDataList)
+            var countColumn = 0;
+            foreach (Line line in _spaceLineReversed)
             {
-                if (gameData.Score > score)
+                countColumn += line.GetAvailableSpace();
+            }
+
+            return (countRow, countColumn);
+        }
+    }
+
+    public class Line
+    {
+        char[] _lineSpace;
+        int _availableSpace = -1;
+        public int LineSpaceCount => _lineSpace.Length;
+
+        public Line(char[] lineSpace)
+        {
+            _lineSpace = lineSpace;
+        }
+
+        public int GetAvailableSpace()
+        {
+            if (_availableSpace != -1)
+            {
+                return _availableSpace;
+            }
+            _availableSpace = _lineSpace.Select((ch, index) => (ch, index))
+                .Where(element => element.ch == 'X')
+                .Select(element => element.index)
+                .Aggregate(
+                (count: 0, prevIndex: 0), // seed
+                (acc, curr) =>  // func
                 {
-                    count++;
-                }
-                else
-                {
-                    break;
-                }
-            }
-            return count;
-        }
+                    if ((curr) - acc.prevIndex > 2)
+                    {
+                        acc.count++;
+                    }
+                    acc.prevIndex = curr;
+                    return acc;
+                },
+                (line) => line.count // resultSelector
+                );
 
-        private bool IsOutOfRank(int myScore)
-        {
-            // 0 <= N <= maxRankNumber
-            // 10 <= maxRankNumber <= 50
-            if (_rankListLength == _maxRankNumber && _GameDataList[_rankListLength - 1].Score >= myScore)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-    }
-
-    class GameData
-    {
-        public int Score { get; set; } = 0;
-        public int Rank { get; set; } = -1;
-        public GameData(int score, int rank)
-        {
-            Score = score;
-            Rank = rank;
+            return _availableSpace;
         }
     }
 
 
-/////////////////////////////  util 함수  ////////////////////////////////
-static T[] CopyArray<T>(T[] array)
+    /////////////////////////////  util 함수  ////////////////////////////////
+    static T[] CopyArray<T>(T[] array)
     {
         T[] newArray = new T[array.Length];
         for (var i = 0; i < array.Length; i++)
@@ -178,6 +197,21 @@ static T[] CopyArray<T>(T[] array)
         return copyArr;
     }
 
+    static public char[][] GetReversed2DArray(char[][] array)
+    {
+        char[][] reversedArray = new char[array[0].Length][];
+
+        for (var i = 0; i < reversedArray.Length; i++)
+        {
+            reversedArray[i] = new char[array[i].Length];
+            for (var j = 0; j < reversedArray.Length; j++)
+            {
+                reversedArray[i][j] = array[j][i];
+            }
+        }
+        return reversedArray;
+    }
+
     static char[,] GetSquareArr(int N)
     {
         char[,] resultArr = new char[N, N];
@@ -206,14 +240,14 @@ static T[] CopyArray<T>(T[] array)
         return resultArr;
     }
 
-    static int[] ChangeCharToInt(char[] numsInChar)
+    static int[] ChangeCharToNum(char[] numsInChar)
     {
         return numsInChar.Select(x => int.Parse(x.ToString())).ToArray();
     }
 
-    static List<int> ChangeStrToInt(string[] numsInStr)
+    static int[] ChangeStrToNum(string[] numsInStr)
     {
-        return numsInStr.Select(x => int.Parse(x)).ToList();
+        return numsInStr.Select(x => int.Parse(x)).ToArray();
     }
 
     static void Print(int[,] result, int N, int K)
