@@ -1,119 +1,130 @@
-﻿using static System.Console;
+﻿using System;
+using System.Reflection;
+using System.Text;
 
 namespace Algorithm;
-
 public class Program
 {
     static void Main(string[] args)
     {
-        int N = int.Parse(ReadLine());
-        Solve(N);
+        int N = int.Parse(Console.ReadLine());
+        int myVote = int.Parse(Console.ReadLine());
+        Solve(N, myVote);
     }
 
-    static void Solve(int N)
+    static void Solve(int N, int myVote)
     {
-        char[][] spaceArray = GetSpaceArray(N);
-        var space = new Space(spaceArray);
-        var count = space.GetSleepAvailableSpace();
-        WriteLine(count.countRow + " " + count.countColumn);
+        var me = new Candidate(myVote, true);
+        var candidateList = GetValidVoteList(N);
+        var machine = new ElectionFraudMachine(candidateList);
+        machine.BuyPeopleUntilWin(me);
+        Console.WriteLine(machine.GetMinCountToWin());
     }
 
-    static char[][] GetSpaceArray(int N)
+    static public List<Candidate> GetValidVoteList(int N)
     {
-        // input array 둘레를 벽(wall) X로 감싸기
-        // XXXXX
-        // X   X
-        // X   X
-        // XXXXX
-        char[][] spaceArrayWithWall = new char[N + 2][];
-        spaceArrayWithWall[0] = (new string('X', N + 2)).ToCharArray();
-        spaceArrayWithWall[N + 1] = (new string('X', N + 2)).ToCharArray();
-        for (var i = 1; i < N + 1; i++)
+        var voteList = new List<Candidate>();
+        for (var i = 0; i < N - 1; i++)
         {
-            spaceArrayWithWall[i] = ('X' + ReadLine() + 'X').ToCharArray();
+            var index = i + 1;
+            voteList.Add(new Candidate(int.Parse(Console.ReadLine()), index));
         }
-        return spaceArrayWithWall;
+
+        return voteList;
     }
 
-    public class Space
+    class ElectionFraudMachine
     {
-        private readonly List<Line> _spaceList;
-        private readonly List<Line> _spaceLineReversed; // row, column 반전
-        public Space(char[][] spaceArray)
+        int _minCount = 0;
+        List<Candidate> _candidateList = new List<Candidate>();
+        public ElectionFraudMachine(List<Candidate> candidateList)
         {
-            _spaceList = ConvertSpaceArray(spaceArray);
-            _spaceLineReversed = ConvertSpaceArray(GetReversed2DArray(spaceArray));
+            _candidateList = candidateList;
         }
 
-        List<Line> ConvertSpaceArray(char[][] spaceArray)
+        public void BuyPeopleUntilWin(Candidate me)
         {
-            var convertedSpaceArray = new List<Line>();
-            foreach (var line in spaceArray)
+
+            if (_candidateList.Count == 0)
+                return;
+            var max = GetMaxVote();
+            while (max >= me.Vote)
             {
-                convertedSpaceArray.Add(new Line(line));
+                DecreaseVoteOfOther(FindMaxCandidateIndex(max));
+                IncreaseVoteOfMine(me);
+                _minCount++;
+                max = GetMaxVote();
             }
-            return convertedSpaceArray;
+        }
+        void DecreaseVoteOfOther(int targetIndex)
+        {
+            _candidateList.Where(candidate => candidate.Index == targetIndex)
+                .ForEach(candidate => candidate.Vote -= 1);
         }
 
-        public (int countRow, int countColumn) GetSleepAvailableSpace()
+        int FindMaxCandidateIndex(int max)
         {
-            var countRow = 0;
-            foreach (Line line in _spaceList)
-            {
-                countRow += line.GetAvailableSpace();
-            }
+            return _candidateList.Where(candidate => candidate.Vote == max)
+                .Select(candidate => candidate.Index)
+                .FirstOrDefault();
+        }
 
-            var countColumn = 0;
-            foreach (Line line in _spaceLineReversed)
-            {
-                countColumn += line.GetAvailableSpace();
-            }
+        void IncreaseVoteOfMine(Candidate me)
+        {
+            me.Vote += 1;
+        }
 
-            return (countRow, countColumn);
+        int GetMaxVote()
+        {
+            return _candidateList.Max(candidate => candidate.Vote);
+        }
+
+        public int GetMinCountToWin()
+        {
+            return _minCount;
         }
     }
 
-    public class Line
+    public class Candidate
     {
-        char[] _lineSpace;
-        int _availableSpace = -1;
-        public int LineSpaceCount => _lineSpace.Length;
+        readonly int _index = -1;
+        readonly bool _isMe = false;
 
-        public Line(char[] lineSpace)
+        public int Vote { get; set; }
+        public bool IsMe
         {
-            _lineSpace = lineSpace;
-        }
-
-        public int GetAvailableSpace()
-        {
-            if (_availableSpace != -1)
+            get
             {
-                return _availableSpace;
+                return _isMe;
             }
-            _availableSpace = _lineSpace.Select((ch, index) => (ch, index))
-                .Where(element => element.ch == 'X')
-                .Select(element => element.index)
-                .Aggregate(
-                (count: 0, prevIndex: 0), // seed
-                (acc, curr) =>  // func
-                {
-                    if ((curr) - acc.prevIndex > 2)
-                    {
-                        acc.count++;
-                    }
-                    acc.prevIndex = curr;
-                    return acc;
-                },
-                (line) => line.count // resultSelector
-                );
-
-            return _availableSpace;
         }
+
+        public int Index
+        {
+            get
+            {
+                return _index;
+            }
+        }
+
+        public Candidate(int vote, bool isMe)
+        {
+            Vote = vote;
+            _isMe = isMe;
+        }
+
+        public Candidate(int vote, int index)
+        {
+            Vote = vote;
+            _index = index;
+        }
+
+        
     }
 
 
-    /////////////////////////////  util 함수  ////////////////////////////////
-    static T[] CopyArray<T>(T[] array)
+/////////////////////////////  util 함수  ////////////////////////////////
+static T[] CopyArray<T>(T[] array)
     {
         T[] newArray = new T[array.Length];
         for (var i = 0; i < array.Length; i++)
