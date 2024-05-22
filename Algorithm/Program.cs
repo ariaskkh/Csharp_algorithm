@@ -1,78 +1,77 @@
 ﻿using static System.Console;
 
 namespace Algorithm;
-public class Program
+class Program
 {
-	static void Main(string[] args)
-	{
-		string inputString = ReadLine();
-		Solve(inputString);
-	}
-
-	static void Solve(string inputString)
-	{
-		var generator = new PalindromeGenerator();
-		generator.MakePlaindrome(inputString);
-		WriteLine(generator.Palindrome);
-	}
+    static void Main(string[] args)
+    {
+        var input = ReadLine().Split(' ');
+        var N = int.Parse(input[0].ToString());
+        var KthNumberNeedToRemove = int.Parse(input[1].ToString());
+        Write(Solve(N, KthNumberNeedToRemove));
+    }
 
 
-	class PalindromeGenerator
-	{
-		public string Palindrome { get; set; } = "";
-		private string DEFAULT_PALINDROME = "I'm Sorry Hansoo";
-		public void MakePlaindrome(string inputString)
-		{
-			var charCounts = new Dictionary<char, int>();
-			var palindromeFirstHalf = new List<char>();
-			char middleCharacter = default;
+    static int Solve(int N, int KthNumberNeedToRemove)
+    {
+        Sieve sieve = new Sieve(N);
+        return sieve.GetCountOfKthNumberRemoved(KthNumberNeedToRemove);
+    }
 
-			charCounts = SetDictionary(charCounts, inputString); // 확장 메서드 가능?
+    public class Sieve
+    {
 
+        private int _count = 0;
+		private List<int> _primeNumberList = new(); // 이 문제에선 사용하지 않지만 생성
+        private readonly bool[] _boolArray;
+        public Sieve(int N)
+        {
+            _boolArray = new bool[N + 1];
+            _boolArray[0] = _boolArray[1] = true;
+        }
 
-			foreach (var item in charCounts.OrderBy(c => c.Key))
-			{
-				char character = item.Key;
-				int count = item.Value;
-				if (count % 2 != 0)
-				{
-					if (middleCharacter == default)
+        public int GetCountOfKthNumberRemoved(int KthNumber)
+        {
+            for (var number = 2; number <= _boolArray.Length - 1; number++)
+            {
+                // Prime 일 때
+                if (_boolArray[number] == false)
+                {
+					_primeNumberList.Add(number);
+                    // Prime 배수 처리
+                    foreach (var multiple in GetMultipleNumber(_boolArray.Length - 1, number))
 					{
-						middleCharacter = character;
-					}
-					else
-					{
-						Palindrome = DEFAULT_PALINDROME;
-						return;
-					}
+                        if (_boolArray[multiple] == false)
+                        {
+                            _boolArray[multiple] = true;
+                            _count++;
+
+                            if (_count == KthNumber)
+                            {
+                                return multiple;
+                            }
+                        }
+                    }
 				}
-				for (var j = 0; j < count / 2; j++)
-				{
-					palindromeFirstHalf.Add(character);
-				}
-			}
-			SetPalindromeString(middleCharacter, palindromeFirstHalf);
-		}
+            }
+            return -1;
+        }
 
-		void SetPalindromeString(char middleCharacter, List<char> palindromeFirstHalf)
-		{
-			var palindromeSecondHalf = GetSecondHalf<char>(palindromeFirstHalf);
-			Palindrome = new string(palindromeFirstHalf.ToArray())
-				+ (middleCharacter == default ? string.Empty : middleCharacter.ToString())
-				+ new string(palindromeSecondHalf.ToArray());
-		}
-
-		List<T> GetSecondHalf<T>(List<T> list)
-		{
-			var secondHalfList = list.ToList();
-			secondHalfList.Reverse();
-			return secondHalfList;
-		}
-	}
+        // 배수 처리에 대한 걸 yield return 할 수 있나?
+        static IEnumerable<int> GetMultipleNumber(int maxLength, int primeNumber)
+        {
+            int multiple = 1;
+            while (primeNumber * multiple <= maxLength)
+            {
+                yield return primeNumber * multiple;
+                multiple++;
+            }
+        }
+    }
 
 
-	/////////////////////////////  util 함수  ////////////////////////////////
-	static T[] CopyArray<T>(T[] array)
+    /////////////////////////////  util 함수  ////////////////////////////////
+    static T[] CopyArray<T>(T[] array)
 	{
 		T[] newArray = new T[array.Length];
 		for (var i = 0; i < array.Length; i++)
