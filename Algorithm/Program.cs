@@ -1,77 +1,90 @@
 ﻿using static System.Console;
 
-namespace Algorithm;
 class Program
 {
     static void Main(string[] args)
     {
-        var input = ReadLine().Split(' ');
-        var N = int.Parse(input[0].ToString());
-        var KthNumberNeedToRemove = int.Parse(input[1].ToString());
-        Write(Solve(N, KthNumberNeedToRemove));
-    }
-
-
-    static int Solve(int N, int KthNumberNeedToRemove)
-    {
-        Sieve sieve = new Sieve(N);
-        return sieve.GetCountOfKthNumberRemoved(KthNumberNeedToRemove);
-    }
-
-    public class Sieve
-    {
-
-        private int _count = 0;
-		private List<int> _primeNumberList = new(); // 이 문제에선 사용하지 않지만 생성
-        private readonly bool[] _boolArray;
-        public Sieve(int N)
+        var inputNum = int.Parse(ReadLine());
+        var resultArr = Solve(inputNum);
+        foreach (var result in resultArr)
         {
-            _boolArray = new bool[N + 1];
-            _boolArray[0] = _boolArray[1] = true;
+            WriteLine(result);
         }
+    }
 
-        public int GetCountOfKthNumberRemoved(int KthNumber)
+    static int[] Solve(int N)
+    {
+        var orderArr = new int[N];
+        for (var i = 0; i < N; i++)
         {
-            for (var number = 2; number <= _boolArray.Length - 1; number++)
-            {
-                // Prime 일 때
-                if (_boolArray[number] == false)
-                {
-					_primeNumberList.Add(number);
-                    // Prime 배수 처리
-                    foreach (var multiple in GetMultipleNumber(_boolArray.Length - 1, number))
-					{
-                        if (_boolArray[multiple] == false)
-                        {
-                            _boolArray[multiple] = true;
-                            _count++;
+            var targetIndex = ChangeStrToNum(ReadLine().Split(' '))[1];
+            int[] priorities = ChangeStrToNum(ReadLine().Split(' '));
+			List<Document> documentList =  priorities.Select((priority, index) => new Document(priority, index)).ToList();
+            var queue = new PrinterQueue(documentList);
+			queue.ProcessPrint();
+            orderArr[i] = queue.GetPrintOrder(targetIndex);
+        }
+        return orderArr;
+    }
 
-                            if (_count == KthNumber)
-                            {
-                                return multiple;
-                            }
-                        }
-                    }
+	class PrinterQueue
+	{
+		private List<Document> _originalDocumentList = new();
+		private Queue<Document> _queue = new();
+		private List<Document> _printedOrder = new();
+
+        public PrinterQueue(List<Document> documentList)
+		{
+			_originalDocumentList = documentList;
+            foreach (var document in documentList)
+            {
+                _queue.Enqueue(document);
+            }
+		}
+
+		public void ProcessPrint()
+		{
+			var newQueue = new Queue<Document>(_queue); // deep copy
+			while (newQueue.Count > 0)
+			{
+				var max = newQueue.Select(document => document.Priority).Max();
+				if (newQueue.Peek().Priority == max)
+				{
+					_printedOrder.Add(newQueue.Peek());
+					newQueue.Dequeue();
+                }
+				else
+				{
+					newQueue.Enqueue(newQueue.Dequeue());
 				}
-            }
-            return -1;
-        }
+			}
+		}
 
-        // 배수 처리에 대한 걸 yield return 할 수 있나?
-        static IEnumerable<int> GetMultipleNumber(int maxLength, int primeNumber)
-        {
-            int multiple = 1;
-            while (primeNumber * multiple <= maxLength)
-            {
-                yield return primeNumber * multiple;
-                multiple++;
+        public int GetPrintOrder(int targetIndex)
+		{
+			var targetDocument = _printedOrder.Find(document => document.DocumentIndex == targetIndex);
+			if (targetDocument != null)
+			{
+                return _printedOrder.IndexOf(targetDocument) + 1;
             }
+			return -1;
         }
     }
 
+	class Document
+	{
+		public int DocumentIndex { get; } = -1;
+		public int Priority { get; } = -1;
+		public Document(int priority, int documentIndex)
+		{
+			Priority = priority;
+			DocumentIndex = documentIndex;
+        }
+	}
 
-    /////////////////////////////  util 함수  ////////////////////////////////
-    static T[] CopyArray<T>(T[] array)
+
+/////////////////////////////  util 함수  ////////////////////////////////
+static T[] CopyArray<T>(T[] array)
 	{
 		T[] newArray = new T[array.Length];
 		for (var i = 0; i < array.Length; i++)
