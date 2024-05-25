@@ -5,143 +5,98 @@ class Program
 {
     static void Main(string[] args)
     {
-        var N = int.Parse(ReadLine());
-		string[] candiesArray = Enumerable.Range(0, N).Select(i => ReadLine()).ToArray();
-		Solve(candiesArray, N);
+        string word = ReadLine();
+		Solve(word);
     }
 
-    static void Solve(string[] candiesArray, int N)
+    static void Solve(string word)
     {
-		var bomboni = new BomboniGame(candiesArray,N);
-		bomboni.ExchangeCandies();
-		WriteLine(bomboni.MaxCandyCount);
+		var converter = new WordConverter();
+		converter.ConvertWord(word);
+		WriteLine(converter.FirstAlphabeticalWord);
     }
 
-	class BomboniGame
+	// 단어를 3가지로 나누는 모든 경우의 수를 구한다
+	// 나눈 단어를 뒤집어 합친다.
+	// 사전 순으로 가장 앞서는 단어를 저장해서 갱신한다 - string.Compare(a,b) a가 앞서는 경우 => -1
+	class WordConverter
 	{
-		private readonly CandyLine[] _candyTable;
-		private readonly int N;
-		public int MaxCandyCount { get; set; }
-		public BomboniGame(string[] candyTable, int N)
-		{
-            _candyTable = candyTable.Select(candyLine => new CandyLine(candyLine)).ToArray();
-			this.N = N;
-        }
+		private string _originalWord = string.Empty;
+        public string FirstAlphabeticalWord { get; set; } = string.Empty;
 
-        public void ExchangeCandies()
+		public void ConvertWord(string word)
 		{
-			var defaultCandyTableMax = _candyTable.Select(line => line.GetMaxCandyCountOfSameColor()).Max();
-            MaxCandyCount = Math.Max(MaxCandyCount, defaultCandyTableMax);
-
-            // 열방향
-            for (var row = 0; row < N; row++)
+			_originalWord = word;
+            List<ConvertedWord> convertedWordList = GetConvertedWordList(word);
+            FirstAlphabeticalWord = GetFirstAlphabeticalWord(convertedWordList);
+		}
+        
+		private static List<ConvertedWord> GetConvertedWordList(string word)
+		{
+			var N = word.ToCharArray().Length;
+			List<ConvertedWord> newWordList = new();
+            for (var i = 1; i < N - 1; i++)
 			{
-				for (var column = 0; column < N - 1; column++)
+				for (var j = i + 1; j < N; j++)
 				{
-					var newCandyTable = swap(_candyTable, row, column, row, column + 1);
-					var max = newCandyTable.Select(line => line.GetMaxCandyCountOfSameColor()).Max();
-
-                    var reversedCandyTable = getReversedCandyPlate(newCandyTable);
-                    var reversedMax = reversedCandyTable.Select(line => line.GetMaxCandyCountOfSameColor()).Max();
-
-                    MaxCandyCount = Math.Max(MaxCandyCount, Math.Max(max, reversedMax));
+					// 최소 1개 char 필요
+					var subWordArray = new string[] {
+						word[..i],
+						word[i..j],
+						word[j..],
+						};
+                    newWordList.Add(new ConvertedWord(subWordArray));
                 }
 			}
+			return newWordList;
+        }
 
-			// 행 방향
-            for (var column = 0; column < N; column++)
+		private static string GetFirstAlphabeticalWord(List<ConvertedWord> wordList)
+		{
+           ConvertedWord? firstAlphabeticalWord = null;
+            foreach (ConvertedWord word in wordList)
             {
-                for (var row = 0; row < N - 1; row++)
+                if (firstAlphabeticalWord == null)
                 {
-                    var newCandyTable = swap(_candyTable, row, column, row + 1, column);
-                    var max = newCandyTable.Select(line => line.GetMaxCandyCountOfSameColor()).Max();
-
-					var reversedCandyTable = getReversedCandyPlate(newCandyTable);
-					var reversedMax = reversedCandyTable.Select(line => line.GetMaxCandyCountOfSameColor()).Max();
-
-                    MaxCandyCount = Math.Max(MaxCandyCount, Math.Max(max, reversedMax));
+                    firstAlphabeticalWord = word;
+                }
+                else
+                {
+                    if (string.Compare(firstAlphabeticalWord.WholeConvertedWord, word.WholeConvertedWord) > 0) // 우측이 알파벳 순서상 앞(작음)
+                    {
+						firstAlphabeticalWord = word;
+					};
                 }
             }
+            return firstAlphabeticalWord?.WholeConvertedWord ?? string.Empty;
         }
-
-
-        private CandyLine[] getReversedCandyPlate(CandyLine[] array)
-		{
-			var newArray = GetCopyOfCandyArray(array);
-			for (var i = 0; i < newArray.Length; i++)
-			{
-				for (var j = i + 1; j < newArray.Length; j++)
-				{
-					char tmpCandy = newArray[i].Line[j];
-					newArray[i].Line[j] = newArray[j].Line[i];
-					newArray[j].Line[i] = tmpCandy;
-				}
-			}
-			return newArray;
-		}
-
-        private CandyLine[] swap(CandyLine[] array, int x1, int y1, int x2, int y2)
-        {
-			var newArray = GetCopyOfCandyArray(array);
-            var tmpCharacter = newArray[x1].Line[y1];
-            newArray[x1].Line[y1] = newArray[x2].Line[y2];
-            newArray[x2].Line[y2] = tmpCharacter;
-            return newArray;
-        }
-
-		private CandyLine[] GetCopyOfCandyArray(CandyLine[] array)
-		{
-			var newCandyLine = new CandyLine[array.Length];
-			for (var i = 0; i < array.Length; i++)
-			{
-                newCandyLine[i] = new CandyLine(string.Join("", array[i].Line));
-			}
-			return newCandyLine;
-
-		}
     }
 
-	class CandyLine
+	interface IConvert
 	{
-        private readonly static char[] colors = new char[] { 'C', 'P', 'Z', 'Y' };
-        public char[] Line { get; set; }
-		public int LineLength => Line.Length;
-		private int _maxCountCache = 0;
-		public CandyLine(string line)
+		string Convert(string word);
+	}
+
+	class ConvertedWord : IConvert
+    {
+		public List<string> ConvertedSubWordList { get; } = new();
+		public string WholeConvertedWord { get; }
+
+		public ConvertedWord(string[] subWordList)
 		{
-			Line = line.ToCharArray();
+			foreach (string word in subWordList)
+			{
+                ConvertedSubWordList.Add(Convert(word));
+            }
+			WholeConvertedWord = string.Join("", ConvertedSubWordList);
 		}
 
-		public int GetMaxCandyCountOfSameColor()
+		public string Convert(string word)
 		{
-			if (_maxCountCache > 0)
-				return _maxCountCache;
-
-			var maxCount = colors.Select(color => Line.Aggregate(
-				(count: 0, tmpCount: 0), // init
-				((acc, curr) =>
-				{
-					if (curr == color)
-					{
-						acc.tmpCount++;
-						return (Math.Max(acc.tmpCount, acc.count), acc.tmpCount);
-					}
-					else
-					{
-						acc.tmpCount = 0;
-						return acc;
-					}
-				}), // func
-				(item => item.count) // result selector
-				)
-			).Max();
-
-			_maxCountCache = maxCount;
-			return maxCount;
+			var convertedWordList = word.ToCharArray().Reverse();
+			return string.Join("", convertedWordList);
         }
-    }
-
-	
+	}
 
 
 
