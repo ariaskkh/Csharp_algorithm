@@ -1,103 +1,52 @@
 ﻿
+using System.Numerics;
 using static System.Console;
 
 class Program
 {
     static void Main(string[] args)
     {
-        string word = ReadLine();
+        BigInteger word = BigInteger.Parse(ReadLine());
 		Solve(word);
     }
 
-    static void Solve(string word)
+    static void Solve(BigInteger word)
     {
-		var converter = new WordConverter();
-		converter.ConvertWord(word);
-		WriteLine(converter.FirstAlphabeticalWord);
+		var checker = new MultiplesOfThreeChecker();
+		checker.Transform(word);
+		WriteLine(checker.NumberOfTransform);
+		WriteLine(checker.IsMultiplesofThree ? "YES" : "NO");
     }
 
-	// 단어를 3가지로 나누는 모든 경우의 수를 구한다
-	// 나눈 단어를 뒤집어 합친다.
-	// 사전 순으로 가장 앞서는 단어를 저장해서 갱신한다 - string.Compare(a,b) a가 앞서는 경우 => -1
-	class WordConverter
+	class MultiplesOfThreeChecker
 	{
-		private string _originalWord = string.Empty;
-        public string FirstAlphabeticalWord { get; set; } = string.Empty;
-
-		public void ConvertWord(string word)
+		private BigInteger finalNumberOfTransform = 0;
+		public int NumberOfTransform { get; set; } = 0;
+		public bool IsMultiplesofThree => (finalNumberOfTransform % 3 == 0);
+		public void Transform(BigInteger number)
 		{
-			_originalWord = word;
-            List<ConvertedWord> convertedWordList = GetConvertedWordList(word);
-            FirstAlphabeticalWord = GetFirstAlphabeticalWord(convertedWordList);
-		}
-        
-		private static List<ConvertedWord> GetConvertedWordList(string word)
-		{
-			var N = word.ToCharArray().Length;
-			List<ConvertedWord> newWordList = new();
-            for (var i = 1; i < N - 1; i++)
+			var newNumber = number;
+			while (newNumber >= 10)
 			{
-				for (var j = i + 1; j < N; j++)
-				{
-					// 최소 1개 char 필요
-					var subWordArray = new string[] {
-						word[..i],
-						word[i..j],
-						word[j..],
-						};
-                    newWordList.Add(new ConvertedWord(subWordArray));
-                }
+				newNumber = SumDigit(newNumber);
+				NumberOfTransform++;
 			}
-			return newWordList;
-        }
-
-		private static string GetFirstAlphabeticalWord(List<ConvertedWord> wordList)
-		{
-           ConvertedWord? firstAlphabeticalWord = null;
-            foreach (ConvertedWord word in wordList)
-            {
-                if (firstAlphabeticalWord == null)
-                {
-                    firstAlphabeticalWord = word;
-                }
-                else
-                {
-                    if (string.Compare(firstAlphabeticalWord.WholeConvertedWord, word.WholeConvertedWord) > 0) // 우측이 알파벳 순서상 앞(작음)
-                    {
-						firstAlphabeticalWord = word;
-					};
-                }
-            }
-            return firstAlphabeticalWord?.WholeConvertedWord ?? string.Empty;
-        }
-    }
-
-	interface IConvert
-	{
-		string Convert(string word);
-	}
-
-	class ConvertedWord : IConvert
-    {
-		public List<string> ConvertedSubWordList { get; } = new();
-		public string WholeConvertedWord { get; }
-
-		public ConvertedWord(string[] subWordList)
-		{
-			foreach (string word in subWordList)
-			{
-                ConvertedSubWordList.Add(Convert(word));
-            }
-			WholeConvertedWord = string.Join("", ConvertedSubWordList);
+			finalNumberOfTransform = newNumber;
 		}
 
-		public string Convert(string word)
+		private BigInteger SumDigit(BigInteger number)
 		{
-			var convertedWordList = word.ToCharArray().Reverse();
-			return string.Join("", convertedWordList);
+			//return number.ToString().ToCharArray().ChangeCharToInt().Sum();
+			//return number.ToString().ToCharArray().ChangeCharToInt().Aggregate(BigInteger.Zero, (acc, val) => acc + val);
+			BigInteger sum = 0;
+			while (number > 0)
+			{
+				sum += number % 10;
+				number /= 10;
+			}
+			return sum;
         }
-	}
-
+    }
 
 
 /////////////////////////////  util 함수  ////////////////////////////////
@@ -234,4 +183,14 @@ public static class EnumerableExtensions
 			action(item);
 		}
 	}
+
+	public static int[] ChangeCharToInt(this IEnumerable<char> enumerable)
+	{
+		return enumerable.Select(item => int.Parse(item.ToString())).ToArray();
+	}
+
+    public static long[] ChangeCharToLong(this IEnumerable<char> enumerable)
+    {
+        return enumerable.Select(item => long.Parse(item.ToString())).ToArray();
+    }
 }
