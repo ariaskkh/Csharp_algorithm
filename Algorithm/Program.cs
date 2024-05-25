@@ -1,86 +1,148 @@
-﻿using static System.Console;
+﻿
+using static System.Console;
 
 class Program
 {
     static void Main(string[] args)
     {
-        var inputNum = int.Parse(ReadLine());
-        var resultArr = Solve(inputNum);
-        foreach (var result in resultArr)
-        {
-            WriteLine(result);
-        }
+        var N = int.Parse(ReadLine());
+		string[] candiesArray = Enumerable.Range(0, N).Select(i => ReadLine()).ToArray();
+		Solve(candiesArray, N);
     }
 
-    static int[] Solve(int N)
+    static void Solve(string[] candiesArray, int N)
     {
-        var orderArr = new int[N];
-        for (var i = 0; i < N; i++)
-        {
-            var targetIndex = ChangeStrToNum(ReadLine().Split(' '))[1];
-            int[] priorities = ChangeStrToNum(ReadLine().Split(' '));
-			List<Document> documentList =  priorities.Select((priority, index) => new Document(priority, index)).ToList();
-            var queue = new PrinterQueue(documentList);
-			queue.ProcessPrint();
-            orderArr[i] = queue.GetPrintOrder(targetIndex);
-        }
-        return orderArr;
+		var bomboni = new BomboniGame(candiesArray,N);
+		bomboni.ExchangeCandies();
+		WriteLine(bomboni.MaxCandyCount);
     }
 
-	class PrinterQueue
+	class BomboniGame
 	{
-		private List<Document> _originalDocumentList = new();
-		private Queue<Document> _queue = new();
-		private List<Document> _printedOrder = new();
-
-        public PrinterQueue(List<Document> documentList)
+		private readonly CandyLine[] _candyTable;
+		private readonly int N;
+		public int MaxCandyCount { get; set; }
+		public BomboniGame(string[] candyTable, int N)
 		{
-			_originalDocumentList = documentList;
-            foreach (var document in documentList)
-            {
-                _queue.Enqueue(document);
-            }
-		}
+            _candyTable = candyTable.Select(candyLine => new CandyLine(candyLine)).ToArray();
+			this.N = N;
+        }
 
-		public void ProcessPrint()
+        public void ExchangeCandies()
 		{
-			var newQueue = new Queue<Document>(_queue); // deep copy
-			while (newQueue.Count > 0)
+			var defaultCandyTableMax = _candyTable.Select(line => line.GetMaxCandyCountOfSameColor()).Max();
+            MaxCandyCount = Math.Max(MaxCandyCount, defaultCandyTableMax);
+
+            // 열방향
+            for (var row = 0; row < N; row++)
 			{
-				var max = newQueue.Select(document => document.Priority).Max();
-				if (newQueue.Peek().Priority == max)
+				for (var column = 0; column < N - 1; column++)
 				{
-					_printedOrder.Add(newQueue.Peek());
-					newQueue.Dequeue();
+					var newCandyTable = swap(_candyTable, row, column, row, column + 1);
+					var max = newCandyTable.Select(line => line.GetMaxCandyCountOfSameColor()).Max();
+
+                    var reversedCandyTable = getReversedCandyPlate(newCandyTable);
+                    var reversedMax = reversedCandyTable.Select(line => line.GetMaxCandyCountOfSameColor()).Max();
+
+                    MaxCandyCount = Math.Max(MaxCandyCount, Math.Max(max, reversedMax));
                 }
-				else
+			}
+
+			// 행 방향
+            for (var column = 0; column < N; column++)
+            {
+                for (var row = 0; row < N - 1; row++)
+                {
+                    var newCandyTable = swap(_candyTable, row, column, row + 1, column);
+                    var max = newCandyTable.Select(line => line.GetMaxCandyCountOfSameColor()).Max();
+
+					var reversedCandyTable = getReversedCandyPlate(newCandyTable);
+					var reversedMax = reversedCandyTable.Select(line => line.GetMaxCandyCountOfSameColor()).Max();
+
+                    MaxCandyCount = Math.Max(MaxCandyCount, Math.Max(max, reversedMax));
+                }
+            }
+        }
+
+
+        private CandyLine[] getReversedCandyPlate(CandyLine[] array)
+		{
+			var newArray = GetCopyOfCandyArray(array);
+			for (var i = 0; i < newArray.Length; i++)
+			{
+				for (var j = i + 1; j < newArray.Length; j++)
 				{
-					newQueue.Enqueue(newQueue.Dequeue());
+					char tmpCandy = newArray[i].Line[j];
+					newArray[i].Line[j] = newArray[j].Line[i];
+					newArray[j].Line[i] = tmpCandy;
 				}
 			}
+			return newArray;
 		}
 
-        public int GetPrintOrder(int targetIndex)
+        private CandyLine[] swap(CandyLine[] array, int x1, int y1, int x2, int y2)
+        {
+			var newArray = GetCopyOfCandyArray(array);
+            var tmpCharacter = newArray[x1].Line[y1];
+            newArray[x1].Line[y1] = newArray[x2].Line[y2];
+            newArray[x2].Line[y2] = tmpCharacter;
+            return newArray;
+        }
+
+		private CandyLine[] GetCopyOfCandyArray(CandyLine[] array)
 		{
-			var targetDocument = _printedOrder.Find(document => document.DocumentIndex == targetIndex);
-			if (targetDocument != null)
+			var newCandyLine = new CandyLine[array.Length];
+			for (var i = 0; i < array.Length; i++)
 			{
-                return _printedOrder.IndexOf(targetDocument) + 1;
-            }
-			return -1;
+                newCandyLine[i] = new CandyLine(string.Join("", array[i].Line));
+			}
+			return newCandyLine;
+
+		}
+    }
+
+	class CandyLine
+	{
+        private readonly static char[] colors = new char[] { 'C', 'P', 'Z', 'Y' };
+        public char[] Line { get; set; }
+		public int LineLength => Line.Length;
+		private int _maxCountCache = 0;
+		public CandyLine(string line)
+		{
+			Line = line.ToCharArray();
+		}
+
+		public int GetMaxCandyCountOfSameColor()
+		{
+			if (_maxCountCache > 0)
+				return _maxCountCache;
+
+			var maxCount = colors.Select(color => Line.Aggregate(
+				(count: 0, tmpCount: 0), // init
+				((acc, curr) =>
+				{
+					if (curr == color)
+					{
+						acc.tmpCount++;
+						return (Math.Max(acc.tmpCount, acc.count), acc.tmpCount);
+					}
+					else
+					{
+						acc.tmpCount = 0;
+						return acc;
+					}
+				}), // func
+				(item => item.count) // result selector
+				)
+			).Max();
+
+			_maxCountCache = maxCount;
+			return maxCount;
         }
     }
 
-	class Document
-	{
-		public int DocumentIndex { get; } = -1;
-		public int Priority { get; } = -1;
-		public Document(int priority, int documentIndex)
-		{
-			Priority = priority;
-			DocumentIndex = documentIndex;
-        }
-	}
+	
+
 
 
 /////////////////////////////  util 함수  ////////////////////////////////
