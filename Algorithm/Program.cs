@@ -1,56 +1,78 @@
-﻿
-using System.Numerics;
-using static System.Console;
+﻿using static System.Console;
 
 class Program
 {
-    static void Main(string[] args)
-    {
-        BigInteger word = BigInteger.Parse(ReadLine());
-		Solve(word);
-    }
-
-    static void Solve(BigInteger word)
-    {
-		var checker = new MultiplesOfThreeChecker();
-		checker.Transform(word);
-		WriteLine(checker.NumberOfTransform);
-		WriteLine(checker.IsMultiplesofThree ? "YES" : "NO");
-    }
-
-	class MultiplesOfThreeChecker
+	static void Main(string[] args)
 	{
-		private BigInteger finalNumberOfTransform = 0;
-		public int NumberOfTransform { get; set; } = 0;
-		public bool IsMultiplesofThree => (finalNumberOfTransform % 3 == 0);
-		public void Transform(BigInteger number)
+		var N = int.Parse(ReadLine());
+		List<Confetto> confettoList = getConfettoList(N);
+		solve(N, confettoList);
+	}
+	static List<Confetto> getConfettoList(int N)
+	{
+		List<Confetto> confettoList = new();
+		for (var i = 0; i < N; i++)
 		{
-			var newNumber = number;
-			while (newNumber >= 10)
-			{
-				newNumber = SumDigit(newNumber);
-				NumberOfTransform++;
-			}
-			finalNumberOfTransform = newNumber;
+			var coordinate = ChangeStrToNum(ReadLine().Split(' '));
+			confettoList.Add(new Confetto(coordinate[0], coordinate[1]));
 		}
+		return confettoList;
+	}
 
-		private BigInteger SumDigit(BigInteger number)
+	static void solve(int N, List<Confetto> confettiList)
+	{
+		var paper = new Paper();
+		paper.PutConfetti(confettiList);
+		WriteLine(paper.GetSumOfCoveredArea());
+	}
+
+	class Paper
+	{
+		private const int Width = 100;
+		private const int Height = 100;
+
+		private bool[][] ConfettoCoverCheck = Enumerable.Range(0, Width).Select(_ => Enumerable.Repeat(false, Height).ToArray()).ToArray();
+
+
+		public void PutConfetti(List<Confetto> confettoList)
 		{
-			//return number.ToString().ToCharArray().ChangeCharToInt().Sum();
-			//return number.ToString().ToCharArray().ChangeCharToInt().Aggregate(BigInteger.Zero, (acc, val) => acc + val);
-			BigInteger sum = 0;
-			while (number > 0)
-			{
-				sum += number % 10;
-				number /= 10;
-			}
-			return sum;
+			var n1 = Enumerable.Range(0, Width);
+			var n2 = Enumerable.Range(0, Height);
+			IterationFunction(n1, n2).Where(item => !ConfettoCoverCheck[item.Item1][item.Item2])
+					.ForEach(item => confettoList.ForEach(confetto => CheckCoveredSpot(item.Item1, item.Item2, confetto.CoordinateX, confetto.CoordinateY)));
+            
+			void CheckCoveredSpot(int x, int y, int confettoX, int confettoY)
+            {
+                if ((x >= confettoX && x < confettoX + Confetto.Width) && (y >= confettoY && y < confettoY + Confetto.Heihgt))
+                {
+                    ConfettoCoverCheck[x][y] = true;
+                }
+            }
+        }
+
+		public int GetSumOfCoveredArea()
+		{
+			return ConfettoCoverCheck.Select(row => row.Where(unitArea => unitArea).Count()).Sum();
+		}
+    }
+
+	class Confetto
+	{
+		public static int Width = 10;
+		public static int Heihgt = 10;
+		public int CoordinateX { get; set;}
+        public int CoordinateY { get; set; }
+
+        public Confetto(int x, int y)
+		{
+			CoordinateX = x;
+            CoordinateY = y;
         }
     }
 
 
-/////////////////////////////  util 함수  ////////////////////////////////
-static T[] CopyArray<T>(T[] array)
+    /////////////////////////////  util 함수  ////////////////////////////////
+    static T[] CopyArray<T>(T[] array)
 	{
 		T[] newArray = new T[array.Length];
 		for (var i = 0; i < array.Length; i++)
