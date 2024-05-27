@@ -4,72 +4,73 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var N = int.Parse(ReadLine());
-		List<Confetto> confettoList = getConfettoList(N);
-		solve(N, confettoList);
-	}
-	static List<Confetto> getConfettoList(int N)
-	{
-		List<Confetto> confettoList = new();
-		for (var i = 0; i < N; i++)
-		{
-			var coordinate = ChangeStrToNum(ReadLine().Split(' '));
-			confettoList.Add(new Confetto(coordinate[0], coordinate[1]));
-		}
-		return confettoList;
+		var numberOfSquare = 4;
+		solve(numberOfSquare);
 	}
 
-	static void solve(int N, List<Confetto> confettiList)
+	static void solve(int numberOfSquare)
 	{
+		// 1 2 4 4
+		// 2 3 5 7
+		// 3 1 6 5
+		// 7 3 8 6
+		var squareList = Enumerable.Range(0, numberOfSquare)
+			.Select(n => ReadLine().Split(' '))
+			.Select(item => new Square(int.Parse(item[0]), int.Parse(item[1]), int.Parse(item[2]), int.Parse(item[3]))).ToList();
+
 		var paper = new Paper();
-		paper.PutConfetti(confettiList);
-		WriteLine(paper.GetSumOfCoveredArea());
-	}
+		paper.PutSquares(squareList);
+		WriteLine(paper.GetCoveredArea());
+    }
 
 	class Paper
 	{
-		private const int Width = 100;
-		private const int Height = 100;
+		private bool[][] CoverCheckTable;
+        private int _width = 100;
+        private int _height = 100;
 
-		private bool[][] ConfettoCoverCheck = Enumerable.Range(0, Width).Select(_ => Enumerable.Repeat(false, Height).ToArray()).ToArray();
-
-
-		public void PutConfetti(List<Confetto> confettoList)
+        public Paper()
 		{
-			var n1 = Enumerable.Range(0, Width);
-			var n2 = Enumerable.Range(0, Height);
-			IterationFunction(n1, n2).Where(item => !ConfettoCoverCheck[item.Item1][item.Item2])
-					.ForEach(item => confettoList.ForEach(confetto => CheckCoveredSpot(item.Item1, item.Item2, confetto.CoordinateX, confetto.CoordinateY)));
-            
-			void CheckCoveredSpot(int x, int y, int confettoX, int confettoY)
-            {
-                if ((x >= confettoX && x < confettoX + Confetto.Width) && (y >= confettoY && y < confettoY + Confetto.Heihgt))
-                {
-                    ConfettoCoverCheck[x][y] = true;
-                }
+			CoverCheckTable = Enumerable.Range(0, _width).Select(a => Enumerable.Repeat(false, _height).ToArray()).ToArray();
+        }
+		public void PutSquares(List<Square> squareList)
+		{
+			void setCoverCheckTable(int x, int y, int x1, int y1, int x2, int y2)
+			{
+                if (x >= x1 && x < x2 && y >= y1 && y < y2)
+				{
+                    CoverCheckTable[x][y] = true;
+				}
             }
-        }
 
-		public int GetSumOfCoveredArea()
-		{
-			return ConfettoCoverCheck.Select(row => row.Where(unitArea => unitArea).Count()).Sum();
+			var n = Enumerable.Range(0, _width);
+			var m = Enumerable.Range(0, _height);
+			IterationFunction(n, m, squareList).Where(item => !CoverCheckTable[item.Item1][item.Item2])
+				.ForEach(item => setCoverCheckTable(item.Item1, item.Item2, item.Item3.X1, item.Item3.Y1, item.Item3.X2, item.Item3.Y2));
 		}
-    }
 
-	class Confetto
-	{
-		public static int Width = 10;
-		public static int Heihgt = 10;
-		public int CoordinateX { get; set;}
-        public int CoordinateY { get; set; }
-
-        public Confetto(int x, int y)
+		public int GetCoveredArea()
 		{
-			CoordinateX = x;
-            CoordinateY = y;
-        }
-    }
+			return CoverCheckTable.Select(line => line.Count(item => item)).Sum();
+		}
+	}
 
+	class Square
+	{
+		public int X1 { get; set; }
+        public int Y1 { get; set; }
+        public int X2 { get; set; }
+        public int Y2 { get; set; }
+        public Square(int x1, int y1, int x2, int y2)
+		{
+			X1 = x1;
+			Y1 = y1;
+			X2 = x2;
+			Y2 = y2;
+		}
+	}
+
+	
 
     /////////////////////////////  util 함수  ////////////////////////////////
     static T[] CopyArray<T>(T[] array)
