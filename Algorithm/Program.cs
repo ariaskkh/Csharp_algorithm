@@ -1,74 +1,148 @@
-﻿using static System.Console;
+﻿using System.Linq;
+using static System.Console;
 
 class Program
 {
 	static void Main(string[] args)
 	{
-		var numberOfSquare = 4;
-		solve(numberOfSquare);
+		List<string> passwordList = new();
+		while (true)
+		{
+			var password = ReadLine();
+            if (password == "end")
+				break;
+			passwordList.Add(password);
+        }
+		solve(passwordList);
 	}
 
-	static void solve(int numberOfSquare)
+	static void solve(List<string> passwordList)
 	{
-		// 1 2 4 4
-		// 2 3 5 7
-		// 3 1 6 5
-		// 7 3 8 6
-		var squareList = Enumerable.Range(0, numberOfSquare)
-			.Select(n => ReadLine().Split(' '))
-			.Select(item => new Square(int.Parse(item[0]), int.Parse(item[1]), int.Parse(item[2]), int.Parse(item[3]))).ToList();
-
-		var paper = new Paper();
-		paper.PutSquares(squareList);
-		WriteLine(paper.GetCoveredArea());
+		PasswordData[] passwordArray = passwordList.Select(password => new PasswordData(password)).ToArray();
+		var generator = new PasswordGenerator();
+        foreach (var password in passwordArray)
+		{
+			if (generator.CheckPasswordQuality(password))
+			{
+				WriteLine($"<{password.Password}> is acceptable.");
+			}
+			else
+			{
+                WriteLine($"<{password.Password}> is not acceptable.");
+            }
+		}
     }
 
-	class Paper
+	interface IPasswordGenerator<T> // 이름
 	{
-		private bool[][] CoverCheckTable;
-        private int _width = 100;
-        private int _height = 100;
+		bool CheckHavingVowel(T password);
+		bool CheckCharacterContinuousDuplication(T password);
+		bool CheckConsonantOrVowelContinuousDuplication(T password);
 
-        public Paper()
+    }
+
+	class PasswordGenerator : IPasswordGenerator<PasswordData>
+    {
+        private char[] VowelArray = new char[] { 'a', 'e', 'i', 'o', 'u' };
+        public bool CheckPasswordQuality(PasswordData password)
 		{
-			CoverCheckTable = Enumerable.Range(0, _width).Select(a => Enumerable.Repeat(false, _height).ToArray()).ToArray();
+			if (CheckHavingVowel(password)
+				&& CheckCharacterContinuousDuplication(password)
+				&& CheckConsonantOrVowelContinuousDuplication(password))
+            {
+                return true;
+			}
+			return false;
+		}
+
+        public bool CheckHavingVowel(PasswordData password)
+		{
+			var vowelCount = password.Password.ToCharArray().Select(ch => VowelArray.Contains(ch)).Where(ch => ch).Count();
+            bool hasGoodQuality = vowelCount > 0;
+			return hasGoodQuality;
         }
-		public void PutSquares(List<Square> squareList)
+
+		public bool CheckCharacterContinuousDuplication(PasswordData password)
 		{
-			void setCoverCheckTable(int x, int y, int x1, int y1, int x2, int y2)
+            var passwordArray = password.Password.ToCharArray();
+			char previousChar = default;
+			bool hasGoodQuality = true;
+			foreach (var currentChar in passwordArray)
 			{
-                if (x >= x1 && x < x2 && y >= y1 && y < y2)
+				if ((previousChar == currentChar) && (currentChar != 'e' && currentChar != 'o'))
 				{
-                    CoverCheckTable[x][y] = true;
+                    hasGoodQuality = false;
+				}
+				previousChar = currentChar;
+			}
+			return hasGoodQuality;
+        }
+
+		public bool CheckConsonantOrVowelContinuousDuplication(PasswordData password)
+		{
+            var passwordArray = password.Password.ToCharArray();
+			bool wasPreviousVowel = false;
+			var vowelCount = 0;
+			var consonantCount = 0;
+			bool hasGoodQuality = true;
+
+			foreach (var currentChar in passwordArray)
+			{
+
+				if (IsVowel(currentChar)) // 모음
+				{
+					if (wasPreviousVowel == true) // 연속
+					{
+                        vowelCount++;
+                        if (vowelCount >= 3)
+                        {
+                            hasGoodQuality = false;
+                        }
+                    } 
+					else
+					{
+						wasPreviousVowel = true;
+                        vowelCount = 1;
+						consonantCount = 0;
+                    }
+                }
+				else // 자음
+				{
+					if (wasPreviousVowel == false) // 연속
+					{
+                        consonantCount++;
+                        if (consonantCount >= 3)
+                        {
+                            hasGoodQuality = false;
+                        }
+                    }
+					else
+					{
+						wasPreviousVowel = false;
+                        consonantCount = 1;
+						vowelCount = 0;
+                    }
 				}
             }
+			return hasGoodQuality;
+        }
+        private bool IsVowel(char ch)
+        {
+            return VowelArray.Contains(ch);
+        }
 
-			var n = Enumerable.Range(0, _width);
-			var m = Enumerable.Range(0, _height);
-			IterationFunction(n, m, squareList).Where(item => !CoverCheckTable[item.Item1][item.Item2])
-				.ForEach(item => setCoverCheckTable(item.Item1, item.Item2, item.Item3.X1, item.Item3.Y1, item.Item3.X2, item.Item3.Y2));
-		}
+    }
 
-		public int GetCoveredArea()
-		{
-			return CoverCheckTable.Select(line => line.Count(item => item)).Sum();
-		}
-	}
-
-	class Square
+	// quality 기준이 바뀔 수 있기 때문에 PasswordData에 check로직이 들어가는 건 적절하지 않은 것 같음.
+	class PasswordData
 	{
-		public int X1 { get; set; }
-        public int Y1 { get; set; }
-        public int X2 { get; set; }
-        public int Y2 { get; set; }
-        public Square(int x1, int y1, int x2, int y2)
+		public string Password { get; }
+        public PasswordData(string password)
 		{
-			X1 = x1;
-			Y1 = y1;
-			X2 = x2;
-			Y2 = y2;
-		}
+			Password = password;
+        }
 	}
+
 
 	
 
