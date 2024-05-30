@@ -1,64 +1,107 @@
 ﻿using static System.Console;
-using System.Text;
-using System.Linq;
 
 class Program
 {
+    // 1
     static void Main(string[] args)
     {
-        var N = int.Parse(ReadLine());
-        var numberList = new List<int>();
-        Enumerable.Range(0, N).ForEach(_ => numberList.Add(int.Parse(ReadLine())));
+        var input = ReadLine().Split(' ').ChangeStrToInt();
+        var truckNumber = input[0];
+        var bridgeLength = input[1];
+        var maxWeight = input[2];
+        Queue<Truck> trucQueue = ReadLine().Split(' ').ChangeStrToInt().Select((truckWeight, index) => new Truck(index, truckWeight)).ToQueue<Truck>();
 
-        Solve(numberList);
+        Solve(trucQueue, bridgeLength, maxWeight);
     }
 
-    static void Solve(List<int> numberList)
+    static void Solve(Queue<Truck> truckQueue, int bridgeLength, int maxWeight)
     {
-        StringBuilder st = new StringBuilder();
-        st.AppendLine(StaticalCalculator.GetMean(numberList).ToString());
-        st.AppendLine(StaticalCalculator.GetMedian(numberList).ToString());
-        st.AppendLine(StaticalCalculator.GetMode(numberList).ToString());
-        st.AppendLine(StaticalCalculator.GetRange(numberList).ToString());
+        var bridgeManager = new BridgeManager(bridgeLength, maxWeight);
+        bridgeManager.CrossBridge(truckQueue);
+        WriteLine(bridgeManager.MinTimeToPass);
 
-        WriteLine(st.ToString());
     }
 
-    static class StaticalCalculator
+    class BridgeManager
     {
-
-        public static int GetMean(List<int> numberList) // 평균
+        private readonly int bridgeLength;
+        private readonly int maxWeight;
+        private readonly Queue<Truck> BridgeQueue = new();
+        public int MinTimeToPass { get; set; }
+        private List<Truck> passedTruckList = new();
+        public BridgeManager(int bridgeLength, int maxWeight)
         {
-            return (int)Math.Round(numberList.Average());
+            this.bridgeLength = bridgeLength;
+            this.maxWeight = maxWeight;
         }
 
-        public static int GetMedian(List<int> numberList) // 중앙값
+        public void CrossBridge(Queue<Truck> readyTruckQueue)
         {
-            var newNumberList = numberList.OrderBy(number => number).ToList();
-            var medianIndex = (newNumberList.Count - 1) / 2;
-            return newNumberList[medianIndex];
+            // 다리 지난 차량 Queue에서 빼기
+            // 다리 위 트럭드들 한 칸 전진
+            // 다리에 트럭 올라갈 수 있는지 확인 후 그 트럭 이동
+            Truck? enteringTruck = readyTruckQueue.Dequeue();
+            while (enteringTruck != null || readyTruckQueue.Count > 0 || BridgeQueue.Count > 0)
+            {
+                MoveTrucksForward();
+                if (HasPassedTruckExistInTheBridge())
+                {
+                    passedTruckList.Add(BridgeQueue.Dequeue());
+                }
+                if (CanEnterTheBridge(enteringTruck))
+                {
+                    enteringTruck.Position++;
+                    BridgeQueue.Enqueue(enteringTruck);
+                    enteringTruck = readyTruckQueue.Count > 0 ? readyTruckQueue.Dequeue() : null;
+                }
+                MinTimeToPass++;
+            }
+            
+        }
+        private void MoveTrucksForward()
+        {
+            BridgeQueue.ForEach(truck => truck.Position++);
         }
 
-        public static int GetMode(List<int> numberList) // 최빈값
+        private bool CanEnterTheBridge(Truck truck)
         {
-            var numberDict = numberList.ConverIntListToDict();
-            List<int> maxNumberList = GetMaxNumberList(numberDict, numberDict.Values.Max());
-            return maxNumberList.Count > 1 ? maxNumberList[1] : maxNumberList[0];
+            return truck != null && IsWithinBridgeMaxWeight(truck) && HasEnoughSpace();
         }
 
-        public static int GetRange(List<int> numberList) // 범위
+        private bool IsWithinBridgeMaxWeight(Truck truck)
         {
-            return numberList.Max() - numberList.Min();
+            return BridgeQueue.Select(truck => truck.Weight).Sum() + truck.Weight <= maxWeight;
         }
 
-        static private List<int> GetMaxNumberList(Dictionary<int, int> numberDict, int maxValue)
+        private bool HasEnoughSpace()
         {
-            return numberDict.Where(keyValue => keyValue.Value == maxValue)
-                .Select(keyValue => keyValue.Key)
-                .OrderBy(number => number)
-                .ToList();
+            return BridgeQueue.Count < bridgeLength;
+        }
+
+        private bool HasPassedTruckExistInTheBridge()
+        {
+            return BridgeQueue.Count > 0 && BridgeQueue.Peek().HasPassedTheBridge(bridgeLength);
         }
     }
+
+    class Truck
+    {
+        private int index;
+        public int Weight { get; }
+        public int Position { get; set; } = 0; // 다리 위에서의 위치
+        
+        public Truck(int index, int weight)
+        {
+            this.index = index;
+            Weight = weight;
+        }
+
+        public bool HasPassedTheBridge(int bridgeLength) 
+        {
+            return Position > bridgeLength;
+        }
+    }
+    
 
 
     /////////////////////////////  util 함수  ////////////////////////////////
@@ -163,16 +206,6 @@ class Program
         return resultArr;
     }
 
-    static int[] ChangeCharToNum(char[] numsInChar)
-    {
-        return numsInChar.Select(x => int.Parse(x.ToString())).ToArray();
-    }
-
-    static int[] ChangeStrToNum(string[] numsInStr)
-    {
-        return numsInStr.Select(x => int.Parse(x)).ToArray();
-    }
-
     static void Print(int[,] result, int N, int K)
     {
         for (var i = 0; i < N; i++)
@@ -204,6 +237,18 @@ public static class EnumerableExtensions
     public static long[] ChangeCharToLong(this IEnumerable<char> enumerable)
     {
         return enumerable.Select(item => long.Parse(item.ToString())).ToArray();
+    }
+
+    public static int[] ChangeStrToInt(this IEnumerable<string> enumerable)
+    {
+        return enumerable.Select(x => int.Parse(x)).ToArray();
+    }
+
+    public static Queue<T> ToQueue<T>(this IEnumerable<T> enumerable)
+    {
+        var queue = new Queue<T>();
+        enumerable.ForEach(item => queue.Enqueue(item));
+        return queue;
     }
 
     public static Dictionary<int, int> ConverIntListToDict(this IEnumerable<int> enumerable)
