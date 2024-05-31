@@ -2,106 +2,167 @@
 
 class Program
 {
-    // 1
     static void Main(string[] args)
     {
-        var input = ReadLine().Split(' ').ChangeStrToInt();
-        var truckNumber = input[0];
-        var bridgeLength = input[1];
-        var maxWeight = input[2];
-        Queue<Truck> trucQueue = ReadLine().Split(' ').ChangeStrToInt().Select((truckWeight, index) => new Truck(index, truckWeight)).ToQueue<Truck>();
-
-        Solve(trucQueue, bridgeLength, maxWeight);
+        string inputWord = ReadLine();
+        solve(inputWord);
     }
 
-    static void Solve(Queue<Truck> truckQueue, int bridgeLength, int maxWeight)
+    static void solve(string inputWord)
     {
-        var bridgeManager = new BridgeManager(bridgeLength, maxWeight);
-        bridgeManager.CrossBridge(truckQueue);
-        WriteLine(bridgeManager.MinTimeToPass);
-
-    }
-
-    class BridgeManager
-    {
-        private readonly int bridgeLength;
-        private readonly int maxWeight;
-        private readonly Queue<Truck> BridgeQueue = new();
-        public int MinTimeToPass { get; set; }
-        private List<Truck> passedTruckList = new();
-        public BridgeManager(int bridgeLength, int maxWeight)
+        var handlers = new List<ICharacterHandler>
         {
-            this.bridgeLength = bridgeLength;
-            this.maxWeight = maxWeight;
+            new EqualSignHandler(),
+            new DashSignHandler(),
+            new CharacterJHandler(),
+        };
+        var translator = new CroatiaTranslator(handlers);
+        translator.Translate(new Word(inputWord));
+        WriteLine(translator.CroatiaWordCount);
+    }
+
+    interface ITranslator
+    {
+        void Translate(Word word);
+    }
+
+    class CroatiaTranslator : ITranslator
+    {
+        List<string> _croatiaAlphabetList = new();
+        List<ICharacterHandler> handlers;
+        public int CroatiaWordCount => _croatiaAlphabetList.Count;
+
+        public CroatiaTranslator(List<ICharacterHandler> handlers)
+        {
+            this.handlers = handlers;
         }
 
-        public void CrossBridge(Queue<Truck> readyTruckQueue)
+        public void Translate(Word word)
         {
-            // 다리 지난 차량 Queue에서 빼기
-            // 다리 위 트럭드들 한 칸 전진
-            // 다리에 트럭 올라갈 수 있는지 확인 후 그 트럭 이동
-            Truck? enteringTruck = readyTruckQueue.Dequeue();
-            while (enteringTruck != null || readyTruckQueue.Count > 0 || BridgeQueue.Count > 0)
+            var originalWord = word.OriginalWord;
+            for (var i = 0; i < word.OriginalWordLength; i++)
             {
-                MoveTrucksForward();
-                if (HasPassedTruckExistInTheBridge())
+                if (i == 0)
                 {
-                    passedTruckList.Add(BridgeQueue.Dequeue());
+                    _croatiaAlphabetList.Add(originalWord[0].ToString());
+                    continue;
                 }
-                if (CanEnterTheBridge(enteringTruck))
+
+                bool isHandled = false;
+
+                handlers.Where(handler => 
+                    handler.CanHandle(originalWord, i))
+                           .ForEach(handler =>
+                           {
+                               handler.Handle(originalWord, i, _croatiaAlphabetList);
+                               isHandled = true;
+                           });
+
+                if (!isHandled)
                 {
-                    enteringTruck.Position++;
-                    BridgeQueue.Enqueue(enteringTruck);
-                    enteringTruck = readyTruckQueue.Count > 0 ? readyTruckQueue.Dequeue() : null;
+                    _croatiaAlphabetList.Add(originalWord[i].ToString());
                 }
-                MinTimeToPass++;
             }
-            
-        }
-        private void MoveTrucksForward()
-        {
-            BridgeQueue.ForEach(truck => truck.Position++);
-        }
-
-        private bool CanEnterTheBridge(Truck truck)
-        {
-            return truck != null && IsWithinBridgeMaxWeight(truck) && HasEnoughSpace();
-        }
-
-        private bool IsWithinBridgeMaxWeight(Truck truck)
-        {
-            return BridgeQueue.Select(truck => truck.Weight).Sum() + truck.Weight <= maxWeight;
-        }
-
-        private bool HasEnoughSpace()
-        {
-            return BridgeQueue.Count < bridgeLength;
-        }
-
-        private bool HasPassedTruckExistInTheBridge()
-        {
-            return BridgeQueue.Count > 0 && BridgeQueue.Peek().HasPassedTheBridge(bridgeLength);
+            word.CroatiaWord = string.Join("", _croatiaAlphabetList); // 사용되진 않음
         }
     }
 
-    class Truck
+    interface ICharacterHandler
     {
-        private int index;
-        public int Weight { get; }
-        public int Position { get; set; } = 0; // 다리 위에서의 위치
-        
-        public Truck(int index, int weight)
+        bool CanHandle(string word, int index);
+        void Handle(string word, int index, List<string> _croatiaAlphabetList);
+    }
+
+    class EqualSignHandler : ICharacterHandler
+    {
+        public bool CanHandle(string word, int index)
         {
-            this.index = index;
-            Weight = weight;
+            return word[index] == '=';
         }
 
-        public bool HasPassedTheBridge(int bridgeLength) 
+        public void Handle(string word, int index, List<string> _croatiaAlphabetList)
         {
-            return Position > bridgeLength;
+            // dz= 이게 z= 보다 먼저 처리되어야 함
+            if (word[index - 1] == 'z' && index - 2 >= 0 && word[index - 2] == 'd')
+            {
+                _croatiaAlphabetList.RemoveRange(_croatiaAlphabetList.Count - 2, 2);
+                _croatiaAlphabetList.Add(Utility.GetCroatiaAlphabet(word, index - 2, index));
+            }
+            // c=, s=, z=
+            else if (word[index - 1] == 'c' || word[index - 1] == 's' || word[index - 1] == 'z')
+            {
+                _croatiaAlphabetList.RemoveAt(_croatiaAlphabetList.Count - 1);
+                _croatiaAlphabetList.Add(Utility.GetCroatiaAlphabet(word, index - 1, index));
+            }
+            else
+            {
+                _croatiaAlphabetList.Add(Utility.GetCroatiaAlphabet(word, index, index));
+            }
         }
     }
-    
+
+    class DashSignHandler : ICharacterHandler
+    {
+        public bool CanHandle(string word, int index)
+        {
+            return word[index] == '-';
+        }
+
+        public void Handle(string word, int index, List<string> _croatiaAlphabetList)
+        {
+            // c-, d-
+            if (word[index - 1] == 'c' || word[index - 1] == 'd')
+            {
+                _croatiaAlphabetList.RemoveAt(_croatiaAlphabetList.Count - 1);
+                _croatiaAlphabetList.Add(Utility.GetCroatiaAlphabet(word, index - 1, index));
+            }
+            else
+            {
+                _croatiaAlphabetList.Add(Utility.GetCroatiaAlphabet(word, index, index));
+            }
+        }
+    }
+
+    class CharacterJHandler : ICharacterHandler
+    {
+        public bool CanHandle(string word, int index)
+        {
+            return word[index] == 'j';
+        }
+
+        public void Handle(string word, int index, List<string> _croatiaAlphabetList)
+        {
+            // lj, nj
+            if (word[index - 1] == 'l' || word[index - 1] == 'n')
+            {
+                _croatiaAlphabetList.RemoveAt(_croatiaAlphabetList.Count - 1);
+                _croatiaAlphabetList.Add(Utility.GetCroatiaAlphabet(word, index - 1, index));
+            }
+            else
+            {
+                _croatiaAlphabetList.Add(Utility.GetCroatiaAlphabet(word, index, index));
+            }
+        }
+    }
+
+    public static class Utility
+    {
+        public static string GetCroatiaAlphabet(string originalWord, int startIndex, int endIndex)
+        {
+            return originalWord.Substring(startIndex, endIndex - startIndex + 1);
+        }
+    }
+
+    class Word
+    {
+        public string OriginalWord { get; set; }
+        public int OriginalWordLength => OriginalWord.ToCharArray().Length;
+        public string CroatiaWord { get; set; }
+        public Word(string word)
+        {
+            OriginalWord = word;
+        }
+    }
 
 
     /////////////////////////////  util 함수  ////////////////////////////////
