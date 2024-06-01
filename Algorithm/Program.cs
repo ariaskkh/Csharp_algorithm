@@ -1,166 +1,95 @@
 ﻿using static System.Console;
 
-class Program
+public class Program
 {
     static void Main(string[] args)
     {
-        string inputWord = ReadLine();
-        solve(inputWord);
+        var charArray = ReadLine().ToCharArray();
+        var calculator = new BracketCalculator();
+        calculator.RegisterHandler(new SquareBracketHandler());
+        calculator.RegisterHandler(new ParenthesesHandler());
+        WriteLine(calculator.GetCalculatedValue(charArray));
     }
 
-    static void solve(string inputWord)
+    class BracketCalculator
     {
-        var handlers = new List<ICharacterHandler>
+        List<BracketHandler> bracketHandlers = new List<BracketHandler>();
+        public void RegisterHandler(BracketHandler handler)
         {
-            new EqualSignHandler(),
-            new DashSignHandler(),
-            new CharacterJHandler(),
-        };
-        var translator = new CroatiaTranslator(handlers);
-        translator.Translate(new Word(inputWord));
-        WriteLine(translator.CroatiaWordCount);
-    }
-
-    interface ITranslator
-    {
-        void Translate(Word word);
-    }
-
-    class CroatiaTranslator : ITranslator
-    {
-        List<string> _croatiaAlphabetList = new();
-        List<ICharacterHandler> handlers;
-        public int CroatiaWordCount => _croatiaAlphabetList.Count;
-
-        public CroatiaTranslator(List<ICharacterHandler> handlers)
-        {
-            this.handlers = handlers;
+            bracketHandlers.Add(handler);
         }
 
-        public void Translate(Word word)
+        public int GetCalculatedValue(char[] charArray)
         {
-            var originalWord = word.OriginalWord;
-            for (var i = 0; i < word.OriginalWordLength; i++)
+            if (!BracketHandler.IsValid(charArray))
             {
-                if (i == 0)
-                {
-                    _croatiaAlphabetList.Add(originalWord[0].ToString());
-                    continue;
-                }
-
-                bool isHandled = false;
-
-                handlers.Where(handler => 
-                    handler.CanHandle(originalWord, i))
-                           .ForEach(handler =>
-                           {
-                               handler.Handle(originalWord, i, _croatiaAlphabetList);
-                               isHandled = true;
-                           });
-
-                if (!isHandled)
-                {
-                    _croatiaAlphabetList.Add(originalWord[i].ToString());
-                }
+                return 0;
+                
             }
-            word.CroatiaWord = string.Join("", _croatiaAlphabetList); // 사용되진 않음
+            foreach (char ch in charArray)
+            {
+                bracketHandlers.ForEach(handler => handler.Handle(ch));
+            }
+            return BracketHandler.NumberStack.Sum(number => (int)number);
         }
     }
 
-    interface ICharacterHandler
+    abstract class BracketHandler
     {
-        bool CanHandle(string word, int index);
-        void Handle(string word, int index, List<string> _croatiaAlphabetList);
-    }
+        public abstract void Handle(char bracketChar);
 
-    class EqualSignHandler : ICharacterHandler
-    {
-        public bool CanHandle(string word, int index)
+        public static Stack<object> NumberStack = new();
+
+        public static bool IsValid(char[] charArray)
         {
-            return word[index] == '=';
+            if (charArray.Count(ch => ch == '(') != charArray.Count(ch => ch == ')'))
+                return false;
+            if (charArray.Count(ch => ch == '[') != charArray.Count(ch => ch == ']'))
+                return false;
+
+            string st = new string(charArray);
+            if (st.Contains("(]") || st.Contains("[)"))
+                return false;
+            return true;
         }
 
-        public void Handle(string word, int index, List<string> _croatiaAlphabetList)
+        protected static void HandleCloseBracket(Stack<object> stack, char bracketChar, int multiplier)
         {
-            // dz= 이게 z= 보다 먼저 처리되어야 함
-            if (word[index - 1] == 'z' && index - 2 >= 0 && word[index - 2] == 'd')
+            var tempCount = 0;
+            while (stack.Count > 0 && stack.Peek() is int)
             {
-                _croatiaAlphabetList.RemoveRange(_croatiaAlphabetList.Count - 2, 2);
-                _croatiaAlphabetList.Add(Utility.GetCroatiaAlphabet(word, index - 2, index));
+                tempCount += (int)stack.Pop();
             }
-            // c=, s=, z=
-            else if (word[index - 1] == 'c' || word[index - 1] == 's' || word[index - 1] == 'z')
+
+            if (stack.Count > 0 && (char)stack.Peek() == bracketChar)
             {
-                _croatiaAlphabetList.RemoveAt(_croatiaAlphabetList.Count - 1);
-                _croatiaAlphabetList.Add(Utility.GetCroatiaAlphabet(word, index - 1, index));
-            }
-            else
-            {
-                _croatiaAlphabetList.Add(Utility.GetCroatiaAlphabet(word, index, index));
+                stack.Pop();
+                stack.Push(tempCount == 0 ? multiplier : tempCount * multiplier);
             }
         }
     }
 
-    class DashSignHandler : ICharacterHandler
+    class SquareBracketHandler : BracketHandler
     {
-        public bool CanHandle(string word, int index)
+        private int multiplier = 3;
+        public override void Handle(char bracketChar)
         {
-            return word[index] == '-';
-        }
-
-        public void Handle(string word, int index, List<string> _croatiaAlphabetList)
-        {
-            // c-, d-
-            if (word[index - 1] == 'c' || word[index - 1] == 'd')
-            {
-                _croatiaAlphabetList.RemoveAt(_croatiaAlphabetList.Count - 1);
-                _croatiaAlphabetList.Add(Utility.GetCroatiaAlphabet(word, index - 1, index));
-            }
-            else
-            {
-                _croatiaAlphabetList.Add(Utility.GetCroatiaAlphabet(word, index, index));
-            }
+            if (bracketChar == '[')
+                NumberStack.Push(bracketChar);
+            else if (bracketChar == ']')
+                HandleCloseBracket(NumberStack, '[', multiplier);
         }
     }
 
-    class CharacterJHandler : ICharacterHandler
+    class ParenthesesHandler : BracketHandler
     {
-        public bool CanHandle(string word, int index)
+        private int multiplier = 2;
+        public override void Handle(char bracketChar)
         {
-            return word[index] == 'j';
-        }
-
-        public void Handle(string word, int index, List<string> _croatiaAlphabetList)
-        {
-            // lj, nj
-            if (word[index - 1] == 'l' || word[index - 1] == 'n')
-            {
-                _croatiaAlphabetList.RemoveAt(_croatiaAlphabetList.Count - 1);
-                _croatiaAlphabetList.Add(Utility.GetCroatiaAlphabet(word, index - 1, index));
-            }
-            else
-            {
-                _croatiaAlphabetList.Add(Utility.GetCroatiaAlphabet(word, index, index));
-            }
-        }
-    }
-
-    public static class Utility
-    {
-        public static string GetCroatiaAlphabet(string originalWord, int startIndex, int endIndex)
-        {
-            return originalWord.Substring(startIndex, endIndex - startIndex + 1);
-        }
-    }
-
-    class Word
-    {
-        public string OriginalWord { get; set; }
-        public int OriginalWordLength => OriginalWord.ToCharArray().Length;
-        public string CroatiaWord { get; set; }
-        public Word(string word)
-        {
-            OriginalWord = word;
+            if (bracketChar == '(')
+                NumberStack.Push(bracketChar);
+            else if (bracketChar == ')')
+                HandleCloseBracket(NumberStack, '(', multiplier);
         }
     }
 
