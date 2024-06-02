@@ -1,98 +1,82 @@
 ﻿using static System.Console;
 
-public class Program
+class Program
 {
     static void Main(string[] args)
     {
-        var charArray = ReadLine().ToCharArray();
-        var calculator = new BracketCalculator();
-        calculator.RegisterHandler(new SquareBracketHandler());
-        calculator.RegisterHandler(new ParenthesesHandler());
-        WriteLine(calculator.GetCalculatedValue(charArray));
+        int[] inputArr = ReadLine().Split(' ').ChangeStrToInt();
+        var height = inputArr[0];
+        var width = inputArr[1];
+       Solve(width, height);
     }
 
-    class BracketCalculator
+    static void Solve(int width, int height)
     {
-        List<BracketHandler> bracketHandlers = new List<BracketHandler>();
-        public void RegisterHandler(BracketHandler handler)
-        {
-            bracketHandlers.Add(handler);
-        }
-
-        public int GetCalculatedValue(char[] charArray)
-        {
-            if (!BracketHandler.IsValid(charArray))
-            {
-                return 0;
-                
-            }
-            foreach (char ch in charArray)
-            {
-                bracketHandlers.ForEach(handler => handler.Handle(ch));
-            }
-            return BracketHandler.NumberStack.Sum(number => (int)number);
-        }
+        var chessBoard = new ChessBoard(width, height);
+        chessBoard.SetKnight();
+        WriteLine(chessBoard.GetMaxVisitingCountOfSickNight());
     }
 
-    abstract class BracketHandler
+    class ChessBoard
     {
-        public abstract void Handle(char bracketChar);
-
-        public static Stack<object> NumberStack = new();
-
-        public static bool IsValid(char[] charArray)
+        public int Width { get; set; }
+        public int Height { get; set; }
+        public SickKnight SickKnight { get; set; }
+        
+        public ChessBoard(int width, int height)
         {
-            if (charArray.Count(ch => ch == '(') != charArray.Count(ch => ch == ')'))
-                return false;
-            if (charArray.Count(ch => ch == '[') != charArray.Count(ch => ch == ']'))
-                return false;
-
-            string st = new string(charArray);
-            if (st.Contains("(]") || st.Contains("[)"))
-                return false;
-            return true;
+            Width = width;
+            Height = height;
         }
 
-        protected static void HandleCloseBracket(Stack<object> stack, char bracketChar, int multiplier)
+        public void SetKnight(int startX = 0, int startY = 0)
         {
-            var tempCount = 0;
-            while (stack.Count > 0 && stack.Peek() is int)
-            {
-                tempCount += (int)stack.Pop();
-            }
+            SickKnight = new SickKnight(startX, startY);
+        }
 
-            if (stack.Count > 0 && (char)stack.Peek() == bracketChar)
-            {
-                stack.Pop();
-                stack.Push(tempCount == 0 ? multiplier : tempCount * multiplier);
-            }
+        public int GetMaxVisitingCountOfSickNight()
+        {
+            SickKnight.Move(Width, Height);
+            return SickKnight.VisitingCount;
         }
     }
 
-    class SquareBracketHandler : BracketHandler
+    class SickKnight
     {
-        private int multiplier = 3;
-        public override void Handle(char bracketChar)
-        {
-            if (bracketChar == '[')
-                NumberStack.Push(bracketChar);
-            else if (bracketChar == ']')
-                HandleCloseBracket(NumberStack, '[', multiplier);
-        }
-    }
+        public (int x, int y) Coordinate { get; set; } = (0, 0);
+        public int VisitingCount { get; set; } = 1;
 
-    class ParenthesesHandler : BracketHandler
-    {
-        private int multiplier = 2;
-        public override void Handle(char bracketChar)
+        public SickKnight(int startX, int startY)
         {
-            if (bracketChar == '(')
-                NumberStack.Push(bracketChar);
-            else if (bracketChar == ')')
-                HandleCloseBracket(NumberStack, '(', multiplier);
+            Coordinate = (startX, startY);
         }
-    }
 
+        public void Move(int width, int height)
+        {
+            if (height == 1)
+            {
+                VisitingCount = 1;
+            }
+            else if (height == 2)
+            {
+                var result = 1 + (width - 1) / 2;
+                VisitingCount = result > 4 ? 4 : result;
+            }
+            else if (width < 5)
+            {
+                VisitingCount = width;
+            }
+            else if (width == 5)
+            {
+                VisitingCount = 4;
+            }
+            else
+            {
+                VisitingCount = 1 + 2 + (width - 5);
+            }
+        }
+        
+    }
 
     /////////////////////////////  util 함수  ////////////////////////////////
     static T[] CopyArray<T>(T[] array)
