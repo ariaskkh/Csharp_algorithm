@@ -1,4 +1,5 @@
-﻿using static System.Console;
+﻿using System.Text.RegularExpressions;
+using static System.Console;
 
 class Program
 {
@@ -9,11 +10,9 @@ class Program
         var width = int.Parse(input[1]);
         var blocks = int.Parse(input[2]);
         
-        int[][] groundHeight = new int[height][]; // 이거 구림.
-        for (var i =0; i < height; i++)
-        {
-            groundHeight[i] = ReadLine().Split(' ').ChangeStrToInt();
-        }
+        int[][] groundHeight = Enumerable.Range(0, height)
+            .Select(item => ReadLine().Split(' ').ChangeStrToInt())
+            .ToArray();
 
         Solve(groundHeight, blocks);
     }
@@ -22,41 +21,54 @@ class Program
     {
         var user = new User(blocks);
         var ground = new Ground(groundHeight);
+        user.Flatten(ground);
+        WriteLine($"{user.ConsumeTime} {ground.FlattenedGroundHeight}");
     }
 
     class Ground
     {
-        private int[][] GroundHeight;
+        public int[][] GroundHeightTable { get; set; }
+        public int FlattenedGroundHeight { get; set; }
+        private int maxHeight;
+        private int minHeight;
 
         public Ground(int[][] groundHeight)
         {
-            GroundHeight = groundHeight;
+            GroundHeightTable = groundHeight;
+            UpdateHeights();
         }
 
         public int GetMaxHeight()
         {
-            return GroundHeight.Select(line => line.Max()).Max();
+            return GroundHeightTable.Max(line => line.Max());
         }
 
         public int GetMinHeight()
         {
-            return GroundHeight.Select((line) => line.Min()).Min();
+            return GroundHeightTable.Min((line) => line.Min());
         }
 
         public int GetNumberOfMaxHeight()
         {
-            return GroundHeight.Select(line => line.Count(height => height == GetMaxHeight())).Count();
+            return GroundHeightTable.SelectMany(height => height).Count(height => height == maxHeight);
         }
 
         public int GetNumberOfMinHeight()
         {
-            return GroundHeight.Select(line => line.Count(height => height == GetMinHeight())).Count();
+            return GroundHeightTable.SelectMany(height => height).Count(height => height == minHeight);
+        }
+
+        public void UpdateHeights()
+        {
+            maxHeight = GetMaxHeight();
+            minHeight = GetMinHeight();
         }
     }
 
     class User : Digging, Filling
     {
         private int blocks;
+        public int ConsumeTime { get; set; }
         public User(int blocks)
         {
             this.blocks = blocks;
@@ -66,69 +78,89 @@ class Program
         {
             while (true)
             {
-                if (blocks > 0
-                    && ground.GetNumberOfMaxHeight() > ground.GetNumberOfMinHeight())
+                int maxHeight = ground.GetMaxHeight();
+                int minHeight = ground.GetMinHeight();
+                if (maxHeight == minHeight)
                 {
-                    // 가장 아랫쪽 채우기
-                    // 가장 아랫쪽 좌표 구하기고 fill 돌리기
-                    Fill();
-                    blocks--;
+                    ground.FlattenedGroundHeight = maxHeight;
+                    break;
                 }
-                else if (ground.GetNumberOfMaxHeight() < ground.GetNumberOfMinHeight())
+                // 가장 윗쪽 다 깎아야 함
+                if (blocks == 0)
                 {
-                    // 가장 윗쪽 깎기
-                    Dig();
-                    blocks++;
-                }
-                else // 개수 같은 경우
-                {
-                    if (ground.GetMaxHeight() == ground.GetMinHeight()) // 높이 같은 경우
+                    int prevMaxHeight = maxHeight;
+                    while (true)
                     {
-                        // 끝
-                        break;
-                    }
-                    else // 높이 다른 경우
-                    {
-                        // 아랫쪽 먼저 채우기
-                        if (blocks > 0)
+                        Dig(ground, maxHeight);
+                        ground.UpdateHeights();
+                        if (prevMaxHeight != ground.GetMaxHeight())
                         {
-                            // 아랫쪽 채우기
-                            Fill();
-                            blocks--;
-                        }
-                        else
-                        {
-                            // 윗쪽 깎기
-                            Dig();
-                            blocks++;
+                            break;
                         }
                     }
                 }
+                else // block > 0
+                {
+                    // 가장 아랫쪽 채우기. 개수 같을 경우 아랫쪽 채워야 평탄화 높이가 높아짐
+                    if (ground.GetNumberOfMaxHeight() >= ground.GetNumberOfMinHeight())
+                    {
+                        Fill(ground, minHeight);
+                    }
+                    else // 가장 윗쪽 깎기
+                    {
+                        Dig(ground, maxHeight);
+                    }
+                }
+                ground.UpdateHeights();
             }
-            
         }
 
-        // 한 칸씩
-        public void Dig()
+        private (int x, int y) FindCoordinateOfTargetNumber(Ground ground, int targetNumber)
         {
-
+            var heightTable = ground.GroundHeightTable;
+            var n = Enumerable.Range(0, heightTable.Count());
+            var m = Enumerable.Range(0, heightTable[0].Count());
+            return IterationFunction(n, m).FirstOrDefault(item => heightTable[item.Item1][item.Item2] == targetNumber);
         }
-        
-        // 한 칸씩
-        public void Fill()
-        {
 
+        public void Dig(Ground ground, int maxHeight)
+        {
+            (int x, int y) target = FindCoordinateOfTargetNumber(ground, maxHeight);
+            DigUnitArea(ground, target.x, target.y);
+            blocks++;
+            ConsumeTime += 2;
+        }
+
+        public void Fill(Ground ground, int minHeight)
+        {
+            (int x, int y) target = FindCoordinateOfTargetNumber(ground, minHeight);
+            FillUnitArea(ground, target.x, target.y);
+            blocks--;
+            ConsumeTime += 1;
+        }
+
+        public void DigUnitArea(Ground ground, int x, int y)
+        {
+            ground.GroundHeightTable[x][y] -= 1;
+            return;
+        }
+
+        public void FillUnitArea(Ground ground, int x, int y)
+        {
+            ground.GroundHeightTable[x][y] += 1;
+            return;
         }
     }
 
+
     interface Digging
     {
-        public void Dig(int[][] groundHeight);
+        public void Dig(Ground groung, int maxHeight);
     }
 
     interface Filling
     {
-        public void Fill(int[][] groundHeight);
+        public void Fill(Ground groung, int minHeight);
     }
 
 
