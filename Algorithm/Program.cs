@@ -4,79 +4,133 @@ class Program
 {
     static void Main(string[] args)
     {
-        int[] inputArr = ReadLine().Split(' ').ChangeStrToInt();
-        var height = inputArr[0];
-        var width = inputArr[1];
-       Solve(width, height);
-    }
-
-    static void Solve(int width, int height)
-    {
-        var chessBoard = new ChessBoard(width, height);
-        chessBoard.SetKnight();
-        WriteLine(chessBoard.GetMaxVisitingCountOfSickNight());
-    }
-
-    class ChessBoard
-    {
-        public int Width { get; set; }
-        public int Height { get; set; }
-        public SickKnight SickKnight { get; set; }
+        var input = ReadLine().Split(' ');
+        var height = int.Parse(input[0]);
+        var width = int.Parse(input[1]);
+        var blocks = int.Parse(input[2]);
         
-        public ChessBoard(int width, int height)
+        int[][] groundHeight = new int[height][]; // 이거 구림.
+        for (var i =0; i < height; i++)
         {
-            Width = width;
-            Height = height;
+            groundHeight[i] = ReadLine().Split(' ').ChangeStrToInt();
         }
 
-        public void SetKnight(int startX = 0, int startY = 0)
+        Solve(groundHeight, blocks);
+    }
+
+    static void Solve(int[][] groundHeight, int blocks)
+    {
+        var user = new User(blocks);
+        var ground = new Ground(groundHeight);
+    }
+
+    class Ground
+    {
+        private int[][] GroundHeight;
+
+        public Ground(int[][] groundHeight)
         {
-            SickKnight = new SickKnight(startX, startY);
+            GroundHeight = groundHeight;
         }
 
-        public int GetMaxVisitingCountOfSickNight()
+        public int GetMaxHeight()
         {
-            SickKnight.Move(Width, Height);
-            return SickKnight.VisitingCount;
+            return GroundHeight.Select(line => line.Max()).Max();
+        }
+
+        public int GetMinHeight()
+        {
+            return GroundHeight.Select((line) => line.Min()).Min();
+        }
+
+        public int GetNumberOfMaxHeight()
+        {
+            return GroundHeight.Select(line => line.Count(height => height == GetMaxHeight())).Count();
+        }
+
+        public int GetNumberOfMinHeight()
+        {
+            return GroundHeight.Select(line => line.Count(height => height == GetMinHeight())).Count();
         }
     }
 
-    class SickKnight
+    class User : Digging, Filling
     {
-        public (int x, int y) Coordinate { get; set; } = (0, 0);
-        public int VisitingCount { get; set; } = 1;
-
-        public SickKnight(int startX, int startY)
+        private int blocks;
+        public User(int blocks)
         {
-            Coordinate = (startX, startY);
+            this.blocks = blocks;
         }
 
-        public void Move(int width, int height)
+        public void Flatten(Ground ground)
         {
-            if (height == 1)
+            while (true)
             {
-                VisitingCount = 1;
+                if (blocks > 0
+                    && ground.GetNumberOfMaxHeight() > ground.GetNumberOfMinHeight())
+                {
+                    // 가장 아랫쪽 채우기
+                    // 가장 아랫쪽 좌표 구하기고 fill 돌리기
+                    Fill();
+                    blocks--;
+                }
+                else if (ground.GetNumberOfMaxHeight() < ground.GetNumberOfMinHeight())
+                {
+                    // 가장 윗쪽 깎기
+                    Dig();
+                    blocks++;
+                }
+                else // 개수 같은 경우
+                {
+                    if (ground.GetMaxHeight() == ground.GetMinHeight()) // 높이 같은 경우
+                    {
+                        // 끝
+                        break;
+                    }
+                    else // 높이 다른 경우
+                    {
+                        // 아랫쪽 먼저 채우기
+                        if (blocks > 0)
+                        {
+                            // 아랫쪽 채우기
+                            Fill();
+                            blocks--;
+                        }
+                        else
+                        {
+                            // 윗쪽 깎기
+                            Dig();
+                            blocks++;
+                        }
+                    }
+                }
             }
-            else if (height == 2)
-            {
-                var result = 1 + (width - 1) / 2;
-                VisitingCount = result > 4 ? 4 : result;
-            }
-            else if (width < 5)
-            {
-                VisitingCount = width;
-            }
-            else if (width == 5)
-            {
-                VisitingCount = 4;
-            }
-            else
-            {
-                VisitingCount = 1 + 2 + (width - 5);
-            }
+            
+        }
+
+        // 한 칸씩
+        public void Dig()
+        {
+
         }
         
+        // 한 칸씩
+        public void Fill()
+        {
+
+        }
     }
+
+    interface Digging
+    {
+        public void Dig(int[][] groundHeight);
+    }
+
+    interface Filling
+    {
+        public void Fill(int[][] groundHeight);
+    }
+
 
     /////////////////////////////  util 함수  ////////////////////////////////
     static T[] CopyArray<T>(T[] array)
