@@ -1,118 +1,108 @@
-﻿using System.Linq;
-using static System.Console;
+﻿using static System.Console;
 
 class Program
 {
     static void Main(string[] args)
     {
-        var input = ReadLine().Split(' ');
-        var height = int.Parse(input[0]);
-        var width = int.Parse(input[1]);
-        var blocks = int.Parse(input[2]);
-        
-        int[][] groundHeightTable = Enumerable.Range(0, height)
-            .Select(item => ReadLine().Split(' ').ChangeStrToInt())
-            .ToArray();
-
-        Solve(groundHeightTable, blocks);
+        var grageList = Enumerable.Range(0, 20)
+            .Select(_ => ReadLine().Split(' '))
+            .Select(input => new GradeData(input[0], double.Parse(input[1]), input[2]))
+            .ToList();
+        Solve(grageList);
     }
 
-    static void Solve(int[][] groundHeight, int blocks)
+    static void Solve(List<GradeData> gradeList)
     {
-        var user = new User(blocks); // 굳이 필요 없음
-        var ground = new Ground(groundHeight);
-        var data = ground.GetFlatteningData(user.Blocks);
-        if (data != null)
+        var calculator = new GradeCalculator();
+        WriteLine(calculator.GetAverage(gradeList));
+    }
+
+    private class GradeCalculator
+    {
+        public double GetAverage(List<GradeData> gradeList)
         {
-            WriteLine($"{data.Time} {data.Height}");
+            return gradeList
+                .Where(data => data.Grade != "P")
+                .Aggregate(
+                (weightSum: 0.0, weightedGradeSum: 0.0),
+                ((acc, curr) =>
+                {
+                    var nextWeightSum = acc.weightSum + curr.GradeWeight;
+                    var nextWeightedGradeSum = acc.weightedGradeSum + curr.GradeWeight * SubjectGrade.GetSubjectGrade(curr.Grade);
+                    return (nextWeightSum, nextWeightedGradeSum);
+                }),
+                (result => (result.weightedGradeSum / result.weightSum))
+                );
+
+            //var weightedGradeSum = gradeList
+            //     .Where(data => data.Grade != "P")
+            //     .Sum(data => data.GradeWeight * SubjectGrade.GetSubjectGrade(data.Grade));
+
+            //var weightSum = gradeList
+            //    .Where(data => data.Grade != "P")
+            //    .Sum(data => data.GradeWeight);
+
+            //return weightedGradeSum / weightSum;
         }
     }
 
-    class Ground
+
+
+    // double이라 enum이 안됨
+    private static class SubjectGrade
     {
-        public int[][] GroundHeightTable { get; set; }
-        public int FlattenedGroundHeight { get; set; }
+        public const double F = 0.0;
+        public const double D0 = 1.0;
+        public const double DPlus = 1.5;
+        public const double C0 = 2.0;
+        public const double CPlus = 2.5;
+        public const double B0 = 3.0;
+        public const double BPlus = 3.5;
+        public const double A0 = 4.0;
+        public const double APlus = 4.5;
 
-
-        public Ground(int[][] groundHeightTable)
+        public static double GetSubjectGrade(string grade)
         {
-            GroundHeightTable = groundHeightTable;
-        }
-
-        public int GetMaxHeight()
-        {
-            return GroundHeightTable.Max(line => line.Max());
-        }
-
-        public int GetMinHeight()
-        {
-            return GroundHeightTable.Min((line) => line.Min());
-        }
-
-        public FlatteningDetails? GetFlatteningData(int blocks)
-        {
-            // key: 높이, value: 개수
-            var heightDict = GroundHeightTable
-                .SelectMany(height => height)
-                .ConvertToDictionary();
-
-            return Enumerable.Range(GetMinHeight(), GetMaxHeight() - GetMinHeight() + 1)
-                .Select(height => CalculateFlatteningDataDetail(heightDict, height, blocks))
-                .Where(data => data.BlocksSufficient)
-                .OrderBy(data => data.Time)
-                .ThenByDescending(data => data.Height)
-                .FirstOrDefault();
-        }
-
-        private static FlatteningDetails CalculateFlatteningDataDetail(Dictionary<int, int> heightDict, int height, int blocks)
-        {
-            var digs = GetNumberOfDig(heightDict, height);
-            var fills = GetNumberOfFill(heightDict, height);
-            return new FlatteningDetails
+            switch (grade)
             {
-                Digs = digs,
-                Fills = fills,
-                Height = height,
-                Time = digs * 2 + fills,
-                BlocksSufficient = blocks + digs >= fills,
-            };
-        }
-
-        private static int GetNumberOfDig(Dictionary<int, int> heightDict, int targetHeight)
-        {
-            return heightDict
-                .Select(keyValue => keyValue.Key)
-                .Where(height => height > targetHeight)
-                .Sum(height => (height - targetHeight) * heightDict[height]);
-        }
-
-        private static int GetNumberOfFill(Dictionary<int, int> heightDict, int targetHeight)
-        {
-            return heightDict
-                .Select(keyValue => keyValue.Key)
-                .Where(height => height < targetHeight)
-                .Sum(height => (targetHeight - height) * heightDict[height]);
+                case "F":
+                    return F;
+                case "D0":
+                    return D0;
+                case "D+":
+                    return DPlus;
+                case "C0":
+                    return C0;
+                case "C+":
+                    return CPlus;
+                case "B0":
+                    return B0;
+                case "B+":
+                    return BPlus;
+                case "A0":
+                    return A0;
+                case "A+":
+                    return APlus;
+                default:
+                    return 0;
+            }
         }
     }
 
-    class User
+    private class GradeData
     {
-        public int Blocks { get; set; }
+        public string Subject { get; set; }
+        public double GradeWeight { get; set; }
+        public string Grade { get; set; }
 
-        public User(int blocks)
+        public GradeData(string subject, double gradeWeight, string grade)
         {
-            Blocks = blocks;
+            Subject = subject;
+            GradeWeight = gradeWeight;
+            Grade = grade;
         }
     }
-
-    private class FlatteningDetails
-    {
-        public int Height { get; set; }
-        public int Time { get; set; }
-        public int Digs { get; set; }
-        public int Fills { get; set; }
-        public bool BlocksSufficient { get; set; }
-    }
+    
 
 
     /////////////////////////////  util 함수  ////////////////////////////////
@@ -268,6 +258,4 @@ public static class EnumerableExtensions
             .GroupBy(height => height)
             .ToDictionary(group => group.Key, group => group.Count());
     }
-
-
 }
