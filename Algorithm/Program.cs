@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Linq;
 using static System.Console;
 
 class Program
@@ -10,32 +10,33 @@ class Program
         var width = int.Parse(input[1]);
         var blocks = int.Parse(input[2]);
         
-        int[][] groundHeight = Enumerable.Range(0, height)
+        int[][] groundHeightTable = Enumerable.Range(0, height)
             .Select(item => ReadLine().Split(' ').ChangeStrToInt())
             .ToArray();
 
-        Solve(groundHeight, blocks);
+        Solve(groundHeightTable, blocks);
     }
 
     static void Solve(int[][] groundHeight, int blocks)
     {
-        var user = new User(blocks);
+        var user = new User(blocks); // 굳이 필요 없음
         var ground = new Ground(groundHeight);
-        user.Flatten(ground);
-        WriteLine($"{user.ConsumeTime} {ground.FlattenedGroundHeight}");
+        var data = ground.GetFlatteningData(user.Blocks);
+        if (data != null)
+        {
+            WriteLine($"{data.Time} {data.Height}");
+        }
     }
 
     class Ground
     {
         public int[][] GroundHeightTable { get; set; }
         public int FlattenedGroundHeight { get; set; }
-        private int maxHeight;
-        private int minHeight;
 
-        public Ground(int[][] groundHeight)
+
+        public Ground(int[][] groundHeightTable)
         {
-            GroundHeightTable = groundHeight;
-            UpdateHeights();
+            GroundHeightTable = groundHeightTable;
         }
 
         public int GetMaxHeight()
@@ -48,119 +49,69 @@ class Program
             return GroundHeightTable.Min((line) => line.Min());
         }
 
-        public int GetNumberOfMaxHeight()
+        public FlatteningDetails? GetFlatteningData(int blocks)
         {
-            return GroundHeightTable.SelectMany(height => height).Count(height => height == maxHeight);
+            // key: 높이, value: 개수
+            var heightDict = GroundHeightTable
+                .SelectMany(height => height)
+                .ConvertToDictionary();
+
+            return Enumerable.Range(GetMinHeight(), GetMaxHeight() - GetMinHeight() + 1)
+                .Select(height => CalculateFlatteningDataDetail(heightDict, height, blocks))
+                .Where(data => data.BlocksSufficient)
+                .OrderBy(data => data.Time)
+                .ThenByDescending(data => data.Height)
+                .FirstOrDefault();
         }
 
-        public int GetNumberOfMinHeight()
+        private static FlatteningDetails CalculateFlatteningDataDetail(Dictionary<int, int> heightDict, int height, int blocks)
         {
-            return GroundHeightTable.SelectMany(height => height).Count(height => height == minHeight);
+            var digs = GetNumberOfDig(heightDict, height);
+            var fills = GetNumberOfFill(heightDict, height);
+            return new FlatteningDetails
+            {
+                Digs = digs,
+                Fills = fills,
+                Height = height,
+                Time = digs * 2 + fills,
+                BlocksSufficient = blocks + digs >= fills,
+            };
         }
 
-        public void UpdateHeights()
+        private static int GetNumberOfDig(Dictionary<int, int> heightDict, int targetHeight)
         {
-            maxHeight = GetMaxHeight();
-            minHeight = GetMinHeight();
+            return heightDict
+                .Select(keyValue => keyValue.Key)
+                .Where(height => height > targetHeight)
+                .Sum(height => (height - targetHeight) * heightDict[height]);
+        }
+
+        private static int GetNumberOfFill(Dictionary<int, int> heightDict, int targetHeight)
+        {
+            return heightDict
+                .Select(keyValue => keyValue.Key)
+                .Where(height => height < targetHeight)
+                .Sum(height => (targetHeight - height) * heightDict[height]);
         }
     }
 
-    class User : Digging, Filling
+    class User
     {
-        private int blocks;
-        public int ConsumeTime { get; set; }
+        public int Blocks { get; set; }
+
         public User(int blocks)
         {
-            this.blocks = blocks;
-        }
-
-        public void Flatten(Ground ground)
-        {
-            while (true)
-            {
-                int maxHeight = ground.GetMaxHeight();
-                int minHeight = ground.GetMinHeight();
-                if (maxHeight == minHeight)
-                {
-                    ground.FlattenedGroundHeight = maxHeight;
-                    break;
-                }
-                // 가장 윗쪽 다 깎아야 함
-                if (blocks == 0)
-                {
-                    int prevMaxHeight = maxHeight;
-                    while (true)
-                    {
-                        Dig(ground, maxHeight);
-                        ground.UpdateHeights();
-                        if (prevMaxHeight != ground.GetMaxHeight())
-                        {
-                            break;
-                        }
-                    }
-                }
-                else // block > 0
-                {
-                    // 가장 아랫쪽 채우기. 개수 같을 경우 아랫쪽 채워야 평탄화 높이가 높아짐
-                    if (ground.GetNumberOfMaxHeight() >= ground.GetNumberOfMinHeight())
-                    {
-                        Fill(ground, minHeight);
-                    }
-                    else // 가장 윗쪽 깎기
-                    {
-                        Dig(ground, maxHeight);
-                    }
-                }
-                ground.UpdateHeights();
-            }
-        }
-
-        private (int x, int y) FindCoordinateOfTargetNumber(Ground ground, int targetNumber)
-        {
-            var heightTable = ground.GroundHeightTable;
-            var n = Enumerable.Range(0, heightTable.Count());
-            var m = Enumerable.Range(0, heightTable[0].Count());
-            return IterationFunction(n, m).FirstOrDefault(item => heightTable[item.Item1][item.Item2] == targetNumber);
-        }
-
-        public void Dig(Ground ground, int maxHeight)
-        {
-            (int x, int y) target = FindCoordinateOfTargetNumber(ground, maxHeight);
-            DigUnitArea(ground, target.x, target.y);
-            blocks++;
-            ConsumeTime += 2;
-        }
-
-        public void Fill(Ground ground, int minHeight)
-        {
-            (int x, int y) target = FindCoordinateOfTargetNumber(ground, minHeight);
-            FillUnitArea(ground, target.x, target.y);
-            blocks--;
-            ConsumeTime += 1;
-        }
-
-        public void DigUnitArea(Ground ground, int x, int y)
-        {
-            ground.GroundHeightTable[x][y] -= 1;
-            return;
-        }
-
-        public void FillUnitArea(Ground ground, int x, int y)
-        {
-            ground.GroundHeightTable[x][y] += 1;
-            return;
+            Blocks = blocks;
         }
     }
 
-
-    interface Digging
+    private class FlatteningDetails
     {
-        public void Dig(Ground groung, int maxHeight);
-    }
-
-    interface Filling
-    {
-        public void Fill(Ground groung, int minHeight);
+        public int Height { get; set; }
+        public int Time { get; set; }
+        public int Digs { get; set; }
+        public int Fills { get; set; }
+        public bool BlocksSufficient { get; set; }
     }
 
 
@@ -311,20 +262,12 @@ public static class EnumerableExtensions
         return queue;
     }
 
-    public static Dictionary<int, int> ConverIntListToDict(this IEnumerable<int> enumerable)
+    public static Dictionary<int, int> ConvertToDictionary(this IEnumerable<int >enumerable)
     {
-        var numberDict = new Dictionary<int, int>();
-        foreach (var item in enumerable)
-        {
-            if (numberDict.ContainsKey(item))
-            {
-                numberDict[item] += 1;
-            }
-            else
-            {
-                numberDict.Add(item, 1);
-            }
-        }
-        return numberDict;
+        return enumerable
+            .GroupBy(height => height)
+            .ToDictionary(group => group.Key, group => group.Count());
     }
+
+
 }
