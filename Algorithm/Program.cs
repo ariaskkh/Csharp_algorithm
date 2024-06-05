@@ -4,106 +4,37 @@ class Program
 {
     static void Main(string[] args)
     {
-        var grageList = Enumerable.Range(0, 20)
-            .Select(_ => ReadLine().Split(' '))
-            .Select(input => new GradeData(input[0], double.Parse(input[1]), input[2]))
-            .ToList();
-        Solve(grageList);
+        var n = int.Parse(ReadLine());
+        var difficultyList = Enumerable.Range(0, n).Select(_ => int.Parse(ReadLine())).ToList();
+        Solve(difficultyList);
     }
 
-    static void Solve(List<GradeData> gradeList)
+    static void Solve(List<int> difficultyList)
     {
-        var calculator = new GradeCalculator();
-        WriteLine(calculator.GetAverage(gradeList));
+        var difficulty = DifficultyCalculator.GetDifficulty(difficultyList);
+        WriteLine(difficulty);
     }
 
-    private class GradeCalculator
+    static class DifficultyCalculator
     {
-        public double GetAverage(List<GradeData> gradeList)
+        private static decimal cutPercent = 30;
+        public static int GetDifficulty(List<int> difficultyList)
         {
-            return gradeList
-                .Where(data => data.Grade != "P")
-                .Aggregate(
-                (weightSum: 0.0, weightedGradeSum: 0.0),
-                ((acc, curr) =>
-                {
-                    var nextWeightSum = acc.weightSum + curr.GradeWeight;
-                    var nextWeightedGradeSum = acc.weightedGradeSum + curr.GradeWeight * SubjectGrade.GetSubjectGrade(curr.Grade);
-                    return (nextWeightSum, nextWeightedGradeSum);
-                }),
-                (result => (result.weightedGradeSum / result.weightSum))
-                );
-
-            //var weightedGradeSum = gradeList
-            //     .Where(data => data.Grade != "P")
-            //     .Sum(data => data.GradeWeight * SubjectGrade.GetSubjectGrade(data.Grade));
-
-            //var weightSum = gradeList
-            //    .Where(data => data.Grade != "P")
-            //    .Sum(data => data.GradeWeight);
-
-            //return weightedGradeSum / weightSum;
-        }
-    }
-
-
-
-    // double이라 enum이 안됨
-    private static class SubjectGrade
-    {
-        public const double F = 0.0;
-        public const double D0 = 1.0;
-        public const double DPlus = 1.5;
-        public const double C0 = 2.0;
-        public const double CPlus = 2.5;
-        public const double B0 = 3.0;
-        public const double BPlus = 3.5;
-        public const double A0 = 4.0;
-        public const double APlus = 4.5;
-
-        public static double GetSubjectGrade(string grade)
-        {
-            switch (grade)
+            int count = difficultyList.Count;
+            if (count == 0)
             {
-                case "F":
-                    return F;
-                case "D0":
-                    return D0;
-                case "D+":
-                    return DPlus;
-                case "C0":
-                    return C0;
-                case "C+":
-                    return CPlus;
-                case "B0":
-                    return B0;
-                case "B+":
-                    return BPlus;
-                case "A0":
-                    return A0;
-                case "A+":
-                    return APlus;
-                default:
-                    return 0;
+                return 0;
             }
+
+            var cutCountOfOneSide = (int)Math.Round(count * ((cutPercent / 2) / 100), MidpointRounding.AwayFromZero);
+            var average = difficultyList
+                .OrderBy(grade => grade)
+                .Skip(cutCountOfOneSide) // 최하 15% 절삭
+                .Take(count - 2 * cutCountOfOneSide) // 최상 15% 절삭
+                .Average();
+            return (int)Math.Round(average, MidpointRounding.AwayFromZero);
         }
     }
-
-    private class GradeData
-    {
-        public string Subject { get; set; }
-        public double GradeWeight { get; set; }
-        public string Grade { get; set; }
-
-        public GradeData(string subject, double gradeWeight, string grade)
-        {
-            Subject = subject;
-            GradeWeight = gradeWeight;
-            Grade = grade;
-        }
-    }
-    
-
 
     /////////////////////////////  util 함수  ////////////////////////////////
     static T[] CopyArray<T>(T[] array)
