@@ -1,40 +1,79 @@
-﻿using static System.Console;
+﻿using System.Text;
+using static System.Console;
 
 class Program
 {
     static void Main(string[] args)
     {
-        var n = int.Parse(ReadLine());
-        var difficultyList = Enumerable.Range(0, n).Select(_ => int.Parse(ReadLine())).ToList();
-        Solve(difficultyList);
-    }
-
-    static void Solve(List<int> difficultyList)
-    {
-        var difficulty = DifficultyCalculator.GetDifficulty(difficultyList);
-        WriteLine(difficulty);
-    }
-
-    static class DifficultyCalculator
-    {
-        private static decimal cutPercent = 30;
-        public static int GetDifficulty(List<int> difficultyList)
+        var stringDataList = new List<(string st, string subSt)>();
+        while(true) 
         {
-            int count = difficultyList.Count;
-            if (count == 0)
+            try
             {
-                return 0;
+                var input = ReadLine();
+                if (input == null)
+                {
+                    break;
+                }
+                var stringArray = input.Split(' ');
+                var subSt = stringArray[0];
+                var st = stringArray[1];
+                stringDataList.Add((st, subSt));
+            }
+            catch (Exception)
+            {
+                break;
+            }
+            
+        }
+
+        var subStringCheckList = Solve(stringDataList);
+        var sb = new StringBuilder();
+        subStringCheckList
+            .Select(ConvertToPrintForm)
+            .ForEach(isSubstring => sb.AppendLine(isSubstring));
+        WriteLine(sb);
+    }
+
+    static List<bool> Solve(List<(string st, string subSt)> stringDataList)
+    {
+        return stringDataList
+            .Select(stringData => SubstringChecker.Check(stringData.st, stringData.subSt))
+            .ToList();
+    }
+
+    private static string ConvertToPrintForm(bool isSubString)
+    {
+        return isSubString ? "Yes" : "No";
+    }
+
+    static class SubstringChecker
+    {
+        public static bool Check(string st, string subSt)
+        {
+            if (!CheckHavingAllCharacter(st, subSt))
+            {
+                return false;
             }
 
-            var cutCountOfOneSide = (int)Math.Round(count * ((cutPercent / 2) / 100), MidpointRounding.AwayFromZero);
-            var average = difficultyList
-                .OrderBy(grade => grade)
-                .Skip(cutCountOfOneSide) // 최하 15% 절삭
-                .Take(count - 2 * cutCountOfOneSide) // 최상 15% 절삭
-                .Average();
-            return (int)Math.Round(average, MidpointRounding.AwayFromZero);
+            return CheckHavingSubstring(st, subSt);
+        }
+
+        private static bool CheckHavingAllCharacter(string st, string subSt)
+        {
+            return subSt.All(st.Contains);
+        }
+
+        private static bool CheckHavingSubstring(string st, string subSt)
+        {
+            var subStQueue = new Queue<char>(subSt);
+            var count = st.Where(ch => ch == subStQueue.FirstOrDefault())
+                .Select(ch => subStQueue.Dequeue())
+                .Count();
+            return count == subSt.Length;
         }
     }
+    
 
     /////////////////////////////  util 함수  ////////////////////////////////
     static T[] CopyArray<T>(T[] array)
