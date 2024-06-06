@@ -5,75 +5,62 @@ class Program
 {
     static void Main(string[] args)
     {
-        var stringDataList = new List<(string st, string subSt)>();
-        while(true) 
-        {
-            try
-            {
-                var input = ReadLine();
-                if (input == null)
-                {
-                    break;
-                }
-                var stringArray = input.Split(' ');
-                var subSt = stringArray[0];
-                var st = stringArray[1];
-                stringDataList.Add((st, subSt));
-            }
-            catch (Exception)
-            {
-                break;
-            }
-            
-        }
-
-        var subStringCheckList = Solve(stringDataList);
-        var sb = new StringBuilder();
-        subStringCheckList
-            .Select(ConvertToPrintForm)
-            .ForEach(isSubstring => sb.AppendLine(isSubstring));
-        WriteLine(sb);
+        var peopleNumber = int.Parse(ReadLine());
+        var peopleSizeList = Enumerable.Range(0, peopleNumber)
+            .Select(_ => ReadLine().Split(' ').ChangeStrToInt())
+            .Select((bodyData, index) => new Person(index, bodyData[0], bodyData[1]))
+            .ToList();
+        List<int> updatedSizeList = Solve(peopleSizeList);
+        WriteLine(string.Join(" ", updatedSizeList));
     }
 
-    static List<bool> Solve(List<(string st, string subSt)> stringDataList)
+    static List<int> Solve(List<Person> peopleSizeList)
     {
-        return stringDataList
-            .Select(stringData => SubstringChecker.Check(stringData.st, stringData.subSt))
+        var calculator = new BodySizeRankCalculator(peopleSizeList);
+        return peopleSizeList
+            .Select(person => calculator.Calculate(person))
+            .Select(person => person.Rank)
             .ToList();
     }
 
-    private static string ConvertToPrintForm(bool isSubString)
+    class BodySizeRankCalculator
     {
-        return isSubString ? "Yes" : "No";
-    }
-
-    static class SubstringChecker
-    {
-        public static bool Check(string st, string subSt)
+        List<Person> PeopleList = new();
+        public BodySizeRankCalculator(List<Person> peopleList)
         {
-            if (!CheckHavingAllCharacter(st, subSt))
-            {
-                return false;
-            }
-
-            return CheckHavingSubstring(st, subSt);
+            PeopleList = peopleList.ToList(); // deep copy
         }
 
-        private static bool CheckHavingAllCharacter(string st, string subSt)
+        public Person Calculate(Person targetPerson)
         {
-            return subSt.All(st.Contains);
-        }
-
-        private static bool CheckHavingSubstring(string st, string subSt)
-        {
-            var subStQueue = new Queue<char>(subSt);
-            var count = st.Where(ch => ch == subStQueue.FirstOrDefault())
-                .Select(ch => subStQueue.Dequeue())
+            var biggerPeopleCount = PeopleList
+                .Where(person => person != targetPerson)
+                .Where(person => IsBigger(person, targetPerson))
                 .Count();
-            return count == subSt.Length;
+            targetPerson.Rank += biggerPeopleCount;
+            return targetPerson;
+        }
+
+        private static bool IsBigger(Person person, Person targetPerson)
+        {
+            return targetPerson.Weight < person.Weight
+                && targetPerson.Height < person.Height;
         }
     }
-    
+
+    class Person
+    {
+        public int Index { get; set; }
+        public int Weight { get; set; }
+        public int Height { get; set; }
+        public int Rank { get; set; } = 1;
+        public Person(int index, int weight, int height)
+        {
+            Index = index;
+            Weight = weight;
+            Height = height;
+        }
+    }
 
     /////////////////////////////  util 함수  ////////////////////////////////
     static T[] CopyArray<T>(T[] array)
