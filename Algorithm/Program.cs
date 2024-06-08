@@ -5,62 +5,93 @@ class Program
 {
     static void Main(string[] args)
     {
-        var peopleNumber = int.Parse(ReadLine());
-        var peopleSizeList = Enumerable.Range(0, peopleNumber)
+        var input = ReadLine().Split(' ').ChangeStrToInt();
+        var nationNumber = input[0];
+        var targetNationIndex = input[1];
+        var nationList = Enumerable.Range(0, nationNumber)
             .Select(_ => ReadLine().Split(' ').ChangeStrToInt())
-            .Select((bodyData, index) => new Person(index, bodyData[0], bodyData[1]))
+            .Select(data => new Nation(data[0], data[1], data[2], data[3]))  // index, 금, 은, 동
             .ToList();
-        List<int> updatedSizeList = Solve(peopleSizeList);
-        WriteLine(string.Join(" ", updatedSizeList));
+        var targetNation = Solve(nationList, targetNationIndex);
+        WriteLine(targetNation.Rank);
     }
 
-    static List<int> Solve(List<Person> peopleSizeList)
+    static Nation Solve(List<Nation> nationList, int targetNationIndex)
     {
-        var calculator = new BodySizeRankCalculator(peopleSizeList);
-        return peopleSizeList
-            .Select(person => calculator.Calculate(person))
-            .Select(person => person.Rank)
-            .ToList();
+        var calculator = new OlympicRankCalculator();
+        calculator.Calculate(nationList);
+        return calculator.GetTargetNation(targetNationIndex);
+        
     }
 
-    class BodySizeRankCalculator
+    class OlympicRankCalculator
     {
-        List<Person> PeopleList = new();
-        public BodySizeRankCalculator(List<Person> peopleList)
+        private List<Nation> updatedNationList;
+        public void Calculate(List<Nation> nationList)
         {
-            PeopleList = peopleList.ToList(); // deep copy
+            updatedNationList = nationList
+                .OrderByDescending(nation => nation.GoldMedal)
+                .ThenByDescending(nation => nation.SilverMedal)
+                .ThenByDescending(nation => nation.BronzeMedal)
+                .Aggregate(
+                (nation: default(Nation), count: 1), // initial value
+                (acc, curr) =>
+                { // func
+                    if (acc.nation == null)
+                    {
+                        curr.Rank = 1;
+                    }
+                    else
+                    {
+                        if (HasSameRank(acc.nation, curr))
+                        {
+                            curr.Rank = acc.nation.Rank;
+                            acc.count++;
+                        }
+                        else
+                        {
+                            curr.Rank = acc.nation.Rank + acc.count;
+                            acc.count = 1;
+                        }
+                    }
+                    return (curr, acc.count);
+                },
+                (_ => nationList) // result selector
+                );
         }
 
-        public Person Calculate(Person targetPerson)
+
+        bool HasSameRank(Nation prevNation, Nation currNation)
         {
-            var biggerPeopleCount = PeopleList
-                .Where(person => person != targetPerson)
-                .Where(person => IsBigger(person, targetPerson))
-                .Count();
-            targetPerson.Rank += biggerPeopleCount;
-            return targetPerson;
+            return prevNation.GoldMedal == currNation.GoldMedal
+                && prevNation.SilverMedal == currNation.SilverMedal
+                && prevNation.BronzeMedal == currNation.BronzeMedal;
         }
 
-        private static bool IsBigger(Person person, Person targetPerson)
+        public Nation GetTargetNation(int nationIndex)
         {
-            return targetPerson.Weight < person.Weight
-                && targetPerson.Height < person.Height;
+            return updatedNationList.FirstOrDefault(nation => nation.Index == nationIndex);
         }
     }
 
-    class Person
+    class Nation
     {
-        public int Index { get; set; }
-        public int Weight { get; set; }
-        public int Height { get; set; }
-        public int Rank { get; set; } = 1;
-        public Person(int index, int weight, int height)
+        public int Rank { get; set; }
+        public int Index { get; }
+        public int GoldMedal { get; }
+        public int SilverMedal { get; }
+        public int BronzeMedal { get; }
+
+        public Nation(int index, int goldMedal, int silverMedal, int bronzeMedal)
         {
             Index = index;
-            Weight = weight;
-            Height = height;
+            GoldMedal = goldMedal;
+            SilverMedal = silverMedal;
+            BronzeMedal = bronzeMedal;
         }
     }
+
+
 
     /////////////////////////////  util 함수  ////////////////////////////////
     static T[] CopyArray<T>(T[] array)
