@@ -5,92 +5,91 @@ class Program
 {
     static void Main(string[] args)
     {
-        var input = ReadLine().Split(' ').ChangeStrToInt();
-        var nationNumber = input[0];
-        var targetNationIndex = input[1];
-        var nationList = Enumerable.Range(0, nationNumber)
-            .Select(_ => ReadLine().Split(' ').ChangeStrToInt())
-            .Select(data => new Nation(data[0], data[1], data[2], data[3]))  // index, 금, 은, 동
-            .ToList();
-        var targetNation = Solve(nationList, targetNationIndex);
-        WriteLine(targetNation.Rank);
+        var str = ReadLine();
+        Solve(str);
     }
 
-    static Nation Solve(List<Nation> nationList, int targetNationIndex)
+    static void Solve(string str)
     {
-        var calculator = new OlympicRankCalculator();
-        calculator.Calculate(nationList);
-        return calculator.GetTargetNation(targetNationIndex);
-        
+        var subStringList = StringConverter.GetConvertedSubStringList(str);
+        var sb = new StringBuilder();
+        subStringList
+            .ForEach(subString => sb.Append(subString.SubString));
+        WriteLine(sb.ToString());
     }
 
-    class OlympicRankCalculator
+    static class StringConverter
     {
-        private List<Nation> updatedNationList;
-        public void Calculate(List<Nation> nationList)
+        public static List<ISubString> GetConvertedSubStringList(string str)
         {
-            updatedNationList = nationList
-                .OrderByDescending(nation => nation.GoldMedal)
-                .ThenByDescending(nation => nation.SilverMedal)
-                .ThenByDescending(nation => nation.BronzeMedal)
-                .Aggregate(
-                (nation: default(Nation), count: 1), // initial value
-                (acc, curr) =>
-                { // func
-                    if (acc.nation == null)
-                    {
-                        curr.Rank = 1;
-                    }
-                    else
-                    {
-                        if (HasSameRank(acc.nation, curr))
-                        {
-                            curr.Rank = acc.nation.Rank;
-                            acc.count++;
-                        }
-                        else
-                        {
-                            curr.Rank = acc.nation.Rank + acc.count;
-                            acc.count = 1;
-                        }
-                    }
-                    return (curr, acc.count);
-                },
-                (_ => nationList) // result selector
-                );
+            var tagCount = str.Count(ch => ch == '<');
+            List<ISubString> subStringList = new();
+
+            Enumerable.Range(0, tagCount)
+                .ForEach(_ => { str = Separate(str, subStringList); });
+            AddLastSubStringLeft(str, subStringList);
+
+            return subStringList;
         }
 
-
-        bool HasSameRank(Nation prevNation, Nation currNation)
+        private static string Separate(string str, List<ISubString> subStringList)
         {
-            return prevNation.GoldMedal == currNation.GoldMedal
-                && prevNation.SilverMedal == currNation.SilverMedal
-                && prevNation.BronzeMedal == currNation.BronzeMedal;
+            var tagLeftIndex = str.ToList().FindIndex(ch => ch == '<');
+            var tagRightIndex = str.ToList().FindIndex(ch => ch == '>');
+
+            if (tagLeftIndex > 0)
+            {
+                subStringList.Add(new Word(str[..tagLeftIndex]));
+            }
+            subStringList.Add(new Tag(str[tagLeftIndex..(tagRightIndex + 1)]));
+            return str[(tagRightIndex + 1)..];
         }
 
-        public Nation GetTargetNation(int nationIndex)
+        private static void AddLastSubStringLeft(string str, List<ISubString> subStringList)
         {
-            return updatedNationList.FirstOrDefault(nation => nation.Index == nationIndex);
+            if (str.Length != 0)
+            {
+                subStringList.Add(new Word(str));
+            }
         }
     }
 
-    class Nation
+    interface ISubString
     {
-        public int Rank { get; set; }
-        public int Index { get; }
-        public int GoldMedal { get; }
-        public int SilverMedal { get; }
-        public int BronzeMedal { get; }
+        string SubString { get; set; }
+    }
 
-        public Nation(int index, int goldMedal, int silverMedal, int bronzeMedal)
+
+    class Tag : ISubString
+    {
+        public string SubString { get; set; }
+
+        public Tag(string tagString)
         {
-            Index = index;
-            GoldMedal = goldMedal;
-            SilverMedal = silverMedal;
-            BronzeMedal = bronzeMedal;
+            SubString = tagString;
         }
     }
 
+    class Word : ISubString
+    {
+        public string originalSubString { get; set; }
+        public string SubString { get; set; }
+        public Word(string wordString)
+        {
+            originalSubString = wordString;
+            SubString = GetReversedSubString(wordString);
+        }
+
+
+        private string GetReversedSubString(string wordString)
+        {
+            var reversedWordList = wordString
+                .Split(' ')
+                .Select(word => new string(word.Reverse().ToArray()))
+                .ToList();
+            return string.Join(' ', reversedWordList);
+        }
+    }
 
 
     /////////////////////////////  util 함수  ////////////////////////////////
@@ -240,7 +239,7 @@ public static class EnumerableExtensions
         return queue;
     }
 
-    public static Dictionary<int, int> ConvertToDictionary(this IEnumerable<int >enumerable)
+    public static Dictionary<int, int> ConvertToDictionary(this IEnumerable<int> enumerable)
     {
         return enumerable
             .GroupBy(height => height)
