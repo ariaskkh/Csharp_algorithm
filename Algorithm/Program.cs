@@ -1,169 +1,235 @@
-﻿using System.Text;
-using static System.Console;
-
-enum Calculation
-{
-    Add,
-    Remove,
-    Check,
-    Toggle,
-    All,
-    Empty,
-}
+﻿using static System.Console;
 
 class Program
 {
     static void Main(string[] args)
     {
-        var n = int.Parse(ReadLine());
-        List<TaskUnit> taskList = new();
-        //var taskList = Enumerable
-        //    .Range(0, n)
-        //    .Select(_ => ReadLine().Split(' '))
-        //    .Select(item => new Task(item[0], int.Parse(item[1] ?? default )))
-        //    .ToList();
-        for (var i = 0; i < n; i++)
+
+        var boardSize = int.Parse(ReadLine());
+        var appleCount = int.Parse(ReadLine());
+        var appleList = Enumerable.Range(0, appleCount)
+            .Select(_ => ReadLine().Split(' ').ChangeStrToInt())
+            .Select(data => (data[0] - 1, data[1] - 1))  // row index, column index
+            .ToList();
+        var directionChangeCount = int.Parse(ReadLine());
+        var directionChangeList = Enumerable.Range(0, directionChangeCount)
+            .Select(_ => ReadLine().Split(' '))
+            .Select(data => (int.Parse(data[0]), GetSnakeDirection(data[1])))  // row, column
+            .ToList();
+
+        var survivedTime = Solve(boardSize, directionChangeList, appleList);
+        WriteLine(survivedTime);
+    }
+
+    private static IDirectionHandler GetSnakeDirection(string direction)
+    {
+        return direction switch
         {
-            var result = ReadLine().Split(' ');
-            if (result.Length == 1)
-            {
-                taskList.Add(new TaskUnit(result[0], default));
-            }
-            else
-            {
-                taskList.Add(new TaskUnit(result[0], int.Parse(result[1])));
-            }
+            //"D" => SnakeDirection.Right,
+            //"L" => SnakeDirection.Left,
+            //_ => SnakeDirection.Right,
+            "D" => new TurnRightHandler(),
+            "L" => new TurnLeftHandler(),
+            _ => new TurnRightHandler(),
+        };
+    }
+
+    static int Solve(int boardSize, List<(int, IDirectionHandler)> directionChangeList, List<(int row, int column)> appleList)
+    {
+        // 보드 class, 뱀 class 생성
+        // 보드에서 크기, 뱀 인스턴스, 사과 위치 정보 기억
+        // 뱀 class는 위치 및 left, right 메서드 가지기
+        // 뱀 이동 시 앞 추가, 뒤 빼기 -> list?
+
+        var snake = new Snake();
+        var board = new Board(boardSize, boardSize, snake, directionChangeList, appleList);
+        board.Start();
+        return board.SurvivedTime;
+
+    }
+
+    private class Board
+    {
+        private int width;
+        private int height;
+        private Snake snake;
+        private List<(int time, IDirectionHandler direction)> directionChangeInfo = new();
+        private List<(int row, int column)> appleList = new();
+        public int SurvivedTime { get; set; } = 0;
+
+        public Board(
+            int width,
+            int height,
+            Snake snake,
+            List<(int time, IDirectionHandler direction)> directionChangeInfo,
+            List<(int, int)> appleList)
+        {
+            this.width = width;
+            this.height = height;
+            this.snake = snake;
+            this.directionChangeInfo = directionChangeInfo;
+            this.appleList = appleList;
         }
-        var checkList = Solve(taskList);
-        var sb = new StringBuilder();
-        checkList.ForEach(item => sb.AppendLine(item.ToString()));
-        WriteLine(sb.ToString());
-    }
 
-    static List<int> Solve(List<TaskUnit> taskList)
-    {
-        var calculator = new Calculator();
-        calculator.Calculate(taskList);
-        return calculator.CheckList;
-    }
 
-    class Calculator
-    {
-        private List<int> list = new();
-        public List<int> CheckList { get; set; } = new();
-
-        public void Calculate(List<TaskUnit> taskList)
+        public void Start()
         {
-            foreach (var task in taskList)
+            while (true)
             {
-                switch (task.CalcType)
+                (int x, int y) location = snake.Move(appleList);
+                SurvivedTime++;
+
+                if (IsOutOfBoard(location.x, location.y) || snake.HitItSelf)
                 {
-                    case Calculation.Add:
-                        Add(task.Number);
-                        break;
-                    case Calculation.Remove:
-                        Remove(task.Number);
-                        break;
-                    case Calculation.Check:
-                        Check(task.Number);
-                        break;
-                    case Calculation.Toggle:
-                        Toggle(task.Number);
-                        break;
-                    case Calculation.All:
-                        All();
-                        break;
-                    case Calculation.Empty:
-                        Empty();
-                        break;
+                    break;
+                }
+
+                if (directionChangeInfo.Count > 0)
+                {
+                    ChangeDirection(directionChangeInfo.FirstOrDefault());
                 }
             }
         }
 
-
-        private void Add(int number)
+        private void ChangeDirection((int time, IDirectionHandler handler)? directionChange)
         {
-            if (!list.Contains(number))
-                list.Add(number);
-        }
-
-        private void Remove(int number)
-        {
-            if (list.Contains(number))
+            if (directionChange?.time == SurvivedTime)
             {
-                list.Remove(number);
+                snake.TurnDirection(directionChange?.handler);
+                directionChangeInfo.RemoveAt(0);
             }
         }
 
-        private void Check(int number)
+        private bool IsOutOfBoard(int x, int y)
         {
-            if (list.Contains(number))
-            {
-                CheckList.Add(1);
-            }
-            else
-            {
-                CheckList.Add(0);
-            }
-        }
-
-        private void Toggle(int number)
-        {
-            if (list.Contains(number))
-            {
-                list.Remove(number);
-            }
-            else
-            {
-                list.Add(number);
-            }
-        }
-
-        private void Empty()
-        {
-            list = new();
-        }
-
-        private void All()
-        {
-            list = Enumerable.Range(1, 20).ToList();
+            return x < 0
+                || x >= width
+                || y < 0
+                || y >= height;
         }
     }
 
-    class TaskUnit
+
+
+    interface Animal
     {
-        public Calculation CalcType { get; set; }
-        public int Number { get; set; }
-        public TaskUnit(string calcType, int? number)
+        int Length { get; set; }
+        public List<(int row, int column)> LocationList { get; set; }
+        void TurnDirection(IDirectionHandler handler);
+    }
+
+    enum SnakeDirection
+    {
+        Right,
+        Down,
+        Left,
+        Up,
+    }
+
+    private class Snake : Animal
+    {
+        public int Length { get; set; }
+        public List<(int row, int column)> LocationList { get; set; } = new List<(int, int)>();
+        private List<int> dx = new List<int>() { 0, 1, 0, -1 };
+        private List<int> dy = new List<int>() { 1, 0, -1, 0 };
+        private SnakeDirection direction; // 0 ~ 3
+        public bool HitItSelf { get; set; } = false;
+
+        public Snake()
         {
-            SetCalcTpye(calcType);
-            Number = number ?? default;
+            Length = 1;
+            direction = SnakeDirection.Right;
+            LocationList.Add((0, 0));
         }
-        private void SetCalcTpye(string calcType)
+
+        public (int x, int y) Move(List<(int row, int column)> appleList)
         {
-            switch (calcType)
+            // 1. 다음 칸
+            (var nextX, var nextY) = GetNextLocation();
+
+            if (LocationList.Contains((nextX, nextY)))
             {
-                case "add":
-                    CalcType = Calculation.Add;
-                    break;
-                case "remove":
-                    CalcType = Calculation.Remove;
-                    break;
-                case "check":
-                    CalcType = Calculation.Check;
-                    break;
-                case "toggle":
-                    CalcType = Calculation.Toggle;
-                    break;
-                case "all":
-                    CalcType = Calculation.All;
-                    break;
-                case "empty":
-                    CalcType = Calculation.Empty;
-                    break;
+                HitItSelf = true;
+                return (nextX, nextY);
+            }
+
+            // 2.5 다음 칸 정보 추가
+            LocationList.Insert(0, (nextX, nextY));
+
+            // 3. 사과 체크
+            if (appleList.Contains((nextX, nextY)))
+            {
+                // 꼬리 안자름
+                Length++;
+                appleList.Remove((nextX, nextY));
+            }
+            else
+            {
+                // 꼬리 자름
+                LocationList.RemoveAt(LocationList.Count - 1);
+            }
+            //return Survival.Survival;
+            return (nextX, nextY);
+        }
+
+        private (int nextX, int nextY) GetNextLocation()
+        {
+            var directionValue = GetDirectionValue();
+            var nextX = LocationList.FirstOrDefault().row + dx[directionValue];
+            var nextY = LocationList.FirstOrDefault().column + dy[directionValue];
+            return (nextX, nextY);
+        }
+
+        private int GetDirectionValue()
+        {
+            return (int)Enum.Parse(typeof(SnakeDirection), direction.ToString());
+        }
+
+        public void TurnDirection(IDirectionHandler? handler)
+        {
+            if (handler != null)
+            {
+                direction = handler.Handle(direction);
             }
         }
     }
+
+    interface IDirectionHandler
+    {
+        SnakeDirection Handle(SnakeDirection direction);
+    }
+
+    class TurnRightHandler : IDirectionHandler
+    {
+        public SnakeDirection Handle(SnakeDirection direction)
+        {
+            return direction switch
+            {
+                SnakeDirection.Right => SnakeDirection.Down,
+                SnakeDirection.Down => SnakeDirection.Left,
+                SnakeDirection.Left => SnakeDirection.Up,
+                SnakeDirection.Up => SnakeDirection.Right,
+                _ => SnakeDirection.Right
+            };
+        }
+    }
+
+    class TurnLeftHandler : IDirectionHandler
+    {
+        public SnakeDirection Handle(SnakeDirection direction)
+        {
+            return direction switch
+            {
+                SnakeDirection.Right => SnakeDirection.Up,
+                SnakeDirection.Down => SnakeDirection.Right,
+                SnakeDirection.Left => SnakeDirection.Down,
+                SnakeDirection.Up => SnakeDirection.Left,
+                _ => SnakeDirection.Right
+            };
+        }
+    }
+
+
 
 
     /////////////////////////////  util 함수  ////////////////////////////////
@@ -318,5 +384,38 @@ public static class EnumerableExtensions
         return enumerable
             .GroupBy(height => height)
             .ToDictionary(group => group.Key, group => group.Count());
+    }
+}
+
+public class Result<T>
+{
+    public string Error { get; set; }
+    public T Content { get; set; }
+
+    public bool HasContent { get; set; } = false;
+
+    public static Result<T> Success(T content)
+    {
+        var result = new Result<T>();
+        result.Content = content;
+        result.HasContent = true;
+        return result;
+    }
+
+    public static Result<T> Fail(string error = "error")
+    {
+        var result = new Result<T>();
+        result.Error = error;
+        return result;
+    }
+
+    public bool IsSuccess()
+    {
+        return Error == null;
+    }
+
+    public bool IsError()
+    {
+        return Error != null;
     }
 }
