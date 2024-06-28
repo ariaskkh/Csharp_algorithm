@@ -1,93 +1,167 @@
 ﻿using System.Text;
 using static System.Console;
 
+enum Calculation
+{
+    Add,
+    Remove,
+    Check,
+    Toggle,
+    All,
+    Empty,
+}
+
 class Program
 {
     static void Main(string[] args)
     {
-        var str = ReadLine();
-        Solve(str);
-    }
-
-    static void Solve(string str)
-    {
-        var subStringList = StringConverter.GetConvertedSubStringList(str);
+        var n = int.Parse(ReadLine());
+        List<TaskUnit> taskList = new();
+        //var taskList = Enumerable
+        //    .Range(0, n)
+        //    .Select(_ => ReadLine().Split(' '))
+        //    .Select(item => new Task(item[0], int.Parse(item[1] ?? default )))
+        //    .ToList();
+        for (var i = 0; i < n; i++)
+        {
+            var result = ReadLine().Split(' ');
+            if (result.Length == 1)
+            {
+                taskList.Add(new TaskUnit(result[0], default));
+            }
+            else
+            {
+                taskList.Add(new TaskUnit(result[0], int.Parse(result[1])));
+            }
+        }
+        var checkList = Solve(taskList);
         var sb = new StringBuilder();
-        subStringList
-            .ForEach(subString => sb.Append(subString.SubString));
+        checkList.ForEach(item => sb.AppendLine(item.ToString()));
         WriteLine(sb.ToString());
     }
 
-    static class StringConverter
+    static List<int> Solve(List<TaskUnit> taskList)
     {
-        public static List<ISubString> GetConvertedSubStringList(string str)
+        var calculator = new Calculator();
+        calculator.Calculate(taskList);
+        return calculator.CheckList;
+    }
+
+    class Calculator
+    {
+        private List<int> list = new();
+        public List<int> CheckList { get; set; } = new();
+
+        public void Calculate(List<TaskUnit> taskList)
         {
-            var tagCount = str.Count(ch => ch == '<');
-            List<ISubString> subStringList = new();
-
-            Enumerable.Range(0, tagCount)
-                .ForEach(_ => { str = Separate(str, subStringList); });
-            AddLastSubStringLeft(str, subStringList);
-
-            return subStringList;
-        }
-
-        private static string Separate(string str, List<ISubString> subStringList)
-        {
-            var tagLeftIndex = str.ToList().FindIndex(ch => ch == '<');
-            var tagRightIndex = str.ToList().FindIndex(ch => ch == '>');
-
-            if (tagLeftIndex > 0)
+            foreach (var task in taskList)
             {
-                subStringList.Add(new Word(str[..tagLeftIndex]));
+                switch (task.CalcType)
+                {
+                    case Calculation.Add:
+                        Add(task.Number);
+                        break;
+                    case Calculation.Remove:
+                        Remove(task.Number);
+                        break;
+                    case Calculation.Check:
+                        Check(task.Number);
+                        break;
+                    case Calculation.Toggle:
+                        Toggle(task.Number);
+                        break;
+                    case Calculation.All:
+                        All();
+                        break;
+                    case Calculation.Empty:
+                        Empty();
+                        break;
+                }
             }
-            subStringList.Add(new Tag(str[tagLeftIndex..(tagRightIndex + 1)]));
-            return str[(tagRightIndex + 1)..];
         }
 
-        private static void AddLastSubStringLeft(string str, List<ISubString> subStringList)
+
+        private void Add(int number)
         {
-            if (str.Length != 0)
+            if (!list.Contains(number))
+                list.Add(number);
+        }
+
+        private void Remove(int number)
+        {
+            if (list.Contains(number))
             {
-                subStringList.Add(new Word(str));
+                list.Remove(number);
             }
         }
-    }
 
-    interface ISubString
-    {
-        string SubString { get; set; }
-    }
-
-
-    class Tag : ISubString
-    {
-        public string SubString { get; set; }
-
-        public Tag(string tagString)
+        private void Check(int number)
         {
-            SubString = tagString;
+            if (list.Contains(number))
+            {
+                CheckList.Add(1);
+            }
+            else
+            {
+                CheckList.Add(0);
+            }
+        }
+
+        private void Toggle(int number)
+        {
+            if (list.Contains(number))
+            {
+                list.Remove(number);
+            }
+            else
+            {
+                list.Add(number);
+            }
+        }
+
+        private void Empty()
+        {
+            list = new();
+        }
+
+        private void All()
+        {
+            list = Enumerable.Range(1, 20).ToList();
         }
     }
 
-    class Word : ISubString
+    class TaskUnit
     {
-        public string originalSubString { get; set; }
-        public string SubString { get; set; }
-        public Word(string wordString)
+        public Calculation CalcType { get; set; }
+        public int Number { get; set; }
+        public TaskUnit(string calcType, int? number)
         {
-            originalSubString = wordString;
-            SubString = GetReversedSubString(wordString);
+            SetCalcTpye(calcType);
+            Number = number ?? default;
         }
-
-
-        private string GetReversedSubString(string wordString)
+        private void SetCalcTpye(string calcType)
         {
-            var reversedWordList = wordString
-                .Split(' ')
-                .Select(word => new string(word.Reverse().ToArray()))
-                .ToList();
-            return string.Join(' ', reversedWordList);
+            switch (calcType)
+            {
+                case "add":
+                    CalcType = Calculation.Add;
+                    break;
+                case "remove":
+                    CalcType = Calculation.Remove;
+                    break;
+                case "check":
+                    CalcType = Calculation.Check;
+                    break;
+                case "toggle":
+                    CalcType = Calculation.Toggle;
+                    break;
+                case "all":
+                    CalcType = Calculation.All;
+                    break;
+                case "empty":
+                    CalcType = Calculation.Empty;
+                    break;
+            }
         }
     }
 
