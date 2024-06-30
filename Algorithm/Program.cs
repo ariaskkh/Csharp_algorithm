@@ -4,228 +4,197 @@ class Program
 {
     static void Main(string[] args)
     {
-
-        var boardSize = int.Parse(ReadLine());
-        var appleCount = int.Parse(ReadLine());
-        var appleList = Enumerable.Range(0, appleCount)
-            .Select(_ => ReadLine().Split(' ').ChangeStrToInt())
-            .Select(data => (data[0] - 1, data[1] - 1))  // row index, column index
-            .ToList();
-        var directionChangeCount = int.Parse(ReadLine());
-        var directionChangeList = Enumerable.Range(0, directionChangeCount)
-            .Select(_ => ReadLine().Split(' '))
-            .Select(data => (int.Parse(data[0]), GetSnakeDirection(data[1])))  // row, column
-            .ToList();
-
-        var survivedTime = Solve(boardSize, directionChangeList, appleList);
-        WriteLine(survivedTime);
+        var gears = GetGears();
+        var turnInfoList = GetTurnInfoList();
+        var score = Solve(gears, turnInfoList);
+        WriteLine(score);
     }
 
-    private static IDirectionHandler GetSnakeDirection(string direction)
+    private static IGear[] GetGears()
     {
-        return direction switch
+        return Enumerable.Range(0, 4)
+            .Select(_ => ReadLine()
+                .Select(ch => GetMagnetic(ch))
+                .ToList())
+            .Select((gearInfo, index) => new Gear(gearInfo, index + 1))
+            .ToArray();
+    }
+
+    private static (int gearNumber, TurnDirection direction)[] GetTurnInfoList()
+    {
+        var numberOfTurn = int.Parse(ReadLine());
+        return Enumerable.Range(0, numberOfTurn)
+            .Select(_ => ReadLine().Split(' ').ChangeStrToInt())
+            .Select(turnInfo => (turnInfo[0], GetTurnDirection(turnInfo[1]))) // gearNumber, turn direction
+            .ToArray();
+    }
+
+    static int Solve(IGear[] gears, (int, TurnDirection)[] turnInfoList)
+    {
+        var machine = new GearMachine(gears);
+        machine.RunGears(turnInfoList);
+        return machine.GetScore();
+    }
+
+    enum TurnDirection
+    {
+        Clockwise,
+        CounterClockwise
+    }
+
+    enum Magnetic
+    {
+        N,
+        S,
+    }
+
+    private static Magnetic GetMagnetic(char magnetic)
+    {
+        return magnetic switch
         {
-            //"D" => SnakeDirection.Right,
-            //"L" => SnakeDirection.Left,
-            //_ => SnakeDirection.Right,
-            "D" => new TurnRightHandler(),
-            "L" => new TurnLeftHandler(),
-            _ => new TurnRightHandler(),
+            '0' => Magnetic.N,
+            '1' => Magnetic.S,
+            _ => Magnetic.S,
         };
     }
 
-    static int Solve(int boardSize, List<(int, IDirectionHandler)> directionChangeList, List<(int row, int column)> appleList)
+    private static TurnDirection GetTurnDirection(int direction)
     {
-        // 보드 class, 뱀 class 생성
-        // 보드에서 크기, 뱀 인스턴스, 사과 위치 정보 기억
-        // 뱀 class는 위치 및 left, right 메서드 가지기
-        // 뱀 이동 시 앞 추가, 뒤 빼기 -> list?
-
-        var snake = new Snake();
-        var board = new Board(boardSize, boardSize, snake, directionChangeList, appleList);
-        board.Start();
-        return board.SurvivedTime;
-
+        return direction switch
+        {
+            1 => TurnDirection.Clockwise,
+            -1 => TurnDirection.CounterClockwise,
+            _ => TurnDirection.Clockwise,
+        };
     }
 
-    private class Board
-    {
-        private int width;
-        private int height;
-        private Snake snake;
-        private List<(int time, IDirectionHandler direction)> directionChangeInfo = new();
-        private List<(int row, int column)> appleList = new();
-        public int SurvivedTime { get; set; } = 0;
 
-        public Board(
-            int width,
-            int height,
-            Snake snake,
-            List<(int time, IDirectionHandler direction)> directionChangeInfo,
-            List<(int, int)> appleList)
+    class GearMachine
+    {
+        private IGear[] gears;
+        public GearMachine(IGear[] gears)
         {
-            this.width = width;
-            this.height = height;
-            this.snake = snake;
-            this.directionChangeInfo = directionChangeInfo;
-            this.appleList = appleList;
+            this.gears = gears;
         }
 
-
-        public void Start()
+        public void RunGears((int gearNumber, TurnDirection direction)[] turnInfo)
         {
-            while (true)
+            foreach ((int gearNumber, TurnDirection direction) in turnInfo)
             {
-                (int x, int y) location = snake.Move(appleList);
-                SurvivedTime++;
+                TurnGears(gearNumber, direction);
+            }
+        }
 
-                if (IsOutOfBoard(location.x, location.y) || snake.HitItSelf)
+        private void TurnGears(int gearNumber, TurnDirection direction)
+        {
+            var targetGear = gears[gearNumber - 1];
+            var targetGearLeftContactMagnetic = targetGear.LeftContactMagnetic;
+            var targetGearRIghtContactMagnetic = targetGear.RightContactMagnetic;
+            TurnTargetGear(targetGear, direction);
+            TurnLeftGear(gearNumber, direction, targetGearLeftContactMagnetic);
+            TurnRightGear(gearNumber, direction, targetGearRIghtContactMagnetic);
+        }
+
+        private void TurnTargetGear(IGear gear, TurnDirection direction)
+        {
+            if (direction == TurnDirection.Clockwise)
+            {
+                gear.TurnClockwise();
+            }
+            else if (direction == TurnDirection.CounterClockwise)
+            {
+                gear.TurnCounterClockwise();
+            }
+        }
+
+        private void TurnLeftGear(int gearNumber, TurnDirection direction, Magnetic gearLeftContactMagnetic)
+        {
+            var leftGearIndex = (gearNumber - 1) - 1;
+            if (leftGearIndex >= 0) // 좌측 기어 존재
+            {
+                var leftGear = gears[leftGearIndex];
+                if (leftGear.RightContactMagnetic != gearLeftContactMagnetic)
                 {
-                    break;
+                    var leftGearLeftContactMagnetic = leftGear.LeftContactMagnetic;
+                    var leftGearDirection = direction == TurnDirection.Clockwise ? TurnDirection.CounterClockwise : TurnDirection.Clockwise;
+                    TurnTargetGear(leftGear, leftGearDirection);
+                    TurnLeftGear(gearNumber - 1, leftGearDirection, leftGearLeftContactMagnetic);
                 }
+            }
+        }
 
-                if (directionChangeInfo.Count > 0)
+        private void TurnRightGear(int gearNumber, TurnDirection direction, Magnetic gearRIghtContactMagnetic)
+        {
+            var rightGearIndex = (gearNumber - 1) + 1;
+            if (rightGearIndex < gears.Length) // 우측 기어 존재
+            {
+                var rightGear = gears[rightGearIndex];
+                if (gearRIghtContactMagnetic != rightGear.LeftContactMagnetic)
                 {
-                    ChangeDirection(directionChangeInfo.FirstOrDefault());
+                    var rightGearRightContactMagnetic = rightGear.RightContactMagnetic;
+                    var rightGearDirection = direction == TurnDirection.Clockwise ? TurnDirection.CounterClockwise : TurnDirection.Clockwise;
+                    TurnTargetGear(rightGear, rightGearDirection);
+                    TurnRightGear(gearNumber + 1, rightGearDirection, rightGearRightContactMagnetic);
                 }
             }
         }
 
-        private void ChangeDirection((int time, IDirectionHandler handler)? directionChange)
+
+        public int GetScore()
         {
-            if (directionChange?.time == SurvivedTime)
-            {
-                snake.TurnDirection(directionChange?.handler);
-                directionChangeInfo.RemoveAt(0);
-            }
+            var score = 0;
+            if (gears[0].GearInfo[0] == Magnetic.S) score += 1;
+            if (gears[1].GearInfo[0] == Magnetic.S) score += 2;
+            if (gears[2].GearInfo[0] == Magnetic.S) score += 4;
+            if (gears[3].GearInfo[0] == Magnetic.S) score += 8;
+            return score;
         }
 
-        private bool IsOutOfBoard(int x, int y)
-        {
-            return x < 0
-                || x >= width
-                || y < 0
-                || y >= height;
-        }
     }
 
-
-
-    interface Animal
+    interface IGear
     {
-        int Length { get; set; }
-        public List<(int row, int column)> LocationList { get; set; }
-        void TurnDirection(IDirectionHandler handler);
+        public int GearNumber { get; }
+        public List<Magnetic> GearInfo { get; }
+        public void TurnClockwise();
+        public void TurnCounterClockwise();
+
+
+        public Magnetic LeftContactMagnetic { get; }
+        public Magnetic RightContactMagnetic { get; }
     }
 
-    enum SnakeDirection
+    class Gear : IGear
     {
-        Right,
-        Down,
-        Left,
-        Up,
-    }
+        public int GearNumber { get; }
+        /// <summary> 12시 방향부터 8개 극 </summary>
+        public List<Magnetic> GearInfo { get; } = new();
+        /// <summary> 9시 방향 7번째 접촉 극 </summary>
+        public Magnetic LeftContactMagnetic => GearInfo[6];
+        /// <summary> 3시 방향 3번째 접촉 극 </summary>
+        public Magnetic RightContactMagnetic => GearInfo[2];
 
-    private class Snake : Animal
-    {
-        public int Length { get; set; }
-        public List<(int row, int column)> LocationList { get; set; } = new List<(int, int)>();
-        private List<int> dx = new List<int>() { 0, 1, 0, -1 };
-        private List<int> dy = new List<int>() { 1, 0, -1, 0 };
-        private SnakeDirection direction; // 0 ~ 3
-        public bool HitItSelf { get; set; } = false;
 
-        public Snake()
+
+        public Gear(List<Magnetic> gearInfo, int gearNumber)
         {
-            Length = 1;
-            direction = SnakeDirection.Right;
-            LocationList.Add((0, 0));
+
+            GearInfo = gearInfo;
+            GearNumber = gearNumber;
         }
 
-        public (int x, int y) Move(List<(int row, int column)> appleList)
+        public void TurnClockwise()
         {
-            // 1. 다음 칸
-            (var nextX, var nextY) = GetNextLocation();
-
-            if (LocationList.Contains((nextX, nextY)))
-            {
-                HitItSelf = true;
-                return (nextX, nextY);
-            }
-
-            // 2.5 다음 칸 정보 추가
-            LocationList.Insert(0, (nextX, nextY));
-
-            // 3. 사과 체크
-            if (appleList.Contains((nextX, nextY)))
-            {
-                // 꼬리 안자름
-                Length++;
-                appleList.Remove((nextX, nextY));
-            }
-            else
-            {
-                // 꼬리 자름
-                LocationList.RemoveAt(LocationList.Count - 1);
-            }
-            //return Survival.Survival;
-            return (nextX, nextY);
+            var last = GearInfo.LastOrDefault();
+            GearInfo.Insert(0, last);
+            GearInfo.RemoveAt(GearInfo.Count - 1);
         }
 
-        private (int nextX, int nextY) GetNextLocation()
+        public void TurnCounterClockwise()
         {
-            var directionValue = GetDirectionValue();
-            var nextX = LocationList.FirstOrDefault().row + dx[directionValue];
-            var nextY = LocationList.FirstOrDefault().column + dy[directionValue];
-            return (nextX, nextY);
-        }
-
-        private int GetDirectionValue()
-        {
-            return (int)Enum.Parse(typeof(SnakeDirection), direction.ToString());
-        }
-
-        public void TurnDirection(IDirectionHandler? handler)
-        {
-            if (handler != null)
-            {
-                direction = handler.Handle(direction);
-            }
-        }
-    }
-
-    interface IDirectionHandler
-    {
-        SnakeDirection Handle(SnakeDirection direction);
-    }
-
-    class TurnRightHandler : IDirectionHandler
-    {
-        public SnakeDirection Handle(SnakeDirection direction)
-        {
-            return direction switch
-            {
-                SnakeDirection.Right => SnakeDirection.Down,
-                SnakeDirection.Down => SnakeDirection.Left,
-                SnakeDirection.Left => SnakeDirection.Up,
-                SnakeDirection.Up => SnakeDirection.Right,
-                _ => SnakeDirection.Right
-            };
-        }
-    }
-
-    class TurnLeftHandler : IDirectionHandler
-    {
-        public SnakeDirection Handle(SnakeDirection direction)
-        {
-            return direction switch
-            {
-                SnakeDirection.Right => SnakeDirection.Up,
-                SnakeDirection.Down => SnakeDirection.Right,
-                SnakeDirection.Left => SnakeDirection.Down,
-                SnakeDirection.Up => SnakeDirection.Left,
-                _ => SnakeDirection.Right
-            };
+            var first = GearInfo.FirstOrDefault();
+            GearInfo.Add(first);
+            GearInfo.RemoveAt(0);
         }
     }
 
