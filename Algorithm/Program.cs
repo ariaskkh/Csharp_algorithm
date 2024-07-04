@@ -5,263 +5,218 @@ class Program
     static void Main(string[] args)
     {
         var input = ReadLine().Split(' ').ChangeStrToInt();
-        var roomHeight = input[0];
-        var roomWidth = input[1];
-        var targetTime = input[2];
-        var rawRoomData = Enumerable.Range(0, roomHeight)
-            .Select((_, rowIndex) => ReadLine()
+        var N = input[0];
+        var rampLength = input[1];
+
+        var mapData = Enumerable.Range(0, N)
+            .Select(_ => ReadLine()
                 .Split(' ')
                 .ChangeStrToInt()
-                .ToList()).ToList();
-
-        //roomData.Where((row, rowIndex) => row.Where((area, columnIndex) => area == -1).Select(_ => (rowIndex, columnIndex)));
-        var airCleanerIndices = rawRoomData.SelectMany((row, rowIndex) =>
-                row.Select((value, columnIndex) => new { value, rowIndex, columnIndex })
-                .Where(item => item.value == -1)
-                .Select(item => (item.rowIndex, item.columnIndex)))
+                .Select(height => new UnitArea(height))
+                .ToArray())
             .ToArray();
-        var airCleaner = new AirCleaner(airCleanerIndices);
 
-        var roomData = rawRoomData.Select(row => row.Select(value =>
-                {
-                    if (value > 0)
-                    {
-                        return new UnitArea(new FineDust(value));
-                    }
-                    else if (value == -1)
-                    {
-                        return new UnitArea(airCleaner);
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                }).ToList())
-            .ToList();
-
-        var ConsumedTime = Solve(roomHeight, roomWidth, roomData, airCleaner, targetTime);
-        WriteLine(ConsumedTime);
+        var availableRoadCount = Solve(mapData, rampLength);
+        WriteLine(availableRoadCount);
     }
 
-    static int Solve(int roomHeight, int roomWidth, List<List<UnitArea>> roomData, AirCleaner airCleaner, int targetTime)
+    static int Solve(UnitArea[][] mapData, int rampLength)
     {
-        var room = new Room(roomWidth, roomHeight, roomData, airCleaner);
-        room.Start(targetTime);
-        return room.TotalDustAmount;
+        var map = new Map(mapData, rampLength);
+        map.CheckRoadAvailable();
+        return map.AvailableRoadCount;
     }
 
-
-    // 확산, 공청기 순환
-    class Room
+    class Map
     {
-        private int width;
-        private int height;
-        // 깨끗한 곳은 null, 더러운 곳은 FineDust
-        //private List<List<FineDust>> dustdata = new();
-        //private AirCleaner airCleaner;
-        private List<List<UnitArea>> roomData = new();
-        private AirCleaner airCleaner;
-        public int ConsumedTime { get; set; }
-        public int TotalDustAmount => roomData.Select(row => row
-                .Where(x => x?.FineDust != null)
-                .Select(x => x.FineDust.Amount)
-                .Sum())
-            .Sum();
-            
-        
+        private UnitArea[][]? mapData;
+        private UnitArea?[][]? mapDataReversed;
+        private int rampLength;
+        private bool[] rowAvailablePathTable;
+        private bool[] columnAvailablePathTable;
+        public int AvailableRoadCount => rowAvailablePathTable.Count(x => x) + columnAvailablePathTable.Count(x => x);
 
-        public Room(int width, int height, List<List<UnitArea>> roomData, AirCleaner airCleaner)
+        public Map(UnitArea[][]? mapData, int rampLength)
         {
-            this.width = width;
-            this.height = height;
-            this.roomData = roomData;
-            this.airCleaner = airCleaner;
+            this.mapData = mapData;
+            this.rampLength = rampLength;
+            SetMapDataReversed(mapData);
+            rowAvailablePathTable = Enumerable.Repeat(false, mapData.Length).ToArray();
+            columnAvailablePathTable = Enumerable.Repeat(false, mapData.Length).ToArray();
         }
 
-        public void Start(int targetTime)
+        private void SetMapDataReversed(UnitArea[][]? mapData)
         {
-            var time = 0;
-            while (time < targetTime)
+            if (mapData?.Length == 0)
             {
-                DiffuseDust();
-                CleanAir();
-                time++;
+                return;
+            }
+
+            mapDataReversed = Enumerable.Range(0, mapData.Length)
+                .Select(_ => Enumerable
+                    .Repeat(default(UnitArea), mapData.Length)
+                    .ToArray())
+                .ToArray();
+
+            for (var i = 0; i < mapData.Length; i++)
+            {
+                for (var j = 0; j < mapData[0].Length; j++)
+                {
+                    mapDataReversed[i][j] = new UnitArea(mapData[j][i].Height);
+                }
             }
         }
 
-        private void DiffuseDust()
+        public void CheckRoadAvailable()
         {
-            // setDIffusionAmount 하고
-            // diffuseNumber 구해서 diffuse 하기
-
-            var n = Enumerable.Range(0, height);
-            var m = Enumerable.Range(0, width);
-            IterationFunction(n, m)
-                .Where((x) => roomData[x.Item1][x.Item2]?.FineDust != null)
-                .ForEach(x => roomData[x.Item1][x.Item2].FineDust.SetDiffusionAmount());
-
-            for (var row = 0; row < height; row++)
+            if (mapData?.Length == 0 || mapDataReversed?.Length == 0)
             {
-                for (var column = 0; column < width; column++)
+                return;
+            }
+
+            // 평평한 길
+            CheckFlatRoad();
+            // 울퉁불퉁 길
+            CheckBumpyRoad();
+        }
+
+        private void CheckFlatRoad()
+        {
+            // row 방향 line
+            for (var row = 0; row < mapData.Length; row++)
+            {
+                if (HasSameHeightInLine(mapData[row]))
                 {
-                    if (roomData[row][column]?.FineDust != null && roomData[row][column].FineDust.DiffusionAmount != 0)
+                    rowAvailablePathTable[row] = true;
+                };
+            }
+
+            // column 방향 line
+            for (var row = 0; row < mapDataReversed.Length; row++)
+            {
+                if (HasSameHeightInLine(mapDataReversed[row]))
+                {
+                    columnAvailablePathTable[row] = true;
+                };
+            }
+        }
+
+        private static bool HasSameHeightInLine(UnitArea[] line)
+        {
+            if (line.Length > 0)
+            {
+                var firstHeight = line.First().Height;
+                return line.All(x => x.Height == firstHeight);
+            }
+            return false;
+        }
+
+        // false인 line들만 검사
+        private void CheckBumpyRoad()
+        {
+            for (var i = 0; i < mapData!.Length; i++)
+            {
+                if (rowAvailablePathTable[i] == false)
+                {
+                    if (CanPutRamp(mapData[i]))
                     {
-                        var fineDust = roomData[row][column].FineDust;
-                        var numberOfDiffusion = DiffuseDustFromOneArea(row, column, fineDust.DiffusionAmount);
-                        if (numberOfDiffusion > 0)
+                        rowAvailablePathTable[i] = true;
+                    }
+                }
+            }
+
+            for (var i = 0; i < mapDataReversed!.Length; i++)
+            {
+                if (columnAvailablePathTable[i] == false)
+                {
+                    if (CanPutRamp(mapDataReversed[i]))
+                    {
+                        columnAvailablePathTable[i] = true;
+                    }
+                }
+            }
+        }
+
+        private bool CanPutRamp(UnitArea[] line)
+        {
+            var lineData = ConvertLineData(line);
+            for (var i = 1; i < lineData.Count; i++)
+            {
+                if (Math.Abs(lineData[i - 1].height - lineData[i].height) > 1)
+                {
+                    return false;
+                }
+                else
+                {
+                    if (lineData[i - 1].height > lineData[i].height)
+                    {
+                        if (lineData[i].count >= rampLength)
                         {
-                            fineDust.Amount -= numberOfDiffusion * fineDust.DiffusionAmount;
+                            lineData[i] = (lineData[i].height, lineData[i].count - rampLength);
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        if (lineData[i - 1].count >= rampLength)
+                        {
+                            lineData[i - 1] = (lineData[i - 1].height, lineData[i - 1].count - rampLength);
+                        }
+                        else
+                        {
+                            return false;
                         }
                     }
                 }
             }
+            return true;
         }
 
-        private int DiffuseDustFromOneArea(int row, int column, int diffusionAmount)
-        {
-            var dx = new int[] { 0, -1, 0, 1 };
-            var dy = new int[] { 1, 0, -1, 0 };
-            var numberOfDiffusion = 0;
 
-            for (var k = 0; k < 4; k++)
+        // 이런식으로 나옴
+        // { (1, 2),
+        //   (2, 1),
+        //   (1, 3) }
+        private List<(int height, int count)> ConvertLineData(UnitArea[] line)
+        {
+            List<(int height, int count)> lineData = new();
+
+            int tmpCount = 1;
+            int tmpHeight = line[0].Height;
+            for (var i = 1; i < line.Length; i++)
             {
-                var nextX = row + dx[k];
-                var nextY = column + dy[k];
-                
-                if (nextX >= 0
-                    && nextX < height
-                    && nextY >= 0
-                    && nextY < width)
+                if (tmpHeight == line[i].Height)
                 {
-                    var nextArea = roomData[nextX][nextY];
-                    if (nextArea == null)
-                    {
-                        roomData[nextX][nextY] = new UnitArea(new FineDust(diffusionAmount));
-                        numberOfDiffusion++;
-                    }
-                    else if (nextArea.FineDust != null)
-                    {
-                        nextArea.FineDust.Amount += diffusionAmount;
-                        numberOfDiffusion++;
-                    }
+                    tmpCount++;
+                }
+                else
+                {
+                    lineData.Add((tmpHeight, tmpCount));
+                    tmpCount = 1;
+                    tmpHeight = line[i].Height;
                 }
             }
-            return numberOfDiffusion;
-        }
-
-        private void CleanAir()
-        {
-            if (airCleaner is null)
-            {
-                return;
-            }
-            CirculateUpperSide(airCleaner.UpperSide);
-            CirculateUnderSide(airCleaner.UnderSide);
-        }
-
-        private void CirculateUpperSide((int row, int column) upperSide)
-        {
-            // 좌측 세로
-            for (var row = upperSide.row - 2; row >= 0; row--)
-            {
-                roomData[row + 1][0] = roomData[row][0];
-            }
-            // 윗쪽 가로
-            for (var col = 0; col < width - 1; col++)
-            {
-                roomData[0][col] = roomData[0][col + 1];
-            }
-            // 우측 세로
-            for (var row = 0; row < upperSide.row; row++)
-            {
-                roomData[row][width - 1] = roomData[row + 1][width - 1];
-            }
-            // 아랫쪽 가로
-            for (var col = width - 1; col > 1; col--)
-            {
-                roomData[upperSide.row][col] = roomData[upperSide.row][col - 1];
-            }
-            roomData[upperSide.row][upperSide.column + 1] = null;
-        }
-
-        private void CirculateUnderSide((int row, int column) underSide)
-        {
-            // 좌측 세로
-            for (var row = underSide.row + 2; row < height; row++)
-            {
-                roomData[row - 1][0] = roomData[row][0];
-            }
-            // 아랫쪽 가로
-            for (var col = 0; col < width - 1; col++)
-            {
-                roomData[height - 1][col] = roomData[height - 1][col + 1];
-            }
-            // 우측 세로
-            for (var row = height - 1; row > underSide.row; row--)
-            {
-                roomData[row][width - 1] = roomData[row - 1][width - 1];
-            }
-            // 윗쪽 가로
-            for (var col = width - 1; col > 1; col--)
-            {
-                roomData[underSide.row][col] = roomData[underSide.row][col - 1];
-            }
-            roomData[underSide.row][underSide.column + 1] = null;
-
+            lineData.Add((tmpHeight, tmpCount));
+            return lineData;
         }
     }
 
     class UnitArea
     {
-        public AirCleaner AirCleaner;
-        public FineDust FineDust;
-
-        public UnitArea(AirCleaner airCleaner)
+        public int Height { get; set; }
+        public bool HasRamp { get; set; }
+        
+        public UnitArea(int height)
         {
-            AirCleaner = airCleaner;
-            FineDust = null;
-        }
-
-        public UnitArea(FineDust fineDust)
-        {
-            AirCleaner = null;
-            FineDust = fineDust;
+            Height = height;
         }
     }
+            
+        
 
-
-    class AirCleaner
-    {
-        public (int row, int column) UpperSide;
-        public (int row, int column) UnderSide;
-
-        public AirCleaner((int row, int column)[] location)
-        {
-            UpperSide = location[0];
-            UnderSide = location[1];
-        }
-    }
-
-    class FineDust
-    {
-        public int Amount { get; set; }
-        public int DiffusionAmount { get; set; }
-
-        public FineDust(int amount)
-        {
-            Amount = amount;
-        }
-
-        public void SetDiffusionAmount()
-        {
-            DiffusionAmount = (int)Math.Floor((double)Amount / 5);
-        }
-
-        public void Diffuse(int numberOfDIffusionDirection)
-        {
-            Amount -= numberOfDIffusionDirection * DiffusionAmount;
-        }
-    }
 
 
 
