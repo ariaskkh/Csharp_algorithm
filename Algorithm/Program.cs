@@ -1,48 +1,59 @@
 ﻿using static System.Console;
 
 namespace Algorithm;
+
 class Program
 {
-    static void Main(string[] args)
-    {
-        var inputNumber = Console.ReadLine();
-        var answer = Hansu.CountHansu(inputNumber);
-        Console.WriteLine(answer);
+	static void Main(string[] args)
+	{
+        var number = int.Parse(Console.ReadLine());
+    	var result = NumberCalculator.GetNumber(number);
+        Console.WriteLine(result);
     }
-}
 
-static class Hansu
-{
-	public static int CountHansu(string number)
-	{
-		var intNum = int.Parse(number);
-		if (intNum < 100)
-			return intNum; 
-		
-		// 이제 3자리
-		var answer = 99;
-		for (var i = 100; i <= intNum ; i++)
-		{
-			if (i == 1000)
-				break;
-				
-			var numStr = i.ToString();
-			if (IsHansu(numStr[0], numStr[1], numStr[2]))
-			{
-				answer += 1;
-			}
-				
-		}
-		return answer;
-		
-	}
-	
-	private static bool IsHansu(int first, int second, int third)
-	{
-		if (second - first == third - second)
-			return true;
-		return false;
-	}
+    public static class NumberCalculator
+    {
+        public static int GetNumber(int num)
+        {
+            // 10미만
+    //		if (num < 10)
+    //		{
+    //			"10 미만".Dump();
+    //			answer += num;
+    //		}
+    //		else if (num < 100)
+    //		{
+    //			"100 미만".Dump();
+    //			answer += 10 - 1;
+    //			answer += (num - 9) * 2;
+    //		}
+    //		else if (num < 1000)
+    //		{
+    //			"1000 미만".Dump();
+    //			answer += 10 - 1 =  9 * 1
+    //			answer += (100 - 10) * 2 = 90 * 2
+    //			answer += (num - 100 + 1) * 3;
+    //		}
+            // 자리 구하기
+            var digit = 0;
+            for (var i = 1; i < 10; i++)
+            {
+                if (num / Math.Pow(10, i) < 1)
+                {
+                    digit = i;
+                    break;
+                }
+            }
+            var answer = 0;
+            for (var i = 0; i < digit - 1; i++)
+            {
+                answer += (int)(9 * Math.Pow(10, i) * (i + 1));
+            }
+            answer += (int)(num - Math.Pow(10, digit - 1) + 1) * digit;
+            
+            return answer;
+        }
+    }
 }
 
 
