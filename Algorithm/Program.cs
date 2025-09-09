@@ -1,222 +1,49 @@
 ﻿using static System.Console;
 
+namespace Algorithm;
 class Program
 {
     static void Main(string[] args)
     {
-        var input = ReadLine().Split(' ').ChangeStrToInt();
-        var N = input[0];
-        var rampLength = input[1];
-
-        var mapData = Enumerable.Range(0, N)
-            .Select(_ => ReadLine()
-                .Split(' ')
-                .ChangeStrToInt()
-                .Select(height => new UnitArea(height))
-                .ToArray())
-            .ToArray();
-
-        var availableRoadCount = Solve(mapData, rampLength);
-        WriteLine(availableRoadCount);
+        var inputNumber = Console.ReadLine();
+        var answer = Hansu.CountHansu(inputNumber);
+        Console.WriteLine(answer);
     }
+}
 
-    static int Solve(UnitArea[][] mapData, int rampLength)
-    {
-        var map = new Map(mapData, rampLength);
-        map.CheckRoadAvailable();
-        return map.AvailableRoadCount;
-    }
-
-    class Map
-    {
-        private UnitArea[][]? mapData;
-        private UnitArea?[][]? mapDataReversed;
-        private int rampLength;
-        private bool[] rowAvailablePathTable;
-        private bool[] columnAvailablePathTable;
-        public int AvailableRoadCount => rowAvailablePathTable.Count(x => x) + columnAvailablePathTable.Count(x => x);
-
-        public Map(UnitArea[][]? mapData, int rampLength)
-        {
-            this.mapData = mapData;
-            this.rampLength = rampLength;
-            SetMapDataReversed(mapData);
-            rowAvailablePathTable = Enumerable.Repeat(false, mapData.Length).ToArray();
-            columnAvailablePathTable = Enumerable.Repeat(false, mapData.Length).ToArray();
-        }
-
-        private void SetMapDataReversed(UnitArea[][]? mapData)
-        {
-            if (mapData?.Length == 0)
-            {
-                return;
-            }
-
-            mapDataReversed = Enumerable.Range(0, mapData.Length)
-                .Select(_ => Enumerable
-                    .Repeat(default(UnitArea), mapData.Length)
-                    .ToArray())
-                .ToArray();
-
-            for (var i = 0; i < mapData.Length; i++)
-            {
-                for (var j = 0; j < mapData[0].Length; j++)
-                {
-                    mapDataReversed[i][j] = new UnitArea(mapData[j][i].Height);
-                }
-            }
-        }
-
-        public void CheckRoadAvailable()
-        {
-            if (mapData?.Length == 0 || mapDataReversed?.Length == 0)
-            {
-                return;
-            }
-
-            // 평평한 길
-            CheckFlatRoad();
-            // 울퉁불퉁 길
-            CheckBumpyRoad();
-        }
-
-        private void CheckFlatRoad()
-        {
-            // row 방향 line
-            for (var row = 0; row < mapData.Length; row++)
-            {
-                if (HasSameHeightInLine(mapData[row]))
-                {
-                    rowAvailablePathTable[row] = true;
-                };
-            }
-
-            // column 방향 line
-            for (var row = 0; row < mapDataReversed.Length; row++)
-            {
-                if (HasSameHeightInLine(mapDataReversed[row]))
-                {
-                    columnAvailablePathTable[row] = true;
-                };
-            }
-        }
-
-        private static bool HasSameHeightInLine(UnitArea[] line)
-        {
-            if (line.Length > 0)
-            {
-                var firstHeight = line.First().Height;
-                return line.All(x => x.Height == firstHeight);
-            }
-            return false;
-        }
-
-        // false인 line들만 검사
-        private void CheckBumpyRoad()
-        {
-            for (var i = 0; i < mapData!.Length; i++)
-            {
-                if (rowAvailablePathTable[i] == false)
-                {
-                    if (CanPutRamp(mapData[i]))
-                    {
-                        rowAvailablePathTable[i] = true;
-                    }
-                }
-            }
-
-            for (var i = 0; i < mapDataReversed!.Length; i++)
-            {
-                if (columnAvailablePathTable[i] == false)
-                {
-                    if (CanPutRamp(mapDataReversed[i]))
-                    {
-                        columnAvailablePathTable[i] = true;
-                    }
-                }
-            }
-        }
-
-        private bool CanPutRamp(UnitArea[] line)
-        {
-            var lineData = ConvertLineData(line);
-            for (var i = 1; i < lineData.Count; i++)
-            {
-                if (Math.Abs(lineData[i - 1].height - lineData[i].height) > 1)
-                {
-                    return false;
-                }
-                else
-                {
-                    if (lineData[i - 1].height > lineData[i].height)
-                    {
-                        if (lineData[i].count >= rampLength)
-                        {
-                            lineData[i] = (lineData[i].height, lineData[i].count - rampLength);
-                        }
-                        else
-                        {
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        if (lineData[i - 1].count >= rampLength)
-                        {
-                            lineData[i - 1] = (lineData[i - 1].height, lineData[i - 1].count - rampLength);
-                        }
-                        else
-                        {
-                            return false;
-                        }
-                    }
-                }
-            }
-            return true;
-        }
-
-
-        // 이런식으로 나옴
-        // { (1, 2),
-        //   (2, 1),
-        //   (1, 3) }
-        private List<(int height, int count)> ConvertLineData(UnitArea[] line)
-        {
-            List<(int height, int count)> lineData = new();
-
-            int tmpCount = 1;
-            int tmpHeight = line[0].Height;
-            for (var i = 1; i < line.Length; i++)
-            {
-                if (tmpHeight == line[i].Height)
-                {
-                    tmpCount++;
-                }
-                else
-                {
-                    lineData.Add((tmpHeight, tmpCount));
-                    tmpCount = 1;
-                    tmpHeight = line[i].Height;
-                }
-            }
-            lineData.Add((tmpHeight, tmpCount));
-            return lineData;
-        }
-    }
-
-    class UnitArea
-    {
-        public int Height { get; set; }
-        public bool HasRamp { get; set; }
-        
-        public UnitArea(int height)
-        {
-            Height = height;
-        }
-    }
-            
-        
-
+static class Hansu
+{
+	public static int CountHansu(string number)
+	{
+		var intNum = int.Parse(number);
+		if (intNum < 100)
+			return intNum; 
+		
+		// 이제 3자리
+		var answer = 99;
+		for (var i = 100; i <= intNum ; i++)
+		{
+			if (i == 1000)
+				break;
+				
+			var numStr = i.ToString();
+			if (IsHansu(numStr[0], numStr[1], numStr[2]))
+			{
+				answer += 1;
+			}
+				
+		}
+		return answer;
+		
+	}
+	
+	private static bool IsHansu(int first, int second, int third)
+	{
+		if (second - first == third - second)
+			return true;
+		return false;
+	}
+}
 
 
 
