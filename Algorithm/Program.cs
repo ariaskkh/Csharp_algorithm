@@ -4,56 +4,59 @@ namespace Algorithm;
 
 class Program
 {
-	static void Main(string[] args)
-	{
-        var number = int.Parse(Console.ReadLine());
-    	var result = NumberCalculator.GetNumber(number);
-        Console.WriteLine(result);
-    }
-
-    public static class NumberCalculator
+    static void Main(string[] args)
     {
-        public static int GetNumber(int num)
-        {
-            // 10미만
-    //		if (num < 10)
-    //		{
-    //			"10 미만".Dump();
-    //			answer += num;
-    //		}
-    //		else if (num < 100)
-    //		{
-    //			"100 미만".Dump();
-    //			answer += 10 - 1;
-    //			answer += (num - 9) * 2;
-    //		}
-    //		else if (num < 1000)
-    //		{
-    //			"1000 미만".Dump();
-    //			answer += 10 - 1 =  9 * 1
-    //			answer += (100 - 10) * 2 = 90 * 2
-    //			answer += (num - 100 + 1) * 3;
-    //		}
-            // 자리 구하기
-            var digit = 0;
-            for (var i = 1; i < 10; i++)
-            {
-                if (num / Math.Pow(10, i) < 1)
-                {
-                    digit = i;
-                    break;
-                }
-            }
-            var answer = 0;
-            for (var i = 0; i < digit - 1; i++)
-            {
-                answer += (int)(9 * Math.Pow(10, i) * (i + 1));
-            }
-            answer += (int)(num - Math.Pow(10, digit - 1) + 1) * digit;
-            
-            return answer;
-        }
+        var number = int.Parse(ReadLine());
+    	var students = Enumerable.Range(0, number)
+	    	.Select(_ => Parse(ReadLine()))
+	    	.Select(x => new Student(x[0], x[1], x[2], x[3]))
+	    	.ToList();
+    	var youngest = BirthdayCalculator.GetYoungest(students).GetName();
+    	var oldest = BirthdayCalculator.GetOldest(students).GetName();
+	    
+        WriteLine(youngest);
+        WriteLine(oldest);
+	
+	    string[] Parse(string info)
+    	{
+    		return info.Split(" ");
+    	}
     }
+}
+
+public static class BirthdayCalculator
+{
+	public static Student GetYoungest(List<Student> students)
+	{
+		return students.OrderBy<Student, DateTime>(student => student.GetBirthDay()).LastOrDefault();
+	}
+	
+	public static Student GetOldest(List<Student> students)
+	{
+		return students.OrderByDescending<Student, DateTime>(student => student.GetBirthDay()).LastOrDefault();
+	}
+}
+
+public class Student
+{
+	DateTime _birthday;
+	string _name;
+
+	public Student(string name, string day, string month, string year)
+	{
+		_name = name;
+		_birthday = DateTime.Parse($"{month} {day} {year}");
+	}
+	
+	public string GetName()
+	{
+		return _name;
+	}
+	
+	public DateTime GetBirthDay()
+	{
+		return _birthday;
+	}
 }
 
 
