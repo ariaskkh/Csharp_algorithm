@@ -1,63 +1,136 @@
-﻿using static System.Console;
-
-namespace Algorithm;
+﻿using System.Text;
+using static System.Console;
 
 class Program
 {
-    static void Main(string[] args)
-    {
-        var number = int.Parse(ReadLine());
-    	var students = Enumerable.Range(0, number)
-	    	.Select(_ => Parse(ReadLine()))
-	    	.Select(x => new Student(x[0], x[1], x[2], x[3]))
-	    	.ToList();
-    	var youngest = BirthdayCalculator.GetYoungest(students).GetName();
-    	var oldest = BirthdayCalculator.GetOldest(students).GetName();
-	    
-        WriteLine(youngest);
-        WriteLine(oldest);
-	
-	    string[] Parse(string info)
-    	{
-    		return info.Split(" ");
-    	}
-    }
+	static void Main(string[] args)
+	{
+		var input = Console.ReadLine();
+		var stringConverter = new StringConverter(input);
+		var result = stringConverter.GetProcessedString();
+		Console.WriteLine(result);
+	}
+
+
+	void Main()
+	{
+		var input = Console.ReadLine();
+		var stringConverter = new StringConverter(input);
+		var result = stringConverter.GetProcessedString();
+		Console.WriteLine(result);
+	}
+
+	public class StringConverter
+	{
+		public List<ISubstring> _subStringList = new();
+
+		public StringConverter(string raw)
+		{
+			Parse(raw);
+		}
+
+		// substring으로 쪼개기
+		private void Parse(string raw)
+		{
+			while (!string.IsNullOrEmpty(raw))
+			{
+				if (raw[0] == '<')
+				{
+					raw = ExtractTag(raw);
+				}
+				else
+				{
+					raw = ExtractWord(raw);
+				}
+			}
+		}
+
+		public string GetProcessedString()
+		{
+			return String.Concat(_subStringList.Select(s => s.GetSubstring()));
+		}
+
+		private string ExtractTag(string stringLeft)
+		{
+
+			var closeIndex = stringLeft.IndexOf('>');
+			if (closeIndex < 0)
+				return "";
+
+			var subStr = stringLeft.Substring(0, closeIndex + 1);
+			_subStringList.Add(new Tag(subStr));
+			return stringLeft.Substring(closeIndex + 1);
+		}
+
+		private string ExtractWord(string stringLeft)
+		{
+			if (string.IsNullOrWhiteSpace(stringLeft))
+				return "";
+			var wordPart = "";
+			// 뒤에 tag가 있는지 확인
+			var nextTagInput = stringLeft.IndexOf('<');
+			if (nextTagInput >= 0)
+			{
+				wordPart = stringLeft.Substring(0, nextTagInput);
+				stringLeft = stringLeft.Substring(nextTagInput);
+			}
+			else
+			{
+				wordPart = stringLeft;
+				stringLeft = "";
+			}
+			_subStringList.Add(new Words(wordPart));
+			return stringLeft;
+		}
+	}
 }
 
-public static class BirthdayCalculator
+
+public interface ISubstring
 {
-	public static Student GetYoungest(List<Student> students)
-	{
-		return students.OrderBy<Student, DateTime>(student => student.GetBirthDay()).LastOrDefault();
-	}
-	
-	public static Student GetOldest(List<Student> students)
-	{
-		return students.OrderByDescending<Student, DateTime>(student => student.GetBirthDay()).LastOrDefault();
-	}
+	public string GetSubstring();
 }
 
-public class Student
+public class Tag : ISubstring
 {
-	DateTime _birthday;
-	string _name;
-
-	public Student(string name, string day, string month, string year)
+	private string _substring;
+	public Tag(string substring)
 	{
-		_name = name;
-		_birthday = DateTime.Parse($"{month} {day} {year}");
+		_substring = substring;
 	}
-	
-	public string GetName()
+	public string GetSubstring()
 	{
-		return _name;
-	}
-	
-	public DateTime GetBirthDay()
-	{
-		return _birthday;
+		return _substring;
 	}
 }
+
+public class Words : ISubstring
+{
+	private string _substring;
+	
+	public Words(string words)
+	{
+		SetSubstring(words);
+	}
+	
+	private void SetSubstring(string words)
+	{
+		var wordList = words.Split(' ');
+		var reversedWordList =  wordList.Select(word => Reverse(word)).ToList();
+		_substring = string.Join(' ', reversedWordList);
+	}
+	
+	private string Reverse(string word)
+	{
+		return new String(word.Reverse().ToArray());
+	}
+	
+	public string GetSubstring()
+	{
+		return _substring;
+	}
+}
+
 
 
 
