@@ -5,133 +5,60 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var input = Console.ReadLine();
-		var stringConverter = new StringConverter(input);
-		var result = stringConverter.GetProcessedString();
-		Console.WriteLine(result);
+		List<(string, string)> inputs = GetInputs();
+		var results = inputs.Select(input => input.Item1.IsSubstring(input.Item2))
+			.Select(b => b ? "Yes" : "No")
+			.ToList();
+		foreach (var result in results)
+		{
+			WriteLine(result);
+		}		
 	}
-
-
-	void Main()
+	
+	private static List<(string, string)> GetInputs()
 	{
-		var input = Console.ReadLine();
-		var stringConverter = new StringConverter(input);
-		var result = stringConverter.GetProcessedString();
-		Console.WriteLine(result);
-	}
-
-	public class StringConverter
-	{
-		public List<ISubstring> _subStringList = new();
-
-		public StringConverter(string raw)
+		var inputList = new List<(string, string)>();
+		while(true)
 		{
-			Parse(raw);
+			var input = ReadLine();
+			if (string.IsNullOrEmpty(input))
+				break;
+				
+			var split = input.Split(' ');
+			var subStr = split[0];
+			var str = split[1];
+			inputList.Add((subStr, str));
 		}
-
-		// substring으로 쪼개기
-		private void Parse(string raw)
-		{
-			while (!string.IsNullOrEmpty(raw))
-			{
-				if (raw[0] == '<')
-				{
-					raw = ExtractTag(raw);
-				}
-				else
-				{
-					raw = ExtractWord(raw);
-				}
-			}
-		}
-
-		public string GetProcessedString()
-		{
-			return String.Concat(_subStringList.Select(s => s.GetSubstring()));
-		}
-
-		private string ExtractTag(string stringLeft)
-		{
-
-			var closeIndex = stringLeft.IndexOf('>');
-			if (closeIndex < 0)
-				return "";
-
-			var subStr = stringLeft.Substring(0, closeIndex + 1);
-			_subStringList.Add(new Tag(subStr));
-			return stringLeft.Substring(closeIndex + 1);
-		}
-
-		private string ExtractWord(string stringLeft)
-		{
-			if (string.IsNullOrWhiteSpace(stringLeft))
-				return "";
-			var wordPart = "";
-			// 뒤에 tag가 있는지 확인
-			var nextTagInput = stringLeft.IndexOf('<');
-			if (nextTagInput >= 0)
-			{
-				wordPart = stringLeft.Substring(0, nextTagInput);
-				stringLeft = stringLeft.Substring(nextTagInput);
-			}
-			else
-			{
-				wordPart = stringLeft;
-				stringLeft = "";
-			}
-			_subStringList.Add(new Words(wordPart));
-			return stringLeft;
-		}
+		return inputList;
 	}
 }
 
-
-public interface ISubstring
+public static class StringChecker
 {
-	public string GetSubstring();
-}
-
-public class Tag : ISubstring
-{
-	private string _substring;
-	public Tag(string substring)
+	public static bool IsSubstring(this string subStr, string str)
 	{
-		_substring = substring;
-	}
-	public string GetSubstring()
-	{
-		return _substring;
-	}
-}
-
-public class Words : ISubstring
-{
-	private string _substring;
-	
-	public Words(string words)
-	{
-		SetSubstring(words);
+		if (!IsAllIncluded(subStr, str))
+			return false;
+		
+		return CheckSubstring(subStr, str);
 	}
 	
-	private void SetSubstring(string words)
+	private static bool IsAllIncluded(string subStr, string str)
 	{
-		var wordList = words.Split(' ');
-		var reversedWordList =  wordList.Select(word => Reverse(word)).ToList();
-		_substring = string.Join(' ', reversedWordList);
+		return subStr.All(ch => str.Contains(ch));
 	}
 	
-	private string Reverse(string word)
+	private static bool CheckSubstring(string subStr, string str)
 	{
-		return new String(word.Reverse().ToArray());
-	}
-	
-	public string GetSubstring()
-	{
-		return _substring;
+		var j = 0;
+		foreach (var ch in str)
+		{
+			if (j < subStr.Length && ch == subStr[j])
+				j++;
+		}
+		return j == subStr.Length;
 	}
 }
-
-
 
 
     /////////////////////////////  util 함수  ////////////////////////////////
