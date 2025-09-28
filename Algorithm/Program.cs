@@ -5,58 +5,75 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		List<(string, string)> inputs = GetInputs();
-		var results = inputs.Select(input => input.Item1.IsSubstring(input.Item2))
-			.Select(b => b ? "Yes" : "No")
+		var peopleNum = int.Parse(ReadLine());
+		var peopleList = Enumerable.Range(0, peopleNum)
+			.Select(_ => ParsePerson(ReadLine()))
 			.ToList();
-		foreach (var result in results)
-		{
-			WriteLine(result);
-		}		
+			var rankList = Solve(peopleList);
+			WriteLine(string.Join(' ', rankList));
 	}
 	
-	private static List<(string, string)> GetInputs()
+	static List<int> Solve(List<Person> peopleList)
 	{
-		var inputList = new List<(string, string)>();
-		while(true)
-		{
-			var input = ReadLine();
-			if (string.IsNullOrEmpty(input))
-				break;
-				
-			var split = input.Split(' ');
-			var subStr = split[0];
-			var str = split[1];
-			inputList.Add((subStr, str));
-		}
-		return inputList;
+		var calculator = new DominanceRankCalculator(peopleList, new HeightWeightDominanceRule());
+		return peopleList
+			.Select(person => calculator.CalculateRank(person))
+			.ToList();
+	}
+	
+	static Person ParsePerson(string input)
+	{
+		var parts = input.Split(' ').Select(int.Parse).ToArray();
+		return new Person (parts[0], parts[1]);
 	}
 }
 
-public static class StringChecker
+public interface IDominanceRule
 {
-	public static bool IsSubstring(this string subStr, string str)
+	bool Dominates(Person a, Person b);
+}
+
+public class HeightWeightDominanceRule : IDominanceRule
+{
+	public bool Dominates(Person a, Person b)
 	{
-		if (!IsAllIncluded(subStr, str))
-			return false;
+		return a.Height > b.Height
+			&& a.Weight > b.Weight;
+	}
+}
+
+public class DominanceRankCalculator
+{
+	private readonly List<Person> PeopleList = new();
+	private readonly IDominanceRule _rule;
+	
+	public DominanceRankCalculator(List<Person> peopleList, IDominanceRule rule)
+	{
+		PeopleList = peopleList.ToList();
+		_rule = rule;
+	}
+	
+	public int CalculateRank(Person targetPerson)
+	{
+		var dominantCount = PeopleList
+				.Where(person => person != targetPerson)
+				.Count(person => _rule.Dominates(person, targetPerson));
 		
-		return CheckSubstring(subStr, str);
+		return dominantCount + 1;
 	}
+}
+
+public class Person
+{
+	public int Weight { get; }
+	public int Height { get; }
+	public int Rank { get; set;}
 	
-	private static bool IsAllIncluded(string subStr, string str)
+	public Person(int weight, int height)
 	{
-		return subStr.All(ch => str.Contains(ch));
-	}
-	
-	private static bool CheckSubstring(string subStr, string str)
-	{
-		var j = 0;
-		foreach (var ch in str)
-		{
-			if (j < subStr.Length && ch == subStr[j])
-				j++;
-		}
-		return j == subStr.Length;
+		Weight = weight;
+		Height = height;
+		Rank = 0;
 	}
 }
 
