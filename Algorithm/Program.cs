@@ -4,28 +4,37 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		List<(string, string)> inputs = GetInputs();
-		var results = inputs
-			.Select(i => i.Item1.IsSubstringOf(i.Item2))
-			.Select(i => i.GetResultString())
+		var numOfScore = int.Parse(ReadLine());
+		var difficultyList = Enumerable
+			.Range(0, numOfScore)
+			.Select(_ => int.Parse(ReadLine()))
 			.ToList();
-		
-		foreach (var result in results)
-			WriteLine(result);
+		var calculator = new DifficultyCalculator(30);
+		var average = calculator.GetAverage(difficultyList);
+		WriteLine(average);	
 	}
-	
-	public static List<(string, string)> GetInputs()
+}
+
+public class DifficultyCalculator
+{
+	private readonly decimal _cutPercent = 0;
+	public DifficultyCalculator(int cutPercent)
 	{
-		List<(string, string)> inputList = new();
-		while(true)
-		{
-			var input = ReadLine();
-			if (string.IsNullOrEmpty(input))
-				break;
-			var parts = input.Split(' ');
-			inputList.Add((parts[0], parts[1]));
-		}
-		return inputList;
+		_cutPercent = cutPercent;
+	}
+	public int GetAverage(List<int> difficultyList)
+	{
+		int count = difficultyList.Count;
+		if (count == 0)
+			return 0;
+		
+		var cutPeopleCountOfOneside = (int)Math.Round(count * (_cutPercent/2) / 100, MidpointRounding.AwayFromZero);
+		var average = difficultyList
+			.OrderBy(grade => grade)
+			.Skip(cutPeopleCountOfOneside) // 하단 절삭
+			.SkipLast(cutPeopleCountOfOneside) // 상단 절삭
+			.Average();
+		return (int)Math.Round(average, MidpointRounding.AwayFromZero);
 	}
 }
 
