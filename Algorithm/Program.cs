@@ -1,84 +1,50 @@
-﻿using System.Text;
-using static System.Console;
+﻿using static System.Console;
 
 class Program
 {
 	static void Main(string[] args)
 	{
-		var input = ReadLine().Split(' ').Select(int.Parse).ToArray();
-		var numOfCountries = input[0];
-		var targetCountryIndex = input[1];
-		var countries = Enumerable.Range(0, numOfCountries)
-			.Select(_ => ReadLine())
-			.Select(GetCountry)
+		List<(string, string)> inputs = GetInputs();
+		var results = inputs
+			.Select(i => i.Item1.IsSubstringOf(i.Item2))
+			.Select(i => i.GetResultString())
 			.ToList();
-		var rank = OlympicRankCalculator.GetRank(countries, targetCountryIndex);
-		WriteLine(rank);
+		
+		foreach (var result in results)
+			WriteLine(result);
 	}
 	
-	static Country GetCountry(string input)
+	public static List<(string, string)> GetInputs()
 	{
-		var parts = input.Split(' ').Select(int.Parse).ToArray();
-		return new Country(parts[0], parts[1], parts[2], parts[3]);
-	}
-}
-
-public static class OlympicRankCalculator
-{
-	public static int GetRank(List<Country> countries, int targetCountryIndex)
-	{
-		var orderedCountries = GetOrderedCountry(countries);
-		SetCountryRank(orderedCountries);
-		return orderedCountries.FirstOrDefault(c => c.Index == targetCountryIndex).Rank;
-	}
-	
-	private static void SetCountryRank(List<Country> countries)
-	{
-		if (countries.Count <= 0)
-			throw new Exception();
-			
-		int i = 1;
-		countries[0].Rank = i; // 1등 set
-		while(i < countries.Count)
+		List<(string, string)> inputList = new();
+		while(true)
 		{
-			if (countries[i].Gold == countries[i-1].Gold
-				&& countries[i].Silver == countries[i-1].Silver
-				&& countries[i].Bronze == countries[i-1].Bronze)
-			{
-				countries[i].Rank = countries[i-1].Rank; // 공동 등수
-			}
-			else
-			{
-				countries[i].Rank = i + 1; // 현재 순서 기반 등수
-			}
-			i++;
+			var input = ReadLine();
+			if (string.IsNullOrEmpty(input))
+				break;
+			var parts = input.Split(' ');
+			inputList.Add((parts[0], parts[1]));
 		}
-	}
-	
-	private static List<Country> GetOrderedCountry(List<Country> countries)
-	{
-		return countries
-			.OrderByDescending(c => c.Gold)
-			.ThenByDescending(c => c.Silver)
-			.ThenByDescending(c => c.Bronze)
-			.ToList();
+		return inputList;
 	}
 }
 
-public class Country
+public static class Extensions
 {
-    public int Index { get; }
-    public int Gold { get; }
-    public int Silver { get; }
-    public int Bronze { get; }
-    public int Rank { get; set; }
-
-    public Country(int index, int gold, int silver, int bronze)
-    {
-        Index = index;
-        Gold = gold;
-        Silver = silver;
-        Bronze = bronze;
+	public static bool IsSubstringOf(this string subStrCandidate, string fullStr)
+	{
+		var i = 0;
+		foreach (var ch in fullStr)
+		{
+			if (i < subStrCandidate.Length && ch == subStrCandidate[i])
+				i++;
+		}
+		return i == subStrCandidate.Length;
+	}
+	
+	public static string GetResultString(this bool isSubstring)
+	{
+		return isSubstring ? "Yes" : "No";
 	}
 }
 
