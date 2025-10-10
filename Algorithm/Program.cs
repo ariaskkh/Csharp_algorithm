@@ -4,62 +4,70 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var numOfScore = int.Parse(ReadLine());
-		var difficultyList = Enumerable
-			.Range(0, numOfScore)
-			.Select(_ => int.Parse(ReadLine()))
+		var gradeInputs = Enumerable.Range(0, 20)
+			.Select(_ => ReadLine().Split(' '))
+			.Select(i => new GradeData(i[0], double.Parse(i[1]), i[2]))
 			.ToList();
-		var calculator = new DifficultyCalculator(30);
-		var average = calculator.GetAverage(difficultyList);
-		WriteLine(average);	
+		var result = GradeCalculator.GetAverage(gradeInputs);
+		WriteLine(result);
 	}
 }
 
-public class DifficultyCalculator
+public static class GradeCalculator
 {
-	private readonly decimal _cutPercent = 0;
-	public DifficultyCalculator(int cutPercent)
+	public static double GetAverage(List<GradeData> gradeDataList)
 	{
-		_cutPercent = cutPercent;
-	}
-	public int GetAverage(List<int> difficultyList)
-	{
-		int count = difficultyList.Count;
-		if (count == 0)
-			return 0;
-		
-		var cutPeopleCountOfOneside = (int)Math.Round(count * (_cutPercent/2) / 100, MidpointRounding.AwayFromZero);
-		var average = difficultyList
-			.OrderBy(grade => grade)
-			.Skip(cutPeopleCountOfOneside) // 하단 절삭
-			.SkipLast(cutPeopleCountOfOneside) // 상단 절삭
-			.Average();
-		return (int)Math.Round(average, MidpointRounding.AwayFromZero);
+		var garaDataListWithoutP = gradeDataList.Where(d => d.SubjectScore != "P").ToList();
+		var totalWeight = garaDataListWithoutP
+				.Sum(d => d.SubjectWeight);
+		var scoreSum = garaDataListWithoutP
+			.Select(d => d.SubjectWeight * d.SubjectScoreNumber)
+				.Sum();
+		return scoreSum / totalWeight;
 	}
 }
 
-public static class Extensions
+public class GradeData
 {
-	public static bool IsSubstringOf(this string subStrCandidate, string fullStr)
+	private readonly static double AP = 4.5;
+	private readonly static double A0 = 4.0;
+	private readonly static double BP = 3.5;
+	private readonly static double B0 = 3.0;
+	private readonly static double CP = 2.5;
+	private readonly static double C0 = 2.0;
+	private readonly static double DP = 1.5;
+	private readonly static double D0 = 1.0;
+	private readonly static double F = 0.0;
+	private readonly static double P = -1.0;
+
+	public GradeData(string subjectName, double subjectWeight, string subjectScore)
 	{
-		var i = 0;
-		foreach (var ch in fullStr)
-		{
-			if (i < subStrCandidate.Length && ch == subStrCandidate[i])
-				i++;
-		}
-		return i == subStrCandidate.Length;
+		SubjectName = subjectName;
+		SubjectWeight = subjectWeight;
+		SubjectScore = subjectScore;
 	}
-	
-	public static string GetResultString(this bool isSubstring)
+
+	public string SubjectName { get; init; }
+	public double SubjectWeight { get; init; }
+	public string SubjectScore { get; init; }
+	public double SubjectScoreNumber => SubjectScore switch
 	{
-		return isSubstring ? "Yes" : "No";
-	}
+		"A+" => AP,
+		"A0" => A0,
+		"B+" => BP,
+		"B0" => B0,
+		"C+" => CP,
+		"C0" => C0,
+		"D+" => DP,
+		"D0" => D0,
+		"F" => F,
+		"P" => P,
+		_ => 0.0
+	};
 }
 
-
-    /////////////////////////////  util 함수  ////////////////////////////////
-    static T[] CopyArray<T>(T[] array)
+/////////////////////////////  util 함수  ////////////////////////////////
+static T[] CopyArray<T>(T[] array)
     {
         T[] newArray = new T[array.Length];
         for (var i = 0; i < array.Length; i++)
