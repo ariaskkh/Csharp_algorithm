@@ -5,112 +5,65 @@ class Program
 	static void Main(string[] args)
 	{
 		var input = ReadLine().Split(' ').ChangeStrToInt();
-		var sero = input[0];
-		var garo = input[1];
-		var blocksAvailable = input[2];
-		
-		// int[][]
-		var groundTable = Enumerable.Range(0, sero).Select(_ => ReadLine().Split(' ').ChangeStrToInt()).ToArray();
-		var ground = new Ground(groundTable);
-		var user = new User(blocksAvailable);
-		Solve(ground, user);
+		var height = input[0];
+		var width = input[1];
+		Solve(height, width);
 	}
 	
-	static void Solve(Ground ground, User user)
+	static void Solve(int height, int width)
 	{
-		var flatteningData = ground.GetFlatteningData(user);
-		if (flatteningData is not null)
+		var board = new ChessBoard(width, height);
+		var knight = new Knight();
+		
+		var count = board.GetMaxVisits(knight);
+		WriteLine(count);
+	}
+}
+
+public class ChessBoard
+{
+	public int _width;
+	public int _height;
+	
+	public ChessBoard(int width, int height)
+	{
+		_width = width;
+		_height = height;
+	}
+	
+	public int GetMaxVisits(Knight knight)
+	{
+		return knight.CalculateMaxVisits(_width, _height);
+	}
+}
+
+public class Knight
+{
+	public (int x, int y) _location = (0,0);
+	public int _visitingCount = 1;
+	
+	public int CalculateMaxVisits(int width, int height)
+	{
+		if (height == 1) // 높이 = 1. 이동 불가
+			return 1;
+		else if (height == 2) //2칸 높이 이동만 가능 -> 4번 제한)	
 		{
-			WriteLine($"{flatteningData.TimeNeeded} {flatteningData.Height}");
+			var count = (width - 1) / 2 + 1;
+			return count > 4 ? 4 : count;
+		}
+		else if (width < 5)
+		{
+			return width;
+		}
+		else if (width == 5)
+		{
+			return 4;
+		}
+		else
+		{
+			return 1 + 2 + (width - 5);
 		}
 	}
-}
-
-public class User
-{
-	public int BlocksAvailable { get; init; }
-	
-	public User(int blocksAvailable)
-	{
-		BlocksAvailable = blocksAvailable;
-	}
-}
-
-class Ground
-{
-	public int[][] _originalGroundHeight;
-	public Dictionary<int, int> _groundHeightDict;
-	private int _FlattenedGroundheight = 0;
-	private int _minHeight;
-	private int _maxHeight;
-	
-	public Ground(int[][] groundHeight)
-	{
-		_originalGroundHeight = groundHeight;
-		_groundHeightDict = GetGroundHeightDict();
-		_minHeight = _groundHeightDict.Keys.Min();
-		_maxHeight = _groundHeightDict.Keys.Max();
-	}
-	
-	private Dictionary<int, int> GetGroundHeightDict()
-	{
-		return _originalGroundHeight
-					.SelectMany(h => h)
-					.GroupBy(h => h)
-					.ToDictionary(g => g.Key, g => g.Count());
-	}
-	
-	public FlatteningResult GetFlatteningData(User user)
-	{
-		var flatteningResult = Enumerable.Range(_minHeight, _maxHeight - _minHeight + 1)
-				.Select(h => CalculateFlatteningData(h, user.BlocksAvailable))
-				.Where(data => data.SufficientBlock)
-				.OrderBy(data => data.TimeNeeded)
-				.ThenByDescending(data => data.Height)
-				.FirstOrDefault();
-		_FlattenedGroundheight = flatteningResult.Height;
-		return flatteningResult;
-	}
-	
-	private FlatteningResult CalculateFlatteningData(int targetHeight, int blocksAvailable)
-	{
-		var digNeeded = GetNumberOfDig(targetHeight);
-		var fillNeeded = GetNumberOfFill(targetHeight);
-		
-		return new FlatteningResult
-		{
-			Dig = digNeeded,
-			Fill = fillNeeded,
-			SufficientBlock = digNeeded + blocksAvailable >= fillNeeded,
-			TimeNeeded = digNeeded * 2 + fillNeeded,
-			Height = targetHeight,
-		};
-	}
-	
-	private int GetNumberOfDig(int targetHeight)
-	{
-		return _groundHeightDict
-					.Select(h => h.Key)
-					.Where(h => h > targetHeight)
-					.Sum(h => (h - targetHeight) * _groundHeightDict[h]);
-	}
-	
-	private int GetNumberOfFill(int targetHeight)
-	{
-		return _groundHeightDict
-					.Select(h => h.Key)
-					.Where(h => h < targetHeight)
-					.Sum(h => (targetHeight - h) * _groundHeightDict[h]);
-	}
-}
-
-public class FlatteningResult
-{
-	public int Dig { get; init; }
-	public int Fill { get; init; }
-	public bool SufficientBlock { get; init; }
-	public int TimeNeeded { get; init; }
-	public int Height { get; init; }
 }
 
 /////////////////////////////  util 함수  ////////////////////////////////
