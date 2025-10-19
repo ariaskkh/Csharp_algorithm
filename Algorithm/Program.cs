@@ -4,65 +4,179 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var input = ReadLine().Split(' ').ChangeStrToInt();
-		var height = input[0];
-		var width = input[1];
-		Solve(height, width);
+		var input = ReadLine().ToCharArray();
+		var word = new CroatiaWord(input);	
+		Solve(word);
 	}
 	
-	static void Solve(int height, int width)
+	private static void Solve(CroatiaWord word)
 	{
-		var board = new ChessBoard(width, height);
-		var knight = new Knight();
+		var handlers = new List<ICharacterHandler> ()
+		{
+			new CharacterJHandler(),
+			new DashHandler(),
+			new EqualHandler(),
+			new NormalCharacterHandler()
+		};
+		var translator = new CroatiaTranslator(handlers);
+		var updatedWord = translator.Translate(word);
+		var result = updatedWord.CroatiaAlphabetList.Count();
+		WriteLine(result);
+	}
+}
+
+public class CroatiaWord
+{
+	public char[] ConvertedWord { get; private init; }
+	public List<string> CroatiaAlphabetList { get; set; } = new();
+	
+	public CroatiaWord(char[] convertedWord)
+	{
+		ConvertedWord = convertedWord;
+	}
+}
+
+public interface ITranslator
+{
+	public CroatiaWord Translate(CroatiaWord word);
+}
+
+public class CroatiaTranslator : ITranslator
+{
+	List<ICharacterHandler> _handlers;
+	public CroatiaTranslator(List<ICharacterHandler> handlers)
+	{
+		_handlers = handlers;
+	}
+	
+	public CroatiaWord Translate(CroatiaWord word)
+	{
+		var convertedWord = word.ConvertedWord;
+		if (convertedWord.Count() <= 0)
+			throw new Exception("word is invalid");
+			
+		var croatiaAlphabetList = new List<string>();
+
+		foreach (var pair in convertedWord.Select((ch, i) => new {ch, i}))
+		{
+			var i = pair.i;
+			var ch = pair.ch;
+			if (i == 0)
+			{
+				croatiaAlphabetList.Add(ch.ToString());
+			}
+			else
+			{
+				foreach (var handler in _handlers.Where(handler => handler.CanHandle(convertedWord, i)))
+				{
+					handler.Handle(convertedWord, i, croatiaAlphabetList);
+				}
+			}
+		}
 		
-		var count = board.GetMaxVisits(knight);
-		WriteLine(count);
+		word.CroatiaAlphabetList = croatiaAlphabetList;
+		return word;
 	}
 }
 
-public class ChessBoard
+public interface ICharacterHandler
 {
-	public int _width;
-	public int _height;
-	
-	public ChessBoard(int width, int height)
-	{
-		_width = width;
-		_height = height;
-	}
-	
-	public int GetMaxVisits(Knight knight)
-	{
-		return knight.CalculateMaxVisits(_width, _height);
-	}
+	public bool CanHandle(char[] convertedWord, int index);
+	public void Handle(char[] convertedWord, int index, List<string> alphabetList);
 }
 
-public class Knight
+public class CharacterJHandler : ICharacterHandler
 {
-	public (int x, int y) _location = (0,0);
-	public int _visitingCount = 1;
+	private const char _identifier = 'j';
 	
-	public int CalculateMaxVisits(int width, int height)
+	public bool CanHandle(char[] convertedWord, int index)
 	{
-		if (height == 1) // 높이 = 1. 이동 불가
-			return 1;
-		else if (height == 2) //2칸 높이 이동만 가능 -> 4번 제한)	
+		return convertedWord[index] == _identifier;
+	}
+	
+	public void Handle(char[] convertedWord, int index, List<string> alphabetList)
+	{
+		// lj, nj
+		if (index > 0
+			&& (convertedWord[index - 1] == 'l' || convertedWord[index - 1] == 'n'))
 		{
-			var count = (width - 1) / 2 + 1;
-			return count > 4 ? 4 : count;
-		}
-		else if (width < 5)
-		{
-			return width;
-		}
-		else if (width == 5)
-		{
-			return 4;
+			alphabetList[alphabetList.Count - 1] = alphabetList[alphabetList.Count - 1] + _identifier;
 		}
 		else
 		{
-			return 1 + 2 + (width - 5);
+			alphabetList.Add(convertedWord[index].ToString());
 		}
+	}
+}
+
+public class DashHandler : ICharacterHandler
+{
+	private const char _identifier = '-';
+	
+	public bool CanHandle(char[] convertedWord, int index)
+	{
+		return convertedWord[index] == _identifier;
+	}
+	
+	public void Handle(char[] convertedWord, int index, List<string> alphabetList)
+	{
+		// c-, d-
+		if (index > 0
+			&& (convertedWord[index - 1] == 'c' || convertedWord[index - 1] == 'd'))
+		{
+			alphabetList[alphabetList.Count - 1] = alphabetList[alphabetList.Count - 1] + _identifier;
+		}
+		else
+		{
+			alphabetList.Add(convertedWord[index].ToString());
+		}
+	}
+}
+
+
+public class EqualHandler : ICharacterHandler
+{
+	private const char _identifier = '=';
+	public bool CanHandle(char[] convertedWord, int index)
+	{
+		return convertedWord[index] == _identifier;
+	}
+
+	public void Handle(char[] convertedWord, int index, List<string> alphabetList)
+	{
+		// dz=, s=, z=
+		if (index <= 0)
+			return;
+		
+		if (index > 1 && convertedWord[index - 2] == 'd' && convertedWord[index - 1] == 'z')
+		{
+			alphabetList.RemoveRange(alphabetList.Count - 2, 2);
+			alphabetList.Add("dz=");
+		}
+		else if (convertedWord[index - 1] == 's' || convertedWord[index - 1] == 'z')
+		{
+			alphabetList[alphabetList.Count - 1] = alphabetList[alphabetList.Count - 1] + _identifier;
+		}
+	}
+}
+
+public class NormalCharacterHandler : ICharacterHandler
+{
+	public bool CanHandle(char[] convertedWord, int index)
+	{
+		var identifier = convertedWord[index];
+		return identifier != '='
+			&& identifier != '-'
+			&& identifier != 'j'
+			;
+	}
+	
+	public void Handle(char[] convertedWord, int index, List<string> alphabetList)
+	{
+		if (index <= 0)
+			return;
+			
+		alphabetList.Add(convertedWord[index].ToString());
 	}
 }
 
