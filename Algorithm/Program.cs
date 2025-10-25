@@ -4,189 +4,114 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var input = ReadLine().ToCharArray();
-		var word = new CroatiaWord(input);	
-		Solve(word);
+		var input = ReadLine().Split(' ').ChangeStrToInt();
+		var truckCount = input[0];
+		var truckQueue = ReadLine().Split(' ').ChangeStrToInt()
+			.Select(weight => new Truck(weight))
+			.ToQueue<Truck>();
+		var bridgeLength = input[1];
+		var bridgeMaxWeight = input[2];
+
+		Solve(truckQueue, bridgeLength, bridgeMaxWeight);
+	}
+
+	static void Solve(Queue<Truck> truckQueue, int bridgeLength, int bridgeMaxWeight)
+	{
+		var manager = new BridgeManager(bridgeLength, bridgeMaxWeight);
+		var time = manager.Cross(truckQueue);
+		WriteLine(time);
+	}
+}
+
+public class BridgeManager
+{
+	public int Length { get; private init; }
+	public int MaxWeight { get; private init; }
+	public List<Truck> _passedTruckList = new ();
+	public Queue<Truck> _trucksOnTheBridgeQueue = new();
+	
+	public BridgeManager(int length, int maxWeight)
+	{
+		Length = length;
+		MaxWeight = maxWeight;
 	}
 	
-	private static void Solve(CroatiaWord word)
+	public int Cross(Queue<Truck> truckQueue)
 	{
-		var handlers = new List<ICharacterHandler> ()
+		int time = 0;
+		while(truckQueue.Count > 0 || _trucksOnTheBridgeQueue.Count > 0)
 		{
-			new CharacterJHandler(),
-			new DashHandler(),
-			new EqualHandler(),
-			new NormalCharacterHandler()
-		};
-		var translator = new CroatiaTranslator(handlers);
-		var updatedWord = translator.Translate(word);
-		var result = updatedWord.CroatiaAlphabetList.Count();
-		WriteLine(result);
-	}
-}
-
-public class CroatiaWord
-{
-	public char[] ConvertedWord { get; private init; }
-	public List<string> CroatiaAlphabetList { get; set; } = new();
-	
-	public CroatiaWord(char[] convertedWord)
-	{
-		ConvertedWord = convertedWord;
-	}
-}
-
-public interface ITranslator
-{
-	public CroatiaWord Translate(CroatiaWord word);
-}
-
-public class CroatiaTranslator : ITranslator
-{
-	List<ICharacterHandler> _handlers;
-	public CroatiaTranslator(List<ICharacterHandler> handlers)
-	{
-		_handlers = handlers;
+			// 다리 위 한칸씩 전진
+			// 1) 다리 위 트럭
+			// 2) 새로 들어올 수 있는 트럭
+			MoveTruckOnTheBridge();
+			EnterBridge(truckQueue);
+			time++;
+		}
+		return time;
 	}
 	
-	public CroatiaWord Translate(CroatiaWord word)
+	private void MoveTruckOnTheBridge()
 	{
-		var convertedWord = word.ConvertedWord;
-		if (convertedWord.Count() <= 0)
-			throw new Exception("word is invalid");
-			
-		var croatiaAlphabetList = new List<string>();
-
-		foreach (var pair in convertedWord.Select((ch, i) => new {ch, i}))
+		if (_trucksOnTheBridgeQueue.Count > 0)
 		{
-			var i = pair.i;
-			var ch = pair.ch;
-			if (i == 0)
+			_trucksOnTheBridgeQueue.ForEach(t => t.MovePosition());
+			if (_trucksOnTheBridgeQueue.First().HasPassedBridge(Length))
 			{
-				croatiaAlphabetList.Add(ch.ToString());
-			}
-			else
-			{
-				foreach (var handler in _handlers.Where(handler => handler.CanHandle(convertedWord, i)))
-				{
-					handler.Handle(convertedWord, i, croatiaAlphabetList);
-				}
+				var truck = _trucksOnTheBridgeQueue.Dequeue();
+				_passedTruckList.Add(truck);
 			}
 		}
-		
-		word.CroatiaAlphabetList = croatiaAlphabetList;
-		return word;
-	}
-}
-
-public interface ICharacterHandler
-{
-	public bool CanHandle(char[] convertedWord, int index);
-	public void Handle(char[] convertedWord, int index, List<string> alphabetList);
-}
-
-public class CharacterJHandler : ICharacterHandler
-{
-	private const char _identifier = 'j';
-	
-	public bool CanHandle(char[] convertedWord, int index)
-	{
-		return convertedWord[index] == _identifier;
 	}
 	
-	public void Handle(char[] convertedWord, int index, List<string> alphabetList)
+	private void EnterBridge(Queue<Truck> truckQueue)
 	{
-		// lj, nj
-		if (index > 0
-			&& (convertedWord[index - 1] == 'l' || convertedWord[index - 1] == 'n'))
+		if (truckQueue.Count > 0 && CanEnter(truckQueue.First()))
 		{
-			alphabetList[alphabetList.Count - 1] = alphabetList[alphabetList.Count - 1] + _identifier;
+			var enteringTruck = truckQueue.Dequeue();
+			enteringTruck.MovePosition();
+			_trucksOnTheBridgeQueue.Enqueue(enteringTruck);
 		}
-		else
-		{
-			alphabetList.Add(convertedWord[index].ToString());
-		}
-	}
-}
-
-public class DashHandler : ICharacterHandler
-{
-	private const char _identifier = '-';
-	
-	public bool CanHandle(char[] convertedWord, int index)
-	{
-		return convertedWord[index] == _identifier;
 	}
 	
-	public void Handle(char[] convertedWord, int index, List<string> alphabetList)
+	private bool CanEnter(Truck truck)
 	{
-		// c-, d-
-		if (index > 0
-			&& (convertedWord[index - 1] == 'c' || convertedWord[index - 1] == 'd'))
-		{
-			alphabetList[alphabetList.Count - 1] = alphabetList[alphabetList.Count - 1] + _identifier;
-		}
-		else
-		{
-			alphabetList.Add(convertedWord[index].ToString());
-		}
+		return _trucksOnTheBridgeQueue.Select(t => t.Weight).Sum() + truck.Weight <= MaxWeight;
 	}
 }
 
 
-public class EqualHandler : ICharacterHandler
+public class Truck
 {
-	private const char _identifier = '=';
-	public bool CanHandle(char[] convertedWord, int index)
+	public int Weight { get; private init; }
+	private int _positionInBridge { get; set; } = 0;
+	
+	public Truck(int weight)
 	{
-		return convertedWord[index] == _identifier;
-	}
-
-	public void Handle(char[] convertedWord, int index, List<string> alphabetList)
-	{
-		// dz=, s=, z=
-		if (index <= 0)
-			return;
-		
-		if (index > 1 && convertedWord[index - 2] == 'd' && convertedWord[index - 1] == 'z')
-		{
-			alphabetList.RemoveRange(alphabetList.Count - 2, 2);
-			alphabetList.Add("dz=");
-		}
-		else if (convertedWord[index - 1] == 's' || convertedWord[index - 1] == 'z')
-		{
-			alphabetList[alphabetList.Count - 1] = alphabetList[alphabetList.Count - 1] + _identifier;
-		}
-	}
-}
-
-public class NormalCharacterHandler : ICharacterHandler
-{
-	public bool CanHandle(char[] convertedWord, int index)
-	{
-		var identifier = convertedWord[index];
-		return identifier != '='
-			&& identifier != '-'
-			&& identifier != 'j'
-			;
+		Weight = weight;
 	}
 	
-	public void Handle(char[] convertedWord, int index, List<string> alphabetList)
+	public void MovePosition()
 	{
-		if (index <= 0)
-			return;
-			
-		alphabetList.Add(convertedWord[index].ToString());
+		_positionInBridge++;
+	}
+	
+	public bool HasPassedBridge(int bridgeLength)
+	{
+		return _positionInBridge > bridgeLength;
 	}
 }
+    
+    
+
 
 /////////////////////////////  util 함수  ////////////////////////////////
 public static class Utils
 {
 	static T[] CopyArray<T>(T[] array)
 	{
-		T[] newArray = new T[array.Length];
-		for (var i = 0; i < array.Length; i++)
+	    T[] newArray = new T[array.Length];
+	    for (var i = 0; i < array.Length; i++)
 	    {
 	        newArray[i] = array[i];
 	    }
@@ -283,7 +208,7 @@ public static class Utils
 	    }
 	    return resultArr;
 	}
-
+	
 	static void Print(int[,] result, int N, int K)
 	{
 	    for (var i = 0; i < N; i++)
@@ -293,9 +218,10 @@ public static class Utils
 	            Write($"{result[i, j]} ");
 	        }
 	        WriteLine();
-		}
+	    }
 	}
 }
+
 
 public static class EnumerableExtensions
 {
@@ -329,43 +255,20 @@ public static class EnumerableExtensions
 		return queue;
 	}
 
-	public static Dictionary<int, int> ConvertToDictionary(this IEnumerable<int> enumerable)
+	public static Dictionary<int, int> ConverIntListToDict(this IEnumerable<int> enumerable)
 	{
-		return enumerable
-			.GroupBy(height => height)
-			.ToDictionary(group => group.Key, group => group.Count());
-	}
-}
-
-public class Result<T>
-{
-	public string Error { get; set; }
-	public T Content { get; set; }
-
-	public bool HasContent { get; set; } = false;
-
-	public static Result<T> Success(T content)
-	{
-		var result = new Result<T>();
-		result.Content = content;
-		result.HasContent = true;
-		return result;
-	}
-
-	public static Result<T> Fail(string error = "error")
-	{
-		var result = new Result<T>();
-		result.Error = error;
-		return result;
-	}
-
-	public bool IsSuccess()
-	{
-		return Error == null;
-	}
-
-	public bool IsError()
-	{
-		return Error != null;
+		var numberDict = new Dictionary<int, int>();
+		foreach (var item in enumerable)
+		{
+			if (numberDict.ContainsKey(item))
+			{
+				numberDict[item] += 1;
+			}
+			else
+			{
+				numberDict.Add(item, 1);
+			}
+		}
+		return numberDict;
 	}
 }
