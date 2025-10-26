@@ -4,105 +4,181 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var input = ReadLine().Split(' ').ChangeStrToInt();
-		var truckCount = input[0];
-		var truckQueue = ReadLine().Split(' ').ChangeStrToInt()
-			.Select(weight => new Truck(weight))
-			.ToQueue<Truck>();
-		var bridgeLength = input[1];
-		var bridgeMaxWeight = input[2];
-
-		Solve(truckQueue, bridgeLength, bridgeMaxWeight);
+		var input = ReadLine().ToCharArray();
+		Solve(input);
 	}
 
-	static void Solve(Queue<Truck> truckQueue, int bridgeLength, int bridgeMaxWeight)
+	static void Solve(char[] charArray)
 	{
-		var manager = new BridgeManager(bridgeLength, bridgeMaxWeight);
-		var time = manager.Cross(truckQueue);
-		WriteLine(time);
+		List<IBracketHandler> handlers = new ()
+		{
+			new SquareOpenBracketHandler(),
+			new SquareCloseBracketHandler(),
+			new ParenthesesOpenHandler(),
+			new ParenthesesCloseHandler(),
+		};
+		var calculator = new BracketCalculator();
+		calculator.Registerhandlers(handlers);
+		var result = calculator.Calculate(charArray);
+		WriteLine(result);
 	}
 }
 
-public class BridgeManager
+public class BracketCalculator
 {
-	public int Length { get; private init; }
-	public int MaxWeight { get; private init; }
-	public List<Truck> _passedTruckList = new ();
-	public Queue<Truck> _trucksOnTheBridgeQueue = new();
-	
-	public BridgeManager(int length, int maxWeight)
+	private Dictionary<char, IBracketHandler> _handlerMap = new();
+	private List<char> _bracketList = new () { '[', ']', '(', ')' };
+	public void Registerhandler(IBracketHandler handler)
 	{
-		Length = length;
-		MaxWeight = maxWeight;
-	}
-	
-	public int Cross(Queue<Truck> truckQueue)
-	{
-		int time = 0;
-		while(truckQueue.Count > 0 || _trucksOnTheBridgeQueue.Count > 0)
+		foreach (var key in _bracketList)
 		{
-			// 다리 위 한칸씩 전진
-			// 1) 다리 위 트럭
-			// 2) 새로 들어올 수 있는 트럭
-			MoveTruckOnTheBridge();
-			EnterBridge(truckQueue);
-			time++;
+			if (handler.CanHandle(key))
+				_handlerMap[key] = handler;
 		}
-		return time;
 	}
 	
-	private void MoveTruckOnTheBridge()
+	public void Registerhandlers(List<IBracketHandler> handlers)
 	{
-		if (_trucksOnTheBridgeQueue.Count > 0)
+		foreach (var key in _bracketList)
 		{
-			_trucksOnTheBridgeQueue.ForEach(t => t.MovePosition());
-			if (_trucksOnTheBridgeQueue.First().HasPassedBridge(Length))
+			foreach (var handler in handlers)
 			{
-				var truck = _trucksOnTheBridgeQueue.Dequeue();
-				_passedTruckList.Add(truck);
+				if (handler.CanHandle(key))
+					_handlerMap[key] = handler;
 			}
 		}
 	}
-	
-	private void EnterBridge(Queue<Truck> truckQueue)
+
+	public int Calculate(char[] charArray)
 	{
-		if (truckQueue.Count > 0 && CanEnter(truckQueue.First()))
+		if (!IsValid(charArray))
+			return 0;
+			
+		// 숫자와, 괄호가 함께 있음
+		Stack<StackItem> stack = new();
+		foreach (var st in charArray)
 		{
-			var enteringTruck = truckQueue.Dequeue();
-			enteringTruck.MovePosition();
-			_trucksOnTheBridgeQueue.Enqueue(enteringTruck);
+			_handlerMap.TryGetValue(st, out var handler);
+			handler.Handle(stack);
+		}
+		return stack.Where(s => s.IsValue).Select(s => s.Value.Value).Sum();
+	}
+	
+	private bool IsValid(char[] charArray)
+	{
+		var st = new string(charArray);
+		if (charArray.Count(c => c == '(') != charArray.Count(c => c == ')'))
+			return false;
+		if (charArray.Count(c => c == '[') != charArray.Count(c => c == ']'))
+			return false;
+		if (st.Contains("(]") || st.Contains("[)"))
+			return false;
+		return true;
+	}
+}
+
+public struct StackItem
+{
+	public char? Bracket { get; }
+	public int? Value { get; }
+	
+	public bool IsBracket => Bracket.HasValue;
+	public bool IsValue => Value.HasValue;
+	
+	private StackItem(char? bracket, int? value)
+	{
+		{
+			Bracket = bracket;
+			Value = value;
 		}
 	}
 	
-	private bool CanEnter(Truck truck)
-	{
-		return _trucksOnTheBridgeQueue.Select(t => t.Weight).Sum() + truck.Weight <= MaxWeight;
-	}
+	public static StackItem FromBracket(char bracket) => new (bracket, null);
+	public static StackItem FromValue(int value) => new (null, value);
 }
 
-
-public class Truck
+public interface IBracketHandler
 {
-	public int Weight { get; private init; }
-	private int _positionInBridge { get; set; } = 0;
-	
-	public Truck(int weight)
+	public bool CanHandle(char ch);
+	public void Handle(Stack<StackItem> stack);
+}
+
+public class SquareOpenBracketHandler : IBracketHandler
+{
+	private char _bracket = '[';
+	public bool CanHandle(char ch)
 	{
-		Weight = weight;
+		return ch == _bracket;
 	}
 	
-	public void MovePosition()
+	public void Handle(Stack<StackItem> stack)
 	{
-		_positionInBridge++;
-	}
-	
-	public bool HasPassedBridge(int bridgeLength)
-	{
-		return _positionInBridge > bridgeLength;
+		stack.Push(StackItem.FromBracket('['));
 	}
 }
-    
-    
+
+public class SquareCloseBracketHandler: IBracketHandler
+{
+	private char _bracket = ']';
+	private int _multiplier = 3;
+	public bool CanHandle(char ch)
+	{
+		return ch == _bracket;
+	}
+	// (2[3
+	public void Handle(Stack<StackItem> stack)
+	{
+		var tempCount = 0;
+		while (stack.Count > 0 && stack.Peek().IsValue)
+		{
+			tempCount += stack.Pop().Value.Value;
+		}
+		
+		if (stack.Count > 0 && stack.Peek().Bracket == '[')
+		{
+			stack.Pop();
+			stack.Push(StackItem.FromValue(tempCount == 0 ? _multiplier : tempCount * _multiplier));
+		}
+	}
+}
+
+public class ParenthesesOpenHandler : IBracketHandler
+{
+	private char _bracket = '(';
+	public bool CanHandle(char ch)
+	{
+		return ch == _bracket;
+	}
+
+	public void Handle(Stack<StackItem> stack)
+	{
+		stack.Push(StackItem.FromBracket('('));
+	}
+}
+
+public class ParenthesesCloseHandler : IBracketHandler
+{
+	private char _bracket = ')';
+	private int _multiplier = 2;
+	public bool CanHandle(char ch)
+	{
+		return ch == _bracket;
+	}
+
+	public void Handle(Stack<StackItem> stack)
+	{
+		var tempCount = 0;
+		while (stack.Count > 0 && stack.Peek().IsValue)
+		{
+			tempCount += stack.Pop().Value.Value;
+		}
+		if (stack.Count > 0 && stack.Peek().Bracket == '(')
+		{
+			stack.Pop();
+			stack.Push(StackItem.FromValue(tempCount == 0 ? _multiplier : tempCount * _multiplier));
+		}
+	}
+}
 
 
 /////////////////////////////  util 함수  ////////////////////////////////
@@ -110,7 +186,7 @@ public static class Utils
 {
 	static T[] CopyArray<T>(T[] array)
 	{
-	    T[] newArray = new T[array.Length];
+		T[] newArray = new T[array.Length];
 	    for (var i = 0; i < array.Length; i++)
 	    {
 	        newArray[i] = array[i];
