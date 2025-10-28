@@ -4,181 +4,60 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var input = ReadLine().ToCharArray();
-		Solve(input);
-	}
-
-	static void Solve(char[] charArray)
-	{
-		List<IBracketHandler> handlers = new ()
-		{
-			new SquareOpenBracketHandler(),
-			new SquareCloseBracketHandler(),
-			new ParenthesesOpenHandler(),
-			new ParenthesesCloseHandler(),
-		};
-		var calculator = new BracketCalculator();
-		calculator.Registerhandlers(handlers);
-		var result = calculator.Calculate(charArray);
-		WriteLine(result);
-	}
-}
-
-public class BracketCalculator
-{
-	private Dictionary<char, IBracketHandler> _handlerMap = new();
-	private List<char> _bracketList = new () { '[', ']', '(', ')' };
-	public void Registerhandler(IBracketHandler handler)
-	{
-		foreach (var key in _bracketList)
-		{
-			if (handler.CanHandle(key))
-				_handlerMap[key] = handler;
-		}
-	}
-	
-	public void Registerhandlers(List<IBracketHandler> handlers)
-	{
-		foreach (var key in _bracketList)
-		{
-			foreach (var handler in handlers)
-			{
-				if (handler.CanHandle(key))
-					_handlerMap[key] = handler;
-			}
-		}
-	}
-
-	public int Calculate(char[] charArray)
-	{
-		if (!IsValid(charArray))
-			return 0;
-			
-		// 숫자와, 괄호가 함께 있음
-		Stack<StackItem> stack = new();
-		foreach (var st in charArray)
-		{
-			_handlerMap.TryGetValue(st, out var handler);
-			handler.Handle(stack);
-		}
-		return stack.Where(s => s.IsValue).Select(s => s.Value.Value).Sum();
-	}
-	
-	private bool IsValid(char[] charArray)
-	{
-		var st = new string(charArray);
-		if (charArray.Count(c => c == '(') != charArray.Count(c => c == ')'))
-			return false;
-		if (charArray.Count(c => c == '[') != charArray.Count(c => c == ']'))
-			return false;
-		if (st.Contains("(]") || st.Contains("[)"))
-			return false;
-		return true;
-	}
-}
-
-public struct StackItem
-{
-	public char? Bracket { get; }
-	public int? Value { get; }
-	
-	public bool IsBracket => Bracket.HasValue;
-	public bool IsValue => Value.HasValue;
-	
-	private StackItem(char? bracket, int? value)
-	{
-		{
-			Bracket = bracket;
-			Value = value;
-		}
-	}
-	
-	public static StackItem FromBracket(char bracket) => new (bracket, null);
-	public static StackItem FromValue(int value) => new (null, value);
-}
-
-public interface IBracketHandler
-{
-	public bool CanHandle(char ch);
-	public void Handle(Stack<StackItem> stack);
-}
-
-public class SquareOpenBracketHandler : IBracketHandler
-{
-	private char _bracket = '[';
-	public bool CanHandle(char ch)
-	{
-		return ch == _bracket;
-	}
-	
-	public void Handle(Stack<StackItem> stack)
-	{
-		stack.Push(StackItem.FromBracket('['));
-	}
-}
-
-public class SquareCloseBracketHandler: IBracketHandler
-{
-	private char _bracket = ']';
-	private int _multiplier = 3;
-	public bool CanHandle(char ch)
-	{
-		return ch == _bracket;
-	}
-	// (2[3
-	public void Handle(Stack<StackItem> stack)
-	{
-		var tempCount = 0;
-		while (stack.Count > 0 && stack.Peek().IsValue)
-		{
-			tempCount += stack.Pop().Value.Value;
-		}
+		var count = int.Parse(ReadLine());
+		var numbers =Enumerable.Range(0, count).Select(_ => int.Parse(ReadLine())).ToList();
 		
-		if (stack.Count > 0 && stack.Peek().Bracket == '[')
+		Solve(numbers);
+	}
+
+	static void Solve(List<int> numbers)
+	{
+		var results = new List<int>();
+		results.Add(numbers.GetMean());
+		results.Add(numbers.GetMedian());
+		results.Add(numbers.GetMode());
+		results.Add(numbers.GetRange());
+		
+		foreach(var result in results)
 		{
-			stack.Pop();
-			stack.Push(StackItem.FromValue(tempCount == 0 ? _multiplier : tempCount * _multiplier));
+			WriteLine(result);
 		}
 	}
 }
 
-public class ParenthesesOpenHandler : IBracketHandler
+public static class StatisticExtensions
 {
-	private char _bracket = '(';
-	public bool CanHandle(char ch)
+	public static int GetMean(this List<int> numberList) // 평균
 	{
-		return ch == _bracket;
+		var avg = numberList.Average();
+		return (int)Math.Round(avg);
 	}
-
-	public void Handle(Stack<StackItem> stack)
+	
+	public static int GetMedian(this List<int> numberList) // 중앙값
 	{
-		stack.Push(StackItem.FromBracket('('));
+		var index = (numberList.Count - 1) / 2;
+		var ordered = numberList.OrderBy(n => n).ToList();
+		return ordered[index];
 	}
-}
-
-public class ParenthesesCloseHandler : IBracketHandler
-{
-	private char _bracket = ')';
-	private int _multiplier = 2;
-	public bool CanHandle(char ch)
+	
+	public static int GetMode(this List<int> numberList) // 최빈값
 	{
-		return ch == _bracket;
+		var dict = numberList.ConverIntListToDict();
+		var max = dict.Values.Max();
+		var resultNumbers = dict
+				.Where(kv => kv.Value == max)
+				.Select(kv => kv.Key)
+				.OrderBy(n => n)
+				.ToList();
+		return resultNumbers.Count() > 1 ? resultNumbers[1] : resultNumbers[0];
 	}
-
-	public void Handle(Stack<StackItem> stack)
+	
+	public static int GetRange(this List<int> numberList) // qjadnl
 	{
-		var tempCount = 0;
-		while (stack.Count > 0 && stack.Peek().IsValue)
-		{
-			tempCount += stack.Pop().Value.Value;
-		}
-		if (stack.Count > 0 && stack.Peek().Bracket == '(')
-		{
-			stack.Pop();
-			stack.Push(StackItem.FromValue(tempCount == 0 ? _multiplier : tempCount * _multiplier));
-		}
+		return numberList.Max() - numberList.Min();
 	}
 }
+
 
 
 /////////////////////////////  util 함수  ////////////////////////////////
