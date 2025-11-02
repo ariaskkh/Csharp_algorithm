@@ -4,60 +4,108 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var count = int.Parse(ReadLine());
-		var numbers =Enumerable.Range(0, count).Select(_ => int.Parse(ReadLine())).ToList();
-		
-		Solve(numbers);
+		List<PasswordData> passwordList = new();
+		while(true)
+		{
+			var input = ReadLine();
+			if (input == "end")
+				break;
+			passwordList.Add(new PasswordData(input));
+		}
+		Solve(passwordList);
 	}
 
-	static void Solve(List<int> numbers)
+	static void Solve(List<PasswordData> passwordList)
 	{
-		var results = new List<int>();
-		results.Add(numbers.GetMean());
-		results.Add(numbers.GetMedian());
-		results.Add(numbers.GetMode());
-		results.Add(numbers.GetRange());
-		
-		foreach(var result in results)
+		foreach (var ps in passwordList)
 		{
+			var acceptable = PasswordValidator.Validate(ps);
+			var result = acceptable
+			? $"<{ps.Password}> is acceptable"
+			: $"<{ps.Password}> is not acceptable";
 			WriteLine(result);
 		}
 	}
 }
 
-public static class StatisticExtensions
+static class PasswordValidator
 {
-	public static int GetMean(this List<int> numberList) // 평균
+	private static List<char> _vowels = new(){ 'a', 'e', 'i', 'o', 'u'};
+	public static bool Validate(PasswordData password)
 	{
-		var avg = numberList.Average();
-		return (int)Math.Round(avg);
-	}
-	
-	public static int GetMedian(this List<int> numberList) // 중앙값
-	{
-		var index = (numberList.Count - 1) / 2;
-		var ordered = numberList.OrderBy(n => n).ToList();
-		return ordered[index];
-	}
-	
-	public static int GetMode(this List<int> numberList) // 최빈값
-	{
-		var dict = numberList.ConverIntListToDict();
-		var max = dict.Values.Max();
-		var resultNumbers = dict
-				.Where(kv => kv.Value == max)
-				.Select(kv => kv.Key)
-				.OrderBy(n => n)
-				.ToList();
-		return resultNumbers.Count() > 1 ? resultNumbers[1] : resultNumbers[0];
-	}
-	
-	public static int GetRange(this List<int> numberList) // qjadnl
-	{
-		return numberList.Max() - numberList.Min();
+		var passwordCharArray = password.ToCharArray();
+		return HasVowel()
+			&& CheckConsonant3Consecutive()
+			&& CheckVowel3Consecutive()
+			&& CheckCharacter2Consecutive();
+		
+		bool HasVowel()
+		{
+			return _vowels.Any(v => password.Password.Contains(v));
+		}
+		
+		bool CheckVowel3Consecutive()
+		{
+			var count = 0;
+			foreach (var ch in passwordCharArray)
+			{
+				if (_vowels.Contains(ch))
+					count++;
+				else
+					count = 0;
+				
+				if (count >= 3)
+					return false;
+			}
+			return true;
+		}
+
+		bool CheckConsonant3Consecutive()
+		{
+			var count = 0;
+			foreach (var ch in passwordCharArray)
+			{
+				if (!_vowels.Contains(ch))
+					count++;
+				else
+					count = 0;
+				
+				if (count >= 3)
+					{
+					return false;
+				}
+			}
+			return true;
+		}
+
+		bool CheckCharacter2Consecutive()
+		{
+			char prev = '_';
+			foreach (var ch in passwordCharArray)
+			{
+				if (prev == ch && (ch != 'e' && ch != 'o'))
+					return false;
+				prev = ch;
+			}
+			return true;
+		}
 	}
 }
 
+class PasswordData
+{
+	public string Password { get; init; }
+
+	public PasswordData(string password)
+	{
+		Password = password;
+	}
+
+	public char[] ToCharArray()
+	{
+		return Password.ToCharArray();
+	}
+}
 
 
 /////////////////////////////  util 함수  ////////////////////////////////
