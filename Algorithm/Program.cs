@@ -4,107 +4,86 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		List<PasswordData> passwordList = new();
-		while(true)
-		{
-			var input = ReadLine();
-			if (input == "end")
-				break;
-			passwordList.Add(new PasswordData(input));
-		}
-		Solve(passwordList);
+		var numberOfSquare = 4;
+		Solve(numberOfSquare);
 	}
-
-	static void Solve(List<PasswordData> passwordList)
+	
+	static void Solve(int numberOfSquare)
 	{
-		foreach (var ps in passwordList)
-		{
-			var acceptable = PasswordValidator.Validate(ps);
-			var result = acceptable
-			? $"<{ps.Password}> is acceptable"
-			: $"<{ps.Password}> is not acceptable";
-			WriteLine(result);
-		}
+		// 1 2 4 4
+		// 2 3 5 7
+		// 3 1 6 5
+		// 7 3 8 6
+		var squares = GetSquares(numberOfSquare);
+		var paper = new Paper(100, 100);
+		paper.SetPaper(squares);
+		var area = paper.GetCoveredArea();
+		WriteLine(area);
+	}
+	
+	private static List<Square> GetSquares(int numberOfSquare)
+	{
+		return Enumerable.Range(0, numberOfSquare)
+				.Select(_ => ReadLine().Split(' ').Select(n => int.Parse(n)).ToArray())
+				.Select(array => new Square
+				{
+					X1 = array[0],
+					Y1 = array[1],
+					X2 = array[2],
+					Y2 = array[3]
+				})
+				.ToList();
 	}
 }
 
-static class PasswordValidator
+class Paper
 {
-	private static List<char> _vowels = new(){ 'a', 'e', 'i', 'o', 'u'};
-	public static bool Validate(PasswordData password)
+	private bool[][] _coverCheckTable;
+	private int _width;
+	private int _height;
+	
+	public Paper(int width, int height)
 	{
-		var passwordCharArray = password.ToCharArray();
-		return HasVowel()
-			&& CheckConsonant3Consecutive()
-			&& CheckVowel3Consecutive()
-			&& CheckCharacter2Consecutive();
-		
-		bool HasVowel()
+		_width = width;
+		_height = height;
+		_coverCheckTable = Enumerable.Range(0, _width).Select(_ => Enumerable.Repeat(false, _height).ToArray()).ToArray();
+	}
+	
+	public void SetPaper(List<Square> squares)
+	{
+		var n = Enumerable.Range(0, _width);
+		var m = Enumerable.Range(0, _height);
+		foreach (var square in squares)
 		{
-			return _vowels.Any(v => password.Password.Contains(v));
+			n.ForEach(x => m.Where(y => !_coverCheckTable[x][y]).ForEach(y => SetCoverCheckTable(x, y, square)));	
 		}
-		
-		bool CheckVowel3Consecutive()
+	}
+	
+	private void SetCoverCheckTable(int targetX, int targetY, Square square)
+	{
+		if (IsAlreadySet(targetX, targetY, square))
 		{
-			var count = 0;
-			foreach (var ch in passwordCharArray)
-			{
-				if (_vowels.Contains(ch))
-					count++;
-				else
-					count = 0;
-				
-				if (count >= 3)
-					return false;
-			}
-			return true;
+			_coverCheckTable[targetX][targetY] = true;
 		}
-
-		bool CheckConsonant3Consecutive()
-		{
-			var count = 0;
-			foreach (var ch in passwordCharArray)
-			{
-				if (!_vowels.Contains(ch))
-					count++;
-				else
-					count = 0;
-				
-				if (count >= 3)
-					{
-					return false;
-				}
-			}
-			return true;
-		}
-
-		bool CheckCharacter2Consecutive()
-		{
-			char prev = '_';
-			foreach (var ch in passwordCharArray)
-			{
-				if (prev == ch && (ch != 'e' && ch != 'o'))
-					return false;
-				prev = ch;
-			}
-			return true;
-		}
+	}
+	
+	private bool IsAlreadySet(int targetX, int targetY, Square square)
+	{
+		return (targetX >= square.X1 && targetX < square.X2) && (targetY >= square.Y1 && targetY < square.Y2);
+	}
+	
+	public int GetCoveredArea()
+	{
+		return _coverCheckTable.Select(line => line.Count(item => item)).Sum();
 	}
 }
 
-class PasswordData
+class Square
 {
-	public string Password { get; init; }
-
-	public PasswordData(string password)
-	{
-		Password = password;
-	}
-
-	public char[] ToCharArray()
-	{
-		return Password.ToCharArray();
-	}
+	public int X1 { get; set; }
+	public int Y1 { get; set; }
+	public int X2 { get; set; }
+	public int Y2 { get; set; }
 }
 
 
