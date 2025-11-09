@@ -4,88 +4,77 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var numberOfSquare = 4;
-		Solve(numberOfSquare);
+		var n = int.Parse(ReadLine());
+		var confettis = Enumerable.Range(0, n)
+				.Select(_ => ReadLine().Split(' ').Select(st => int.Parse(st)).ToArray())
+				.Select(pair => new Confetti(pair[0], pair[1]))
+				.ToList();
+		Solve(confettis);
 	}
 	
-	static void Solve(int numberOfSquare)
+	static void Solve(List<Confetti> confettis)
 	{
-		// 1 2 4 4
-		// 2 3 5 7
-		// 3 1 6 5
-		// 7 3 8 6
-		var squares = GetSquares(numberOfSquare);
-		var paper = new Paper(100, 100);
-		paper.SetPaper(squares);
+		var paper = new Paper();
+		paper.PutPapers(confettis);
 		var area = paper.GetCoveredArea();
 		WriteLine(area);
-	}
-	
-	private static List<Square> GetSquares(int numberOfSquare)
-	{
-		return Enumerable.Range(0, numberOfSquare)
-				.Select(_ => ReadLine().Split(' ').Select(n => int.Parse(n)).ToArray())
-				.Select(array => new Square
-				{
-					X1 = array[0],
-					Y1 = array[1],
-					X2 = array[2],
-					Y2 = array[3]
-				})
-				.ToList();
 	}
 }
 
 class Paper
 {
-	private bool[][] _coverCheckTable;
-	private int _width;
-	private int _height;
+	public const int Height = 100;
+	public const int Width = 100;
+	private bool[][] _paperTable = Enumerable.Range(0, 100).Select(_ => Enumerable.Range(0, 100).Select(_ => false).ToArray()).ToArray();
 	
-	public Paper(int width, int height)
+	public void PutPapers(List<Confetti> confettis)
 	{
-		_width = width;
-		_height = height;
-		_coverCheckTable = Enumerable.Range(0, _width).Select(_ => Enumerable.Repeat(false, _height).ToArray()).ToArray();
-	}
-	
-	public void SetPaper(List<Square> squares)
-	{
-		var n = Enumerable.Range(0, _width);
-		var m = Enumerable.Range(0, _height);
-		foreach (var square in squares)
+		foreach (var confetti in confettis)
 		{
-			n.ForEach(x => m.Where(y => !_coverCheckTable[x][y]).ForEach(y => SetCoverCheckTable(x, y, square)));	
+			PutPaper(confetti);
 		}
 	}
 	
-	private void SetCoverCheckTable(int targetX, int targetY, Square square)
+	public void PutPaper(Confetti confetti)
+	{		
+		Enumerable.Range(0, Width).ForEach(x => Enumerable.Range(0, Height)
+				.Where(y => !IsCovered(x, y))
+				.ForEach(y => Cover(x, y, confetti)));
+	}
+	
+	private void Cover(int x, int y, Confetti confetti)
 	{
-		if (IsAlreadySet(targetX, targetY, square))
+		if ((x >= confetti.X && x < confetti.X + Confetti.Width)
+		&& (y >= confetti.Y && y < confetti.Y + Confetti.Height))
 		{
-			_coverCheckTable[targetX][targetY] = true;
+			_paperTable[x][y] = true;	
 		}
 	}
 	
-	private bool IsAlreadySet(int targetX, int targetY, Square square)
+	private bool IsCovered(int x, int y)
 	{
-		return (targetX >= square.X1 && targetX < square.X2) && (targetY >= square.Y1 && targetY < square.Y2);
+		return _paperTable[x][y];
 	}
 	
 	public int GetCoveredArea()
 	{
-		return _coverCheckTable.Select(line => line.Count(item => item)).Sum();
+		return _paperTable.Sum(x => x.Count(y => y));
 	}
 }
 
-class Square
+class Confetti
 {
-	public int X1 { get; set; }
-	public int Y1 { get; set; }
-	public int X2 { get; set; }
-	public int Y2 { get; set; }
-}
+	public const int Height = 10;
+	public const int Width = 10;
+	public int X { get; set; }
+	public int Y { get; set; }
 
+	public Confetti(int x, int y)
+	{
+		X = x;
+		Y = y;
+	}
+}
 
 /////////////////////////////  util 함수  ////////////////////////////////
 public static class Utils
