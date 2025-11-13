@@ -4,75 +4,63 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var n = int.Parse(ReadLine());
-		var confettis = Enumerable.Range(0, n)
-				.Select(_ => ReadLine().Split(' ').Select(st => int.Parse(st)).ToArray())
-				.Select(pair => new Confetti(pair[0], pair[1]))
-				.ToList();
-		Solve(confettis);
+		var word = ReadLine();
+		Solve(word);
 	}
 	
-	static void Solve(List<Confetti> confettis)
+	static void Solve(string word)
 	{
-		var paper = new Paper();
-		paper.PutPapers(confettis);
-		var area = paper.GetCoveredArea();
-		WriteLine(area);
+		var result = WordProcessor.GetFirstWord(word);
+		WriteLine(result);
 	}
 }
 
-class Paper
+static class WordProcessor
 {
-	public const int Height = 100;
-	public const int Width = 100;
-	private bool[][] _paperTable = Enumerable.Range(0, 100).Select(_ => Enumerable.Range(0, 100).Select(_ => false).ToArray()).ToArray();
-	
-	public void PutPapers(List<Confetti> confettis)
+	public static string GetFirstWord(string word)
 	{
-		foreach (var confetti in confettis)
+		return GetConvertedSubWords(word)
+			.OrderBy(w => w.Converted)
+			.FirstOrDefault()?.Converted ?? string.Empty;
+	}
+	private static List<ConvertedWord> GetConvertedSubWords(string word)
+	{
+		// 나누기
+		// 뒤집기
+		// 단어로 만들기
+		int n = word.Length;
+		var list = new List<ConvertedWord>();
+		foreach (var i in Enumerable.Range(1, n - 2))
 		{
-			PutPaper(confetti);
+			foreach (var j in Enumerable.Range(i + 1, (n - 1) - i))
+			{
+				var parts = new[] { word[..i], word[i..j], word[j..]};
+				list.Add(new ConvertedWord(parts));
+			}
 		}
-	}
-	
-	public void PutPaper(Confetti confetti)
-	{		
-		Enumerable.Range(0, Width).ForEach(x => Enumerable.Range(0, Height)
-				.Where(y => !IsCovered(x, y))
-				.ForEach(y => Cover(x, y, confetti)));
-	}
-	
-	private void Cover(int x, int y, Confetti confetti)
-	{
-		if ((x >= confetti.X && x < confetti.X + Confetti.Width)
-		&& (y >= confetti.Y && y < confetti.Y + Confetti.Height))
-		{
-			_paperTable[x][y] = true;	
-		}
-	}
-	
-	private bool IsCovered(int x, int y)
-	{
-		return _paperTable[x][y];
-	}
-	
-	public int GetCoveredArea()
-	{
-		return _paperTable.Sum(x => x.Count(y => y));
+		return list;
 	}
 }
 
-class Confetti
+class ConvertedWord
 {
-	public const int Height = 10;
-	public const int Width = 10;
-	public int X { get; set; }
-	public int Y { get; set; }
-
-	public Confetti(int x, int y)
+	public string[] OriginalWords { get; }
+	public string Converted { get; }
+	
+	public ConvertedWord(string[] words)
 	{
-		X = x;
-		Y = y;
+		OriginalWords = words;
+		Converted = ToConvertedWord(words);
+	}
+	
+	private string ToConvertedWord(string[] words)
+	{
+		var convertedWordList = new List<string>();
+		foreach (var word in words)
+		{
+			convertedWordList.Add(String.Join("", word.Reverse()));
+		}
+		return String.Join("", convertedWordList);
 	}
 }
 
@@ -82,7 +70,7 @@ public static class Utils
 	static T[] CopyArray<T>(T[] array)
 	{
 		T[] newArray = new T[array.Length];
-	    for (var i = 0; i < array.Length; i++)
+		for (var i = 0; i < array.Length; i++)
 	    {
 	        newArray[i] = array[i];
 	    }
@@ -243,3 +231,4 @@ public static class EnumerableExtensions
 		return numberDict;
 	}
 }
+
