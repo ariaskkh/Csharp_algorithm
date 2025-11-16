@@ -4,63 +4,83 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var word = ReadLine();
-		Solve(word);
+		var N = int.Parse(ReadLine());
+		for (var i = 0; i < N; i++)
+		{
+			var targetDocIndex = int.Parse(ReadLine().Split(' ')[1]);
+			var docs = ReadLine().Split(' ')
+				.Select(priorityStr => int.Parse(priorityStr))
+				.Select((priority, index) => new Document(index, priority)).ToList();
+			Solve(docs, targetDocIndex);
+		}
 	}
-	
-	static void Solve(string word)
+
+	static void Solve(List<Document> docs, int targetDocIndex)
 	{
-		var result = WordProcessor.GetFirstWord(word);
-		WriteLine(result);
+		var processor = new PrintProcessor(docs);
+		processor.Process();
+		var order = processor.GetPrintOrder(targetDocIndex);
+		WriteLine(order);
 	}
 }
 
-static class WordProcessor
+interface IPrintProcessor
 {
-	public static string GetFirstWord(string word)
+	public void Process();
+	public int GetPrintOrder(int targetIndex);
+}
+
+class PrintProcessor : IPrintProcessor
+{
+	private List<Document> _originalDocs { get; set; } = new();
+	private Queue<Document> _queue { get; set; } = new();
+	private List<Document> _printOrderList { get; set; } = new();
+	
+	public PrintProcessor(List<Document> docs)
 	{
-		return GetConvertedSubWords(word)
-			.OrderBy(w => w.Converted)
-			.FirstOrDefault()?.Converted ?? string.Empty;
-	}
-	private static List<ConvertedWord> GetConvertedSubWords(string word)
-	{
-		// 나누기
-		// 뒤집기
-		// 단어로 만들기
-		int n = word.Length;
-		var list = new List<ConvertedWord>();
-		foreach (var i in Enumerable.Range(1, n - 2))
+		_originalDocs = docs;
+		foreach (var doc in docs)
 		{
-			foreach (var j in Enumerable.Range(i + 1, (n - 1) - i))
+			_queue.Enqueue(doc);
+		}
+	}
+	
+	public void Process()
+	{
+		while (_queue.Count > 0)
+		{
+			var max = _queue.Select(d => d.Priority).Max();
+			if (_queue.Peek().Priority == max)
 			{
-				var parts = new[] { word[..i], word[i..j], word[j..]};
-				list.Add(new ConvertedWord(parts));
+				_printOrderList.Add(_queue.Dequeue());
+			}
+			else
+			{
+				_queue.Enqueue(_queue.Dequeue());
 			}
 		}
-		return list;
+	}
+	
+	public int GetPrintOrder(int targetDocIndex)
+	{
+		var targetDoc = _printOrderList.FirstOrDefault(d => d.Index == targetDocIndex);
+		if (targetDoc != null)
+			return _printOrderList.IndexOf(targetDoc) + 1;
+		return -1;
 	}
 }
 
-class ConvertedWord
+
+
+class Document
 {
-	public string[] OriginalWords { get; }
-	public string Converted { get; }
+	public int Index { get; set; }
+	public int Priority { get; set; }
 	
-	public ConvertedWord(string[] words)
+	public Document(int index, int priority)
 	{
-		OriginalWords = words;
-		Converted = ToConvertedWord(words);
-	}
-	
-	private string ToConvertedWord(string[] words)
-	{
-		var convertedWordList = new List<string>();
-		foreach (var word in words)
-		{
-			convertedWordList.Add(String.Join("", word.Reverse()));
-		}
-		return String.Join("", convertedWordList);
+		Index = index;
+		Priority = priority;
 	}
 }
 
