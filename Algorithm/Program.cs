@@ -1,86 +1,92 @@
-﻿using static System.Console;
+﻿
+using static System.Console;
 
 class Program
 {
 	static void Main(string[] args)
 	{
-		var N = int.Parse(ReadLine());
-		for (var i = 0; i < N; i++)
-		{
-			var targetDocIndex = int.Parse(ReadLine().Split(' ')[1]);
-			var docs = ReadLine().Split(' ')
-				.Select(priorityStr => int.Parse(priorityStr))
-				.Select((priority, index) => new Document(index, priority)).ToList();
-			Solve(docs, targetDocIndex);
-		}
+		var num = int.Parse(ReadLine());
+		var table = Enumerable.Range(0, num).Select(_ => ReadLine().ToCharArray()).ToArray();
+		Solve(table);
 	}
-
-	static void Solve(List<Document> docs, int targetDocIndex)
+	
+	static void Solve(char[][] table)
 	{
-		var processor = new PrintProcessor(docs);
-		processor.Process();
-		var order = processor.GetPrintOrder(targetDocIndex);
-		WriteLine(order);
+		var room = new Room(table);
+		var reversed = Calculator.Reverse(room);
+		
+		var count1 = Calculator.FindSpaceToLieInRaw(room);
+		var count2 = Calculator.FindSpaceToLieInRaw(reversed);
+
+		WriteLine($"{count1} {count2}");
 	}
 }
 
-interface IPrintProcessor
+
+static class Calculator
 {
-	public void Process();
-	public int GetPrintOrder(int targetIndex);
+	public static int FindSpaceToLieInRaw(Room room)
+	{
+		var count = 0;
+		foreach (var line in room.RoomTable)
+		{
+			var lineStr = string.Join("", line);
+			var spaces = lineStr.Split('0')
+				.Select(part => part.Count(s => s == '1'))
+				.Where(sum => sum >= 2)
+				.Count();
+			count += spaces;
+		}
+		return count;
+	}
+	
+	public static Room Reverse(Room room)
+	{
+		var table = room.RoomTable;
+		if (table == null)
+			throw new Exception();
+		int rowCount = table.Length;
+		int colCount = table[0].Length;
+		
+		// array 생성 및 초기화
+		var reversedTable = new int[colCount][];
+		for (int i = 0; i < colCount; i++)
+			reversedTable[i] = new int[rowCount];
+			
+		for (var i = 0; i < rowCount; i++)
+		{
+			for (var j = 0; j < colCount; j++)
+			{
+				reversedTable[j][i] = table[i][j];
+			}
+		}
+		return new Room(reversedTable);
+	}
 }
 
-class PrintProcessor : IPrintProcessor
+class Room
 {
-	private List<Document> _originalDocs { get; set; } = new();
-	private Queue<Document> _queue { get; set; } = new();
-	private List<Document> _printOrderList { get; set; } = new();
+	public char[][] OriginalRoomTable;
+	public int[][] RoomTable;
 	
-	public PrintProcessor(List<Document> docs)
+	public Room(char[][] roomTable)
 	{
-		_originalDocs = docs;
-		foreach (var doc in docs)
-		{
-			_queue.Enqueue(doc);
-		}
+		OriginalRoomTable = roomTable;
+		RoomTable = roomTable.Select(line => line.Select(ChangeTable).ToArray()).ToArray();
 	}
 	
-	public void Process()
+	public Room(int[][] roomTable)
 	{
-		while (_queue.Count > 0)
-		{
-			var max = _queue.Select(d => d.Priority).Max();
-			if (_queue.Peek().Priority == max)
-			{
-				_printOrderList.Add(_queue.Dequeue());
-			}
-			else
-			{
-				_queue.Enqueue(_queue.Dequeue());
-			}
-		}
+		RoomTable = roomTable;
 	}
 	
-	public int GetPrintOrder(int targetDocIndex)
+	private int ChangeTable(char ch)
 	{
-		var targetDoc = _printOrderList.FirstOrDefault(d => d.Index == targetDocIndex);
-		if (targetDoc != null)
-			return _printOrderList.IndexOf(targetDoc) + 1;
+		if (ch == 'X') // 짐
+			return 0;
+		if (ch == '.') // 빈자리
+			return 1;
 		return -1;
-	}
-}
-
-
-
-class Document
-{
-	public int Index { get; set; }
-	public int Priority { get; set; }
-	
-	public Document(int index, int priority)
-	{
-		Index = index;
-		Priority = priority;
 	}
 }
 
