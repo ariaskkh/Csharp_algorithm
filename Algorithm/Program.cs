@@ -1,92 +1,65 @@
-﻿
-using static System.Console;
+﻿using static System.Console;
 
 class Program
 {
 	static void Main(string[] args)
 	{
 		var num = int.Parse(ReadLine());
-		var table = Enumerable.Range(0, num).Select(_ => ReadLine().ToCharArray()).ToArray();
-		Solve(table);
+		var me = new Candidate(int.Parse(ReadLine()));
+		var candidates = Enumerable.Range(0, num - 1).Select(_ => new Candidate(int.Parse(ReadLine()))).ToList();
+		Solve(me, candidates);
 	}
 	
-	static void Solve(char[][] table)
+	static void Solve(Candidate me, List<Candidate> candidates)
 	{
-		var room = new Room(table);
-		var reversed = Calculator.Reverse(room);
-		
-		var count1 = Calculator.FindSpaceToLieInRaw(room);
-		var count2 = Calculator.FindSpaceToLieInRaw(reversed);
-
-		WriteLine($"{count1} {count2}");
+		var manipulator = new VoteManipulator();
+		manipulator.excute(me, candidates);
+		var minChangeCount = manipulator.GetMinChangeCount();
+		WriteLine(minChangeCount);
 	}
 }
 
-
-static class Calculator
+class VoteManipulator
 {
-	public static int FindSpaceToLieInRaw(Room room)
+	int _minChangeCount = 0;
+	public void excute(Candidate targetCandidate, List<Candidate> others)
 	{
-		var count = 0;
-		foreach (var line in room.RoomTable)
-		{
-			var lineStr = string.Join("", line);
-			var spaces = lineStr.Split('0')
-				.Select(part => part.Count(s => s == '1'))
-				.Where(sum => sum >= 2)
-				.Count();
-			count += spaces;
-		}
-		return count;
-	}
-	
-	public static Room Reverse(Room room)
-	{
-		var table = room.RoomTable;
-		if (table == null)
-			throw new Exception();
-		int rowCount = table.Length;
-		int colCount = table[0].Length;
+		if (others.Count == 0)
+			return;
 		
-		// array 생성 및 초기화
-		var reversedTable = new int[colCount][];
-		for (int i = 0; i < colCount; i++)
-			reversedTable[i] = new int[rowCount];
+		var maxVote = others.Max(c => c.ChangedVoteCount);
+		while (targetCandidate.ChangedVoteCount <= maxVote)
+		{
+			var maxCandidate = others.Find(c => c.ChangedVoteCount == maxVote);
 			
-		for (var i = 0; i < rowCount; i++)
-		{
-			for (var j = 0; j < colCount; j++)
-			{
-				reversedTable[j][i] = table[i][j];
-			}
+			// 조작
+			maxCandidate.MinusVote();
+			targetCandidate.PlusVote();
+			_minChangeCount++;
+			
+			maxVote = others.Max(c => c.ChangedVoteCount);
 		}
-		return new Room(reversedTable);
+	}
+	
+	public int GetMinChangeCount()
+	{
+		return _minChangeCount;
 	}
 }
 
-class Room
+class Candidate
 {
-	public char[][] OriginalRoomTable;
-	public int[][] RoomTable;
-	
-	public Room(char[][] roomTable)
+	public int Index { get; set; }
+	public int _originalVoteCount { get; set; }
+	public int ChangedVoteCount { get; set; }
+
+	public int MinusVote() => --ChangedVoteCount;
+	public int PlusVote() => ++ChangedVoteCount;
+
+	public Candidate(int originalVoteCount)
 	{
-		OriginalRoomTable = roomTable;
-		RoomTable = roomTable.Select(line => line.Select(ChangeTable).ToArray()).ToArray();
-	}
-	
-	public Room(int[][] roomTable)
-	{
-		RoomTable = roomTable;
-	}
-	
-	private int ChangeTable(char ch)
-	{
-		if (ch == 'X') // 짐
-			return 0;
-		if (ch == '.') // 빈자리
-			return 1;
-		return -1;
+		_originalVoteCount = originalVoteCount;
+		ChangedVoteCount = originalVoteCount;
 	}
 }
 
@@ -96,7 +69,7 @@ public static class Utils
 	static T[] CopyArray<T>(T[] array)
 	{
 		T[] newArray = new T[array.Length];
-		for (var i = 0; i < array.Length; i++)
+	    for (var i = 0; i < array.Length; i++)
 	    {
 	        newArray[i] = array[i];
 	    }
@@ -257,4 +230,3 @@ public static class EnumerableExtensions
 		return numberDict;
 	}
 }
-
