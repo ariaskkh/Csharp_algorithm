@@ -4,62 +4,91 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var num = int.Parse(ReadLine());
-		var me = new Candidate(int.Parse(ReadLine()));
-		var candidates = Enumerable.Range(0, num - 1).Select(_ => new Candidate(int.Parse(ReadLine()))).ToList();
-		Solve(me, candidates);
+		var input = ReadLine().Split(' ').Select(int.Parse).ToList();
+		var N = input[0];
+		var myScore = input[1];
+		var limitNumOfLeaderboard = input[2];
+		
+		if (N == 0)
+		{
+			WriteLine(1);
+			return;
+		}
+		
+		var rankScoreList = ReadLine()
+				.Split(' ')
+				.Select(int.Parse)
+				.ToList();
+		Solve(rankScoreList, myScore, limitNumOfLeaderboard);
 	}
 	
-	static void Solve(Candidate me, List<Candidate> candidates)
+	static void Solve(List<int> rankScoreList, int myScore, int limitNumOfLeaderboard)
 	{
-		var manipulator = new VoteManipulator();
-		manipulator.excute(me, candidates);
-		var minChangeCount = manipulator.GetMinChangeCount();
-		WriteLine(minChangeCount);
+		var rankDataList = rankScoreList
+				.Select(score => new RankData(score))
+				.Append(new RankData(myScore, true))
+				.OrderByDescending(x => x.Score)
+				.ToList();
+		RankCalculator.SetRank(rankDataList);
+		var myRank = RankCalculator.GetRank(rankDataList, limitNumOfLeaderboard);
+		WriteLine(myRank);
 	}
 }
 
-class VoteManipulator
+class RankCalculator
 {
-	int _minChangeCount = 0;
-	public void excute(Candidate targetCandidate, List<Candidate> others)
+	public static void SetRank(List<RankData> rankDataList)
 	{
-		if (others.Count == 0)
-			return;
-		
-		var maxVote = others.Max(c => c.ChangedVoteCount);
-		while (targetCandidate.ChangedVoteCount <= maxVote)
+		int rank = 1;
+		List<RankData> rankDataHistory = new();
+		foreach(var rankData in rankDataList)
 		{
-			var maxCandidate = others.Find(c => c.ChangedVoteCount == maxVote);
-			
-			// 조작
-			maxCandidate.MinusVote();
-			targetCandidate.PlusVote();
-			_minChangeCount++;
-			
-			maxVote = others.Max(c => c.ChangedVoteCount);
+			if (rank == 1)
+			{
+				rankData.Rank = rank;
+				rank++;
+			}
+			else
+			{
+//				rankDataHistory.Dump();
+				var prevRankData = rankDataHistory[rankDataHistory.Count - 1];
+				if (rankData.Score == prevRankData.Score) // 이전 점수와 같을 때
+				{
+					rankData.Rank = prevRankData.Rank;
+				}
+				else
+				{
+					rankData.Rank = rank;
+				}
+				rank++;
+			}
+			rankDataHistory.Add(rankData);
 		}
 	}
 	
-	public int GetMinChangeCount()
+	public static int GetRank(List<RankData> rankDataList, int limitNumOfLeaderboard)
 	{
-		return _minChangeCount;
+		var myRankData = rankDataList.Find(d => d.IsMe);
+		var index = rankDataList.FindIndex(d => d.IsMe);
+		return index + 1 > limitNumOfLeaderboard ? -1 : myRankData.Rank;
 	}
 }
 
-class Candidate
+class RankData
 {
-	public int Index { get; set; }
-	public int _originalVoteCount { get; set; }
-	public int ChangedVoteCount { get; set; }
-
-	public int MinusVote() => --ChangedVoteCount;
-	public int PlusVote() => ++ChangedVoteCount;
-
-	public Candidate(int originalVoteCount)
+	public bool IsMe { get; set; } = false;
+	public int Score { get; set; }
+	public int Rank { get; set; } = -1;
+	public RankData(int score, int rank)
 	{
-		_originalVoteCount = originalVoteCount;
-		ChangedVoteCount = originalVoteCount;
+		Score = score;
+		Rank = rank;
+	}
+	
+	public RankData(int score, bool isMe = false)
+	{
+		Score = score;
+		IsMe = isMe;
 	}
 }
 
