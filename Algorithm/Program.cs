@@ -1,94 +1,116 @@
 ﻿using static System.Console;
+using System.Text;
 
 class Program
 {
 	static void Main(string[] args)
 	{
-		var input = ReadLine().Split(' ').Select(int.Parse).ToList();
-		var N = input[0];
-		var myScore = input[1];
-		var limitNumOfLeaderboard = input[2];
-		
-		if (N == 0)
-		{
-			WriteLine(1);
-			return;
-		}
-		
-		var rankScoreList = ReadLine()
-				.Split(' ')
-				.Select(int.Parse)
-				.ToList();
-		Solve(rankScoreList, myScore, limitNumOfLeaderboard);
+		var num = int.Parse(ReadLine()!);
+		var options = Enumerable.Range(0, num).Select(_ => new Option(ReadLine()!)).ToList();
+		Solve(options);
 	}
 	
-	static void Solve(List<int> rankScoreList, int myScore, int limitNumOfLeaderboard)
+	static void Solve(List<Option> options)
 	{
-		var rankDataList = rankScoreList
-				.Select(score => new RankData(score))
-				.Append(new RankData(myScore, true))
-				.OrderByDescending(x => x.Score)
-				.ToList();
-		RankCalculator.SetRank(rankDataList);
-		var myRank = RankCalculator.GetRank(rankDataList, limitNumOfLeaderboard);
-		WriteLine(myRank);
+		var processor = new ShortCutProcessor();
+		processor.SetShortCutKey(options);
+		options.ForEach(o => WriteLine(o.GetOutput()));
 	}
 }
 
-class RankCalculator
+interface IShortCutProcessor
 {
-	public static void SetRank(List<RankData> rankDataList)
+	public void SetShortCutKey(List<Option> options);
+}
+
+class ShortCutProcessor : IShortCutProcessor
+{
+	private List<char> _shortCutList = new();
+	
+	public void SetShortCutKey(List<Option> options)
 	{
-		int rank = 1;
-		List<RankData> rankDataHistory = new();
-		foreach(var rankData in rankDataList)
+		foreach (var option in options)
+        {
+            if (!SetFirstLetterShortcutKey(option))
+            {
+                SetAllLetterShortcutKey(option);
+            }
+        }	
+	}
+
+	private bool SetFirstLetterShortcutKey(Option option)
+	{
+		foreach (var word in option.SubWordList)
 		{
-			if (rank == 1)
+			var first = word[0];
+			if (CanUseKey(first))
 			{
-				rankData.Rank = rank;
-				rank++;
+				_shortCutList.Add(first);
+				option.ShortcutData = (word, 0);
+				return true;
 			}
-			else
-			{
-//				rankDataHistory.Dump();
-				var prevRankData = rankDataHistory[rankDataHistory.Count - 1];
-				if (rankData.Score == prevRankData.Score) // 이전 점수와 같을 때
-				{
-					rankData.Rank = prevRankData.Rank;
-				}
-				else
-				{
-					rankData.Rank = rank;
-				}
-				rank++;
-			}
-			rankDataHistory.Add(rankData);
 		}
+        return false;
 	}
 	
-	public static int GetRank(List<RankData> rankDataList, int limitNumOfLeaderboard)
+	private void SetAllLetterShortcutKey(Option option)
 	{
-		var myRankData = rankDataList.Find(d => d.IsMe);
-		var index = rankDataList.FindIndex(d => d.IsMe);
-		return index + 1 > limitNumOfLeaderboard ? -1 : myRankData.Rank;
+		foreach (var word in option.SubWordList)
+		{
+			for (var i = 0; i < word.Length; i++)
+			{
+				char ch = word[i];
+				if(CanUseKey(ch))
+				{
+					_shortCutList.Add(ch);
+					option.ShortcutData = (word, i);
+					return;
+				}
+			}
+		}
+	}
+	private bool CanUseKey(char ch)
+	{
+		char upper = char.ToUpperInvariant(ch);
+		return !_shortCutList.Any(k => char.ToUpperInvariant(k) == upper);
 	}
 }
 
-class RankData
+class Option
 {
-	public bool IsMe { get; set; } = false;
-	public int Score { get; set; }
-	public int Rank { get; set; } = -1;
-	public RankData(int score, int rank)
+	public string FullWord { get; set; }
+	public List<string> SubWordList { get; set; }
+	public (string word, int index) ShortcutData { get; set; } = ("", -1);
+
+	
+	public Option(string fullword)
 	{
-		Score = score;
-		Rank = rank;
+		FullWord = fullword;
+		SubWordList = fullword.Split(' ').ToList();
 	}
 	
-	public RankData(int score, bool isMe = false)
+	// [A]pple box
+	public string GetOutput()
 	{
-		Score = score;
-		IsMe = isMe;
+		if (ShortcutData.index == -1)
+			return FullWord;
+			
+		var wordIndex = SubWordList.IndexOf(ShortcutData.word);
+		var shortcutWord = ShortcutData.word;
+		var subIndex = ShortcutData.index;
+		
+		var sb = new StringBuilder();
+		sb.Append(shortcutWord[..subIndex]);
+		sb.Append('[');
+		sb.Append(shortcutWord[subIndex]);
+		sb.Append(']');
+		sb.Append(shortcutWord[(subIndex+1)..]);
+		var highlighted = sb.ToString();
+		
+		var newList = SubWordList.ToList(); // deep copy
+		newList[wordIndex] = highlighted;
+		
+		return string.Join(" ", newList);
 	}
 }
 
