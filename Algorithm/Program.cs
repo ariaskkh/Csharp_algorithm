@@ -1,90 +1,91 @@
 ﻿using static System.Console;
-using System.Text;
 
 class Program
 {
 	static void Main(string[] args)
 	{
-		var input = ReadLine().Split(' ').Select(int.Parse).ToList();
-		var screenWidth = input[0];
-		var basketWidth = input[1];
-		
 		var n = int.Parse(ReadLine());
-		var positions = Enumerable.Range(0, n).Select(_ => int.Parse(ReadLine())).ToList();
-		Solve(new Screen(screenWidth), new Basket(basketWidth), positions);
+		var classMate = GetClassMate(n);
+		Solve(classMate);
 	}
 	
-	static void Solve(Screen screen, Basket basket, List<int> positions)
+	static List<ClassMate> GetClassMate(int n)
 	{
-		var service = new AppleDropService(screen, basket);
-		service.DropApples(positions);
-		var count = service.GetMinMoveCount();
-		WriteLine(count);
+		var classMateData = new List<ClassMate>();
+		for (var i = 0; i < n; i++)
+		{
+		 	var data = ReadLine()
+				.Split(' ')
+				.Select(int.Parse)
+				.ToArray();
+			classMateData.Add(new ClassMate(i + 1, data));
+		}
+		return classMateData;
+	}
+
+
+	static void Solve(List<ClassMate> classMateList)
+	{
+		ClassPresidentManager.CheckSameClassMate(classMateList);
+		var president = ClassPresidentManager.GetPresident(classMateList);
+		WriteLine(president.mateId);
 	}
 }
 
-
-class AppleDropService
+static class ClassPresidentManager
 {
-	private int _leftBasketPosition = 0;
-	private int _rightBasketPosition;
-	private Screen _screen;
-	private Basket _basket;
-	private int _minMoveCount = 0;
+	private const int MAX_GRADE = 5;
 	
-	public AppleDropService(Screen screen, Basket basket)
+	public static void CheckSameClassMate(List<ClassMate> classMates)
 	{
-		_rightBasketPosition = basket.BasketWidth;
-		_screen = screen;
-		_basket = basket;
-	}
-	
-	public void DropApples(List<int> positions)
-	{
-		foreach (var position in positions)
+		classMates.ForEach(mate1 => classMates
+			.Where(mate2 => mate1.mateId != mate2.mateId && WasInSameClass(mate1, mate2))
+			.ForEach(mate2 => AddClassMate(mate1, mate2))
+		);
+			
+		bool WasInSameClass(ClassMate mate1, ClassMate mate2)
 		{
-			var delta = 0;
-			if (position > _rightBasketPosition)
-			{
-				delta = position - _rightBasketPosition;
-				_rightBasketPosition += delta;
-				_leftBasketPosition += delta;
-			}
-			else if (position < _leftBasketPosition + 1)
-			{
-				delta = _leftBasketPosition + 1 - position;
-				_leftBasketPosition -= delta;
-				_rightBasketPosition -= delta;
-			}
-			_minMoveCount += delta;
+			return Enumerable.Range(0, MAX_GRADE).Any(grade => mate1.ClassData[grade] == mate2.ClassData[grade]);
+		}
+		
+		void AddClassMate(ClassMate mate1, ClassMate mate2)
+		{
+			mate1.AddSameClassMate(mate2);
+			mate2.AddSameClassMate(mate1);
 		}
 	}
 	
-	public int GetMinMoveCount()
+	public static ClassMate GetPresident(List<ClassMate> classMates)
 	{
-		return _minMoveCount;
+		var max = classMates.Select(mate => mate.GetSamwClassMateNumber()).Max();
+		return classMates.Where(mate => mate.GetSamwClassMateNumber() == max)
+			.OrderBy(n => n.mateId)
+			.FirstOrDefault();
 	}
 }
 
-class Basket
+class ClassMate
 {
-	public int BasketWidth { get; init; }
-	
-	public Basket(int basketWidth)
+	public int mateId { get; } = -1;
+	public int[] ClassData { get; }
+	private List<ClassMate> _sameClassMateList = new();
+	public ClassMate(int studentId, int[] classData)
 	{
-		BasketWidth = basketWidth;
+		mateId = studentId;
+		ClassData = classData;
+	}
+	
+	public void AddSameClassMate(ClassMate student)
+	{
+		_sameClassMateList.Add(student);
+	}
+	
+	public int GetSamwClassMateNumber()
+	{
+		return _sameClassMateList.Count;
 	}
 }
 
-class Screen
-{
-	private int _screenWidth;
-	
-	public Screen(int screenWidth)
-	{
-		_screenWidth = screenWidth;
-	}
-}
 
 /////////////////////////////  util 함수  ////////////////////////////////
 public static class Utils
