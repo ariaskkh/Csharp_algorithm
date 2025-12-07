@@ -5,112 +5,84 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var num = int.Parse(ReadLine()!);
-		var options = Enumerable.Range(0, num).Select(_ => new Option(ReadLine()!)).ToList();
-		Solve(options);
+		var input = ReadLine().Split(' ').Select(int.Parse).ToList();
+		var screenWidth = input[0];
+		var basketWidth = input[1];
+		
+		var n = int.Parse(ReadLine());
+		var positions = Enumerable.Range(0, n).Select(_ => int.Parse(ReadLine())).ToList();
+		Solve(new Screen(screenWidth), new Basket(basketWidth), positions);
 	}
 	
-	static void Solve(List<Option> options)
+	static void Solve(Screen screen, Basket basket, List<int> positions)
 	{
-		var processor = new ShortCutProcessor();
-		processor.SetShortCutKey(options);
-		options.ForEach(o => WriteLine(o.GetOutput()));
+		var service = new AppleDropService(screen, basket);
+		service.DropApples(positions);
+		var count = service.GetMinMoveCount();
+		WriteLine(count);
 	}
 }
 
-interface IShortCutProcessor
-{
-	public void SetShortCutKey(List<Option> options);
-}
 
-class ShortCutProcessor : IShortCutProcessor
+class AppleDropService
 {
-	private List<char> _shortCutList = new();
+	private int _leftBasketPosition = 0;
+	private int _rightBasketPosition;
+	private Screen _screen;
+	private Basket _basket;
+	private int _minMoveCount = 0;
 	
-	public void SetShortCutKey(List<Option> options)
+	public AppleDropService(Screen screen, Basket basket)
 	{
-		foreach (var option in options)
-        {
-            if (!SetFirstLetterShortcutKey(option))
-            {
-                SetAllLetterShortcutKey(option);
-            }
-        }	
-	}
-
-	private bool SetFirstLetterShortcutKey(Option option)
-	{
-		foreach (var word in option.SubWordList)
-		{
-			var first = word[0];
-			if (CanUseKey(first))
-			{
-				_shortCutList.Add(first);
-				option.ShortcutData = (word, 0);
-				return true;
-			}
-		}
-        return false;
+		_rightBasketPosition = basket.BasketWidth;
+		_screen = screen;
+		_basket = basket;
 	}
 	
-	private void SetAllLetterShortcutKey(Option option)
+	public void DropApples(List<int> positions)
 	{
-		foreach (var word in option.SubWordList)
+		foreach (var position in positions)
 		{
-			for (var i = 0; i < word.Length; i++)
+			var delta = 0;
+			if (position > _rightBasketPosition)
 			{
-				char ch = word[i];
-				if(CanUseKey(ch))
-				{
-					_shortCutList.Add(ch);
-					option.ShortcutData = (word, i);
-					return;
-				}
+				delta = position - _rightBasketPosition;
+				_rightBasketPosition += delta;
+				_leftBasketPosition += delta;
 			}
+			else if (position < _leftBasketPosition + 1)
+			{
+				delta = _leftBasketPosition + 1 - position;
+				_leftBasketPosition -= delta;
+				_rightBasketPosition -= delta;
+			}
+			_minMoveCount += delta;
 		}
 	}
-	private bool CanUseKey(char ch)
+	
+	public int GetMinMoveCount()
 	{
-		char upper = char.ToUpperInvariant(ch);
-		return !_shortCutList.Any(k => char.ToUpperInvariant(k) == upper);
+		return _minMoveCount;
 	}
 }
 
-class Option
+class Basket
 {
-	public string FullWord { get; set; }
-	public List<string> SubWordList { get; set; }
-	public (string word, int index) ShortcutData { get; set; } = ("", -1);
-
+	public int BasketWidth { get; init; }
 	
-	public Option(string fullword)
+	public Basket(int basketWidth)
 	{
-		FullWord = fullword;
-		SubWordList = fullword.Split(' ').ToList();
+		BasketWidth = basketWidth;
 	}
+}
+
+class Screen
+{
+	private int _screenWidth;
 	
-	// [A]pple box
-	public string GetOutput()
+	public Screen(int screenWidth)
 	{
-		if (ShortcutData.index == -1)
-			return FullWord;
-			
-		var wordIndex = SubWordList.IndexOf(ShortcutData.word);
-		var shortcutWord = ShortcutData.word;
-		var subIndex = ShortcutData.index;
-		
-		var sb = new StringBuilder();
-		sb.Append(shortcutWord[..subIndex]);
-		sb.Append('[');
-		sb.Append(shortcutWord[subIndex]);
-		sb.Append(']');
-		sb.Append(shortcutWord[(subIndex+1)..]);
-		var highlighted = sb.ToString();
-		
-		var newList = SubWordList.ToList(); // deep copy
-		newList[wordIndex] = highlighted;
-		
-		return string.Join(" ", newList);
+		_screenWidth = screenWidth;
 	}
 }
 
