@@ -4,88 +4,112 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		var n = int.Parse(ReadLine());
-		var classMate = GetClassMate(n);
-		Solve(classMate);
+		const int INPUT_COUNT = 6;
+		var numberPerUnit = int.Parse(ReadLine());
+		var melonAreaDatas = Enumerable.Range(0, INPUT_COUNT)
+			.Select(_  => ReadLine()
+				.Split(' ').Select(int.Parse).ToArray())
+				.Select(x => new DirectionData(GetDirection(x[0]), x[1]))
+			.ToList();
+		Solve(numberPerUnit, melonAreaDatas);
+	}
+
+	
+	static void Solve(int numberPerUnit, List<DirectionData> directionDataList)
+	{
+//		directionDataList.Dump();
+		var areaService = new MelonAreaService(numberPerUnit, directionDataList);
+		var count = areaService.GetTotalMelonCount();
+		WriteLine(count);
 	}
 	
-	static List<ClassMate> GetClassMate(int n)
+	static Direction GetDirection(int direction)
 	{
-		var classMateData = new List<ClassMate>();
-		for (var i = 0; i < n; i++)
+		return direction switch 
 		{
-		 	var data = ReadLine()
-				.Split(' ')
-				.Select(int.Parse)
-				.ToArray();
-			classMateData.Add(new ClassMate(i + 1, data));
-		}
-		return classMateData;
-	}
-
-
-	static void Solve(List<ClassMate> classMateList)
-	{
-		ClassPresidentManager.CheckSameClassMate(classMateList);
-		var president = ClassPresidentManager.GetPresident(classMateList);
-		WriteLine(president.mateId);
+			1 => Direction.East,
+			2 => Direction.West,
+			3 => Direction.South,
+			4 => Direction.North,
+			_ => throw new Exception("GetDirection - invalid direction")
+		};
 	}
 }
 
-static class ClassPresidentManager
+class MelonAreaService
 {
-	private const int MAX_GRADE = 5;
+	public List<DirectionData> _directionDataList = new();
+	private int _numberPerUnit;
 	
-	public static void CheckSameClassMate(List<ClassMate> classMates)
+	public MelonAreaService(int numberPerUnit, List<DirectionData> directionDataList)
 	{
-		classMates.ForEach(mate1 => classMates
-			.Where(mate2 => mate1.mateId != mate2.mateId && WasInSameClass(mate1, mate2))
-			.ForEach(mate2 => AddClassMate(mate1, mate2))
-		);
-			
-		bool WasInSameClass(ClassMate mate1, ClassMate mate2)
+		if (directionDataList.Count != 6)
+			throw new Exception($"directionDataList must be 6. but it is {directionDataList.Count}");
+		_numberPerUnit = numberPerUnit;
+		_directionDataList = directionDataList;
+	}
+	
+	public int GetTotalMelonCount()
+	{
+		return _numberPerUnit * GetArea();
+	}
+	
+	private int GetArea()
+	{	
+		var bigWidth = 0;
+		var bigHeight = 0;
+		
+		var newDirectionDataList = _directionDataList.ToList();
+		newDirectionDataList.AddRange(_directionDataList);
+		var directions = newDirectionDataList.Select(d => d.Direction).ToList();
+		var smallWidth = 0;
+		var smallHeight = 0;
+		for (int i = 0; i < 6; i++)
 		{
-			return Enumerable.Range(0, MAX_GRADE).Any(grade => mate1.ClassData[grade] == mate2.ClassData[grade]);
+			if (directions[i] == directions[(i + 2) % 6] && directions[i+1] == directions[(i + 3) % 6])
+			{
+//				$"i: {i}".Dump();
+				smallWidth = newDirectionDataList[(i + 1) % 6].Distance;
+				smallHeight = newDirectionDataList[(i + 2) % 6].Distance;
+				bigWidth = newDirectionDataList[(i + 4) % 6].Distance;
+				bigHeight = newDirectionDataList[(i + 5) % 6].Distance;
+				break;
+			}
 		}
 		
-		void AddClassMate(ClassMate mate1, ClassMate mate2)
-		{
-			mate1.AddSameClassMate(mate2);
-			mate2.AddSameClassMate(mate1);
-		}
-	}
-	
-	public static ClassMate GetPresident(List<ClassMate> classMates)
-	{
-		var max = classMates.Select(mate => mate.GetSamwClassMateNumber()).Max();
-		return classMates.Where(mate => mate.GetSamwClassMateNumber() == max)
-			.OrderBy(n => n.mateId)
-			.FirstOrDefault();
+		var bigArea = bigWidth * bigHeight;
+//		bigWidth.Dump();
+//		bigHeight.Dump();
+//		bigArea.Dump();
+//		"".Dump();
+		var smallArea = smallWidth * smallHeight;
+//		smallWidth.Dump();
+//		smallHeight.Dump();
+//		smallArea.Dump();
+//		"".Dump();
+		return bigArea - smallArea;
 	}
 }
 
-class ClassMate
+class DirectionData
 {
-	public int mateId { get; } = -1;
-	public int[] ClassData { get; }
-	private List<ClassMate> _sameClassMateList = new();
-	public ClassMate(int studentId, int[] classData)
-	{
-		mateId = studentId;
-		ClassData = classData;
-	}
+	public Direction Direction { get; set; }
+	public int Distance { get; set; }
 	
-	public void AddSameClassMate(ClassMate student)
+	public DirectionData(Direction direction, int distance)
 	{
-		_sameClassMateList.Add(student);
-	}
-	
-	public int GetSamwClassMateNumber()
-	{
-		return _sameClassMateList.Count;
+		Direction = direction;
+		Distance = distance;
 	}
 }
 
+enum Direction
+{
+	East = 1,
+	West = 2,
+	South = 3,
+	North = 4
+}
 
 /////////////////////////////  util 함수  ////////////////////////////////
 public static class Utils
